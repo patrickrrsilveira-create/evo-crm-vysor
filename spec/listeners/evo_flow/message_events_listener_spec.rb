@@ -8,6 +8,7 @@ RSpec.describe EvoFlow::MessageEventsListener do
   let(:created_at) { Time.utc(2026, 5, 20, 10, 0, 0) }
   let(:inbox) { instance_double(Inbox, channel_type: 'Channel::WebWidget') }
   let(:conversation) { instance_double(Conversation, contact_id: 42, inbox: inbox) }
+  let(:updated_at) { Time.utc(2026, 5, 20, 10, 5, 0) }
   let(:message) do
     instance_double(
       Message,
@@ -17,7 +18,8 @@ RSpec.describe EvoFlow::MessageEventsListener do
       message_type: 'incoming',
       content_type: 'text',
       content: 'hello',
-      created_at: created_at
+      created_at: created_at,
+      updated_at: updated_at
     )
   end
   let(:fixed_digest) { 'fixed-digest' }
@@ -118,6 +120,118 @@ RSpec.describe EvoFlow::MessageEventsListener do
         allow(EvoFlow::PayloadBuilder).to receive(:message_id_for).and_call_original
 
         2.times { listener.message_created(data: payload) }
+
+        jobs = EvoFlow::PublishEventWorker.jobs
+        expect(jobs.size).to eq(2)
+        expect(jobs[0]['args'][1]['messageId']).to eq(jobs[1]['args'][1]['messageId'])
+      end
+    end
+
+    # M5: only `incoming`/`outgoing` are tracked; `activity` (system) and
+    # `template` (whatsapp template / CSAT broadcast) are intentionally dropped.
+    describe 'message_type filter (M5)' do
+      %w[activity template].each do |dropped_type|
+        context "when message_type is #{dropped_type}" do
+          let(:message) do
+            instance_double(
+              Message, id: 555, conversation: conversation, conversation_id: 100,
+                       message_type: dropped_type, content_type: 'text', content: 'x',
+                       created_at: created_at, updated_at: updated_at
+            )
+          end
+
+          it 'does not enqueue' do
+            listener.message_created(data: payload)
+            expect(EvoFlow::PublishEventWorker.jobs).to be_empty
+          end
+        end
+      end
+
+      it 'tracks outgoing messages' do
+        out_message = instance_double(
+          Message, id: 556, conversation: conversation, conversation_id: 100,
+                   message_type: 'outgoing', content_type: 'text', content: 'ok',
+                   created_at: created_at, updated_at: updated_at
+        )
+        listener.message_created(data: { message: out_message })
+        expect(EvoFlow::PublishEventWorker.jobs.size).to eq(1)
+      end
+    end
+  end
+
+  # AC3: message_status_changed → message.delivered / message.read / message.failed.
+  describe '#message_status_changed' do
+    let(:base_payload) { { message: message, previous_status: 'sent', status: 'delivered', external_error: nil } }
+
+    {
+      ['sent', 'delivered'] => 'message.delivered',
+      ['delivered', 'read'] => 'message.read',
+      ['sent', 'failed'] => 'message.failed',
+      ['delivered', 'failed'] => 'message.failed',
+      ['read', 'failed'] => 'message.failed'
+    }.each do |(prev, curr), expected_event|
+      it "maps (#{prev} → #{curr}) to #{expected_event} (AC3)" do
+        listener.message_status_changed(
+          data: { message: message, previous_status: prev, status: curr, external_error: nil }
+        )
+        job = EvoFlow::PublishEventWorker.jobs.last
+        expect(EvoFlow::PublishEventWorker.jobs.size).to eq(1)
+        expect(job['args'][1]['event']).to eq(expected_event)
+        expect(job['args'][1]['properties']).to include('previous_status' => prev, 'status' => curr)
+      end
+    end
+
+    it 'drops unmapped transitions with a warn' do
+      expect(Rails.logger).to receive(:warn).with(/unmapped transition pending → delivered/)
+      listener.message_status_changed(
+        data: { message: message, previous_status: 'pending', status: 'delivered' }
+      )
+      expect(EvoFlow::PublishEventWorker.jobs).to be_empty
+    end
+
+    it 'includes external_error in properties when status=failed' do
+      listener.message_status_changed(
+        data: { message: message, previous_status: 'sent', status: 'failed', external_error: 'boom' }
+      )
+      job = EvoFlow::PublishEventWorker.jobs.last
+      expect(job['args'][1]['properties']).to include('external_error' => 'boom')
+    end
+
+    context 'when ENV is absent' do
+      before do
+        allow(ENV).to receive(:[]).with('AUTH_APIKEY_INTEGRATION_LOCAL').and_return(nil)
+        allow(ENV).to receive(:[]).with('EVO_FLOW_ENABLED').and_return(nil)
+      end
+
+      it 'does not enqueue' do
+        listener.message_status_changed(data: base_payload)
+        expect(EvoFlow::PublishEventWorker.jobs).to be_empty
+      end
+    end
+
+    context 'when called with an EventDispatcher payload' do
+      it 'returns early — only Wisper-direct shape is accepted' do
+        event = Struct.new(:data).new(base_payload)
+        listener.message_status_changed(event)
+        expect(EvoFlow::PublishEventWorker.jobs).to be_empty
+      end
+    end
+
+    context 'when inbox is missing' do
+      let(:conversation) { instance_double(Conversation, contact_id: 42, inbox: nil) }
+
+      it 'logs a warn and does not enqueue' do
+        expect(Rails.logger).to receive(:warn).with(/inbox missing for message 555/)
+        listener.message_status_changed(data: base_payload)
+        expect(EvoFlow::PublishEventWorker.jobs).to be_empty
+      end
+    end
+
+    describe 'message_id idempotency' do
+      it 'produces identical messageId for two firings of the same transition' do
+        allow(EvoFlow::PayloadBuilder).to receive(:message_id_for).and_call_original
+
+        2.times { listener.message_status_changed(data: base_payload) }
 
         jobs = EvoFlow::PublishEventWorker.jobs
         expect(jobs.size).to eq(2)

@@ -7,6 +7,7 @@ RSpec.describe EvoFlow::ConversationEventsListener do
   let(:listener) { described_class.new }
   let(:created_at) { Time.utc(2026, 5, 20, 10, 0, 0) }
   let(:inbox) { instance_double(Inbox, name: 'Support', channel_type: 'Channel::WebWidget') }
+  let(:updated_at) { Time.utc(2026, 5, 20, 10, 30, 0) }
   let(:conversation) do
     instance_double(
       Conversation,
@@ -14,7 +15,8 @@ RSpec.describe EvoFlow::ConversationEventsListener do
       contact_id: 42,
       inbox_id: 7,
       inbox: inbox,
-      created_at: created_at
+      created_at: created_at,
+      updated_at: updated_at
     )
   end
   let(:fixed_digest) { 'fixed-digest' }
@@ -107,6 +109,72 @@ RSpec.describe EvoFlow::ConversationEventsListener do
         allow(EvoFlow::PayloadBuilder).to receive(:message_id_for).and_call_original
 
         2.times { listener.conversation_created(data: payload) }
+
+        jobs = EvoFlow::PublishEventWorker.jobs
+        expect(jobs.size).to eq(2)
+        expect(jobs[0]['args'][1]['messageId']).to eq(jobs[1]['args'][1]['messageId'])
+      end
+    end
+  end
+
+  # AC2: conversation.resolved. Dispatched only via SyncDispatcher
+  # (Conversation#notify_status_change), which wraps payload in Events::Base.
+  describe '#conversation_resolved' do
+    let(:event_data) { { conversation: conversation, performed_by: nil, changed_attributes: { status: %w[open resolved] } } }
+    let(:dispatcher_event) { Events::Base.new('conversation.resolved', Time.zone.now, event_data) }
+
+    it 'enqueues a track event for conversation.resolved (AC2)' do
+      listener.conversation_resolved(dispatcher_event)
+
+      job = EvoFlow::PublishEventWorker.jobs.last
+      expect(EvoFlow::PublishEventWorker.jobs.size).to eq(1)
+      expect(job['args'][0]).to eq('/events/track')
+
+      sent = job['args'][1]
+      expect(sent['event']).to eq('conversation.resolved')
+      expect(sent['contactId']).to eq('42')
+      expect(sent['properties']).to include(
+        'conversation_id' => 100,
+        'inbox_id' => 7,
+        'channel_type' => 'Channel::WebWidget',
+        'resolution_time_seconds' => 1800,
+        'source' => 'conversation_management'
+      )
+    end
+
+    context 'when ENV is absent' do
+      before do
+        allow(ENV).to receive(:[]).with('AUTH_APIKEY_INTEGRATION_LOCAL').and_return(nil)
+        allow(ENV).to receive(:[]).with('EVO_FLOW_ENABLED').and_return(nil)
+      end
+
+      it 'does not enqueue' do
+        listener.conversation_resolved(dispatcher_event)
+        expect(EvoFlow::PublishEventWorker.jobs).to be_empty
+      end
+    end
+
+    context 'when called with a raw Wisper hash (no .data)' do
+      it 'returns early — this event is dispatcher-only, no Wisper-direct shape exists' do
+        listener.conversation_resolved(data: event_data)
+        expect(EvoFlow::PublishEventWorker.jobs).to be_empty
+      end
+    end
+
+    context 'when conversation is missing' do
+      it 'logs an error and does not enqueue' do
+        event = Events::Base.new('conversation.resolved', Time.zone.now, {})
+        expect(Rails.logger).to receive(:error).with(/conversation_resolved.*conversation is nil/)
+        listener.conversation_resolved(event)
+        expect(EvoFlow::PublishEventWorker.jobs).to be_empty
+      end
+    end
+
+    describe 'message_id idempotency' do
+      it 'produces identical messageId for two firings' do
+        allow(EvoFlow::PayloadBuilder).to receive(:message_id_for).and_call_original
+
+        2.times { listener.conversation_resolved(dispatcher_event) }
 
         jobs = EvoFlow::PublishEventWorker.jobs
         expect(jobs.size).to eq(2)

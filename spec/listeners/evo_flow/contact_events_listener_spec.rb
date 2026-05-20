@@ -63,6 +63,22 @@ RSpec.describe EvoFlow::ContactEventsListener do
         'source' => 'contact_created',
         'created_via' => 'system'
       )
+      # M4: custom and additional attributes are namespaced rather than spread.
+      expect(sent['traits']).to include('customAttributes' => { 'tier' => 'gold' })
+      expect(sent['traits']).to include('additionalAttributes' => {})
+    end
+
+    # M4: a custom attribute named `id` (or any structural trait key) must not
+    # overwrite the structural trait value.
+    it 'does not let a custom_attribute named "id" overwrite the structural id' do
+      allow(contact).to receive(:custom_attributes).and_return('id' => 'CUSTOM', 'name' => 'CUSTOM')
+
+      listener.contact_created(data: payload)
+
+      sent = last_payload
+      expect(sent['traits']['id']).to eq(42)
+      expect(sent['traits']['name']).to eq('Ada Lovelace')
+      expect(sent['traits']['customAttributes']).to include('id' => 'CUSTOM', 'name' => 'CUSTOM')
     end
 
     it 'marks created_via=agent when additional_attributes.created_via_user_id is present' do

@@ -8,4 +8,14 @@ module EvoFlow
     message.created message.delivered message.read message.failed
     campaign.triggered campaign.message.sent campaign.message.opened campaign.message.clicked
   ].freeze
+
+  # Feature gate. Primary ENV is `EVO_FLOW_ENABLED`; legacy
+  # `AUTH_APIKEY_INTEGRATION_LOCAL` is honoured as a fallback during the
+  # rollout transition (review L4) so existing deploys keep working. Drop
+  # the legacy var once the rollout settles.
+  def self.enabled?
+    return ENV['EVO_FLOW_ENABLED'].to_s.casecmp('true').zero? if ENV['EVO_FLOW_ENABLED'].present?
+
+    ENV['AUTH_APIKEY_INTEGRATION_LOCAL'].present?
+  end
 end

@@ -93,7 +93,8 @@ module EvoFlow
       return log_missing(__method__, 'contact') unless contact
       return unless evo_flow_enabled?
 
-      occurred_at = Time.zone.now
+      # L3: prefer producer-supplied timestamp; fall back to now.
+      occurred_at = event_data[:occurred_at] || Time.zone.now
       enqueue_identify(
         event_name: 'contact.custom_attribute.changed',
         contact_id: contact.id,
@@ -117,8 +118,13 @@ module EvoFlow
       return unless evo_flow_enabled?
 
       label_name = event_data[:label_name]
-      traits = { labelName: label_name, labelId: label_name, source: source }
-      occurred_at = Time.zone.now
+      # L2: prefer the real Label.id from the producer (event_data[:label_id]);
+      # fall back to a Label lookup for backwards compat with producers that
+      # only pass the name. If neither yields an id, fall back to the name.
+      label_id = event_data[:label_id] || resolve_label_id(label_name) || label_name
+      traits = { labelName: label_name, labelId: label_id, source: source }
+      # L3: prefer producer-supplied timestamp; fall back to now.
+      occurred_at = event_data[:occurred_at] || Time.zone.now
 
       enqueue_identify(
         event_name: event_name,
@@ -130,6 +136,12 @@ module EvoFlow
       )
     rescue StandardError => e
       log_failure("contact_label_#{suffix}", e)
+    end
+
+    def resolve_label_id(label_name)
+      return nil if label_name.blank?
+
+      Label.find_by(title: label_name.to_s)&.id
     end
 
     def created_via(contact)
@@ -181,6 +193,9 @@ module EvoFlow
     end
 
     # Ported from legacy evo_campaign/contact_events_integration_service.rb:553-571.
+    # M4: custom_attributes / additional_attributes are namespaced rather than
+    # spread, so a custom attribute named `id`/`name`/`email`/`created_at`
+    # cannot overwrite the structural trait keys.
     def build_contact_traits(contact)
       {
         id: contact.id,
@@ -196,13 +211,13 @@ module EvoFlow
         blocked: contact.blocked,
         created_at: contact.created_at,
         updated_at: contact.updated_at,
-        **(contact.custom_attributes || {}),
-        **(contact.additional_attributes || {})
+        customAttributes: contact.custom_attributes || {},
+        additionalAttributes: contact.additional_attributes || {}
       }.compact
     end
 
     def evo_flow_enabled?
-      ENV['AUTH_APIKEY_INTEGRATION_LOCAL'].present?
+      EvoFlow.enabled?
     end
 
     def log_missing(handler, key)

@@ -86,7 +86,7 @@ module EvoFlow
     end
 
     def evo_flow_enabled?
-      ENV['AUTH_APIKEY_INTEGRATION_LOCAL'].present?
+      EvoFlow.enabled?
     end
 
     # F6/F8 mitigation: see ContactEventsListener#log_failure for rationale.
