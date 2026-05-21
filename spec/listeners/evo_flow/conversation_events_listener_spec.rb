@@ -117,14 +117,15 @@ RSpec.describe EvoFlow::ConversationEventsListener do
     end
   end
 
-  # AC2: conversation.resolved. Dispatched only via SyncDispatcher
-  # (Conversation#notify_status_change), which wraps payload in Events::Base.
+  # AC2: conversation.resolved. F-1: the model now publishes a Wisper-direct hash
+  # in addition to the Dispatcher path; the handler accepts the hash and rejects
+  # the Events::Base envelope to avoid double-publishing.
   describe '#conversation_resolved' do
     let(:event_data) { { conversation: conversation, performed_by: nil, changed_attributes: { status: %w[open resolved] } } }
-    let(:dispatcher_event) { Events::Base.new('conversation.resolved', Time.zone.now, event_data) }
+    let(:wisper_payload) { { data: event_data } }
 
     it 'enqueues a track event for conversation.resolved (AC2)' do
-      listener.conversation_resolved(dispatcher_event)
+      listener.conversation_resolved(wisper_payload)
 
       job = EvoFlow::PublishEventWorker.jobs.last
       expect(EvoFlow::PublishEventWorker.jobs.size).to eq(1)
@@ -149,23 +150,26 @@ RSpec.describe EvoFlow::ConversationEventsListener do
       end
 
       it 'does not enqueue' do
-        listener.conversation_resolved(dispatcher_event)
+        listener.conversation_resolved(wisper_payload)
         expect(EvoFlow::PublishEventWorker.jobs).to be_empty
       end
     end
 
-    context 'when called with a raw Wisper hash (no .data)' do
-      it 'returns early — this event is dispatcher-only, no Wisper-direct shape exists' do
-        listener.conversation_resolved(data: event_data)
+    # F-1: the Dispatcher fires Sync + Async, each publishing an Events::Base
+    # envelope to global Wisper subscribers. The handler must reject these so
+    # the listener processes only once (from the Wisper-direct producer).
+    context 'when called with an Events::Base envelope (Dispatcher path)' do
+      it 'returns early and does not enqueue' do
+        event = Events::Base.new('conversation.resolved', Time.zone.now, event_data)
+        listener.conversation_resolved(event)
         expect(EvoFlow::PublishEventWorker.jobs).to be_empty
       end
     end
 
     context 'when conversation is missing' do
       it 'logs an error and does not enqueue' do
-        event = Events::Base.new('conversation.resolved', Time.zone.now, {})
         expect(Rails.logger).to receive(:error).with(/conversation_resolved.*conversation is nil/)
-        listener.conversation_resolved(event)
+        listener.conversation_resolved(data: {})
         expect(EvoFlow::PublishEventWorker.jobs).to be_empty
       end
     end
@@ -174,12 +178,47 @@ RSpec.describe EvoFlow::ConversationEventsListener do
       it 'produces identical messageId for two firings' do
         allow(EvoFlow::PayloadBuilder).to receive(:message_id_for).and_call_original
 
-        2.times { listener.conversation_resolved(dispatcher_event) }
+        2.times { listener.conversation_resolved(wisper_payload) }
 
         jobs = EvoFlow::PublishEventWorker.jobs
         expect(jobs.size).to eq(2)
         expect(jobs[0]['args'][1]['messageId']).to eq(jobs[1]['args'][1]['messageId'])
       end
+    end
+  end
+
+  # M1: AC1 integration spec. Drive the real model write
+  # path (`conversation.update!(status: 'resolved')`) so both the Wisper-direct
+  # publish from the model AND the Sync+Async dispatchers fire. Assert that
+  # exactly ONE job lands in EvoFlow::PublishEventWorker — proving the
+  # `return if data.respond_to?(:data)` guard rejects the two Events::Base
+  # envelopes from the Dispatcher path.
+  describe 'AC1 integration: end-to-end dedup via real model update' do
+    let(:user) { User.create!(name: 'Agent', email: "agent-#{SecureRandom.hex(4)}@test.com") }
+    let(:channel) { Channel::WebWidget.create!(website_url: 'https://test.example.com') }
+    let(:inbox) { Inbox.create!(name: 'M1 Inbox', channel: channel) }
+    let(:contact) { Contact.create!(name: 'M1', email: "m1-#{SecureRandom.hex(4)}@test.com") }
+    let(:contact_inbox) { ContactInbox.create!(inbox: inbox, contact: contact, source_id: SecureRandom.hex(4)) }
+    let(:open_conversation) do
+      Conversation.create!(inbox: inbox, contact: contact, contact_inbox: contact_inbox, status: 'open')
+    end
+
+    it 'enqueues exactly 1 job with event_name=conversation.resolved' do
+      open_conversation # ensure it exists with status=open
+
+      EvoFlow::PublishEventWorker.clear
+      open_conversation.update!(status: 'resolved')
+
+      jobs = EvoFlow::PublishEventWorker.jobs.select { |j| j['args'][1]['event'] == 'conversation.resolved' }
+      expect(jobs.size).to eq(1)
+
+      sent = jobs.first['args'][1]
+      expect(sent['contactId']).to eq(contact.id.to_s)
+      expect(sent['messageId']).to be_present
+      expect(sent['properties']).to include(
+        'conversation_id' => open_conversation.id,
+        'inbox_id' => inbox.id
+      )
     end
   end
 end

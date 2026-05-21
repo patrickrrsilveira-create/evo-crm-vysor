@@ -66,7 +66,7 @@ RSpec.describe Contact, type: :model do
       expect(events).to include(['tier', 'added', 'gold'], ['plan', 'added', 'pro'])
     end
 
-    it 'emits :contact_label_added when a new label is applied' do
+    it 'emits :contact_label_added when a new label is applied via update_labels' do
       collected = []
       listener = Class.new do
         define_method(:contact_label_added) { |data| collected << data[:data] }
@@ -78,7 +78,7 @@ RSpec.describe Contact, type: :model do
       expect(collected.map { |d| d[:label_name] }).to include('vip')
     end
 
-    it 'emits :contact_label_removed when an existing label is dropped' do
+    it 'emits :contact_label_removed when an existing label is dropped via update_labels' do
       contact.update_labels(['vip', 'beta'])
       collected = []
       listener = Class.new do
@@ -87,6 +87,36 @@ RSpec.describe Contact, type: :model do
       contact.subscribe(listener)
 
       contact.update_labels(['vip'])
+
+      expect(collected.map { |d| d[:label_name] }).to include('beta')
+    end
+
+    # B1: the production automation/rename paths reach
+    # `Contact#publish_label_changes` only when the write goes through the
+    # setter (`label_list = ...`), which dirty-tracks the attribute. These
+    # specs guard against a regression where any of those paths bypass
+    # the commit hook.
+    it 'emits :contact_label_added via update(label_list:) setter (controller path)' do
+      collected = []
+      listener = Class.new do
+        define_method(:contact_label_added) { |data| collected << data[:data] }
+      end.new
+      contact.subscribe(listener)
+
+      contact.update!(label_list: ['vip'])
+
+      expect(collected.map { |d| d[:label_name] }).to include('vip')
+    end
+
+    it 'emits :contact_label_removed via update(label_list:) setter (controller path)' do
+      contact.update!(label_list: %w[vip beta])
+      collected = []
+      listener = Class.new do
+        define_method(:contact_label_removed) { |data| collected << data[:data] }
+      end.new
+      contact.subscribe(listener)
+
+      contact.update!(label_list: ['vip'])
 
       expect(collected.map { |d| d[:label_name] }).to include('beta')
     end

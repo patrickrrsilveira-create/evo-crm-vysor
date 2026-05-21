@@ -84,7 +84,7 @@ class Contact < ApplicationRecord
   # after_create_commit :dispatch_create_event # Disabled - using Wisper events instead
   after_create_commit :ip_lookup, :publish_contact_created, :assign_to_default_pipeline
   # after_update_commit :dispatch_update_event # Disabled - using Wisper events instead
-  after_update_commit :publish_contact_updated, :publish_custom_attribute_changes
+  after_update_commit :publish_contact_updated, :publish_custom_attribute_changes, :publish_label_changes
   before_save :sync_contact_attributes
   before_destroy :ensure_pipeline_items_cleanup, :publish_contact_deleted
   after_destroy_commit :dispatch_destroy_event
@@ -351,6 +351,31 @@ class Contact < ApplicationRecord
     return 'removed' if new_value.nil?
 
     'updated'
+  end
+
+  # F-2: diff `label_list` on update and emit one Wisper event per added/removed
+  # label so EvoFlow listeners observe label changes via the setter path —
+  # `update(label_list: ...)`, `Labelable#update_labels/#add_labels`,
+  # `AutomationRules::FlowExecutionService#add_label/#remove_label`, and
+  # `Labels::UpdateService` rename. These all dirty-track `label_list` and
+  # hit `saved_change_to_label_list?`.
+  #
+  # NOTE: `contact.label_list.add(...)/.remove(...) + contact.save!` mutates
+  # the cached TagList in place and does NOT dirty-track the attribute — this
+  # callback returns early on that path. Callers that need event emission
+  # must use the setter (route via `update!(label_list: ...)`).
+  def publish_label_changes
+    return unless saved_change_to_label_list?
+
+    # `previous_changes` uses string keys for AR attributes but `label_list`
+    # is an acts-as-taggable-on virtual attribute exposed via dirty tracking
+    # under `saved_change_to_label_list` — use that directly.
+    before, after = saved_change_to_label_list
+    before = Array(before)
+    after = Array(after)
+
+    (after - before).each { |label_name| publish_label_added(label_name) }
+    (before - after).each { |label_name| publish_label_removed(label_name) }
   end
 
   # Publish label changes
