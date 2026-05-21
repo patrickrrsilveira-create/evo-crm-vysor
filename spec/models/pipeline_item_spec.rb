@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'rails_helper'
+require 'sidekiq/testing'
 
 RSpec.describe PipelineItem, type: :model do
   # Derives from VALID_TYPES so the fixture stays valid if the inclusion list changes.
@@ -158,6 +159,49 @@ RSpec.describe PipelineItem, type: :model do
 
       serialized = PipelineItemSerializer.serialize(item, include_entity: false)
       expect(serialized[:is_orphaned]).to be false
+    end
+  end
+
+  # M2: AC5 regression guard. Pre-fix, `publish_pipeline_item_created` ran on
+  # `after_create` (inside the transaction). A rollback would leave an orphan
+  # Sidekiq job referencing a row that never existed. Post-fix it runs on
+  # `after_create_commit`, so a rolled-back transaction enqueues nothing.
+  describe 'after_create_commit (AC5)' do
+    around do |ex|
+      # Restore the original ActiveJob queue adapter so the `:test` override
+      # below does not leak into other specs in the same run.
+      previous_adapter = ActiveJob::Base.queue_adapter
+      ActiveJob::Base.queue_adapter = :test
+      Sidekiq::Testing.fake! { ex.run }
+    ensure
+      ActiveJob::Base.queue_adapter = previous_adapter
+    end
+
+    before do
+      EvoFlow::PublishEventWorker.clear
+      # EventDispatcherJob is an ActiveJob backed by Sidekiq; under the :test
+      # adapter, enqueued jobs land in `ActiveJob::Base.queue_adapter.enqueued_jobs`.
+      ActiveJob::Base.queue_adapter.enqueued_jobs.clear
+    end
+
+    it 'does not enqueue EvoFlow::PublishEventWorker when the transaction rolls back' do
+      ActiveRecord::Base.transaction do
+        described_class.create!(pipeline: pipeline, pipeline_stage: pipeline_stage, contact: contact)
+        raise ActiveRecord::Rollback
+      end
+
+      expect(EvoFlow::PublishEventWorker.jobs).to be_empty
+    end
+
+    it 'does not enqueue EventDispatcherJob with pipeline_item.created when the transaction rolls back' do
+      ActiveRecord::Base.transaction do
+        described_class.create!(pipeline: pipeline, pipeline_stage: pipeline_stage, contact: contact)
+        raise ActiveRecord::Rollback
+      end
+
+      enqueued = ActiveJob::Base.queue_adapter.enqueued_jobs
+      dispatcher_jobs = enqueued.select { |j| j[:job] == EventDispatcherJob }
+      expect(dispatcher_jobs.map { |j| j[:args].first }).not_to include('pipeline_item.created')
     end
   end
 end

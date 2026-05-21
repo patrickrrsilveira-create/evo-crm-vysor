@@ -186,4 +186,39 @@ RSpec.describe EvoFlow::ConversationEventsListener do
       end
     end
   end
+
+  # M1: AC1 integration spec. Drive the real model write
+  # path (`conversation.update!(status: 'resolved')`) so both the Wisper-direct
+  # publish from the model AND the Sync+Async dispatchers fire. Assert that
+  # exactly ONE job lands in EvoFlow::PublishEventWorker — proving the
+  # `return if data.respond_to?(:data)` guard rejects the two Events::Base
+  # envelopes from the Dispatcher path.
+  describe 'AC1 integration: end-to-end dedup via real model update' do
+    let(:user) { User.create!(name: 'Agent', email: "agent-#{SecureRandom.hex(4)}@test.com") }
+    let(:channel) { Channel::WebWidget.create!(website_url: 'https://test.example.com') }
+    let(:inbox) { Inbox.create!(name: 'M1 Inbox', channel: channel) }
+    let(:contact) { Contact.create!(name: 'M1', email: "m1-#{SecureRandom.hex(4)}@test.com") }
+    let(:contact_inbox) { ContactInbox.create!(inbox: inbox, contact: contact, source_id: SecureRandom.hex(4)) }
+    let(:open_conversation) do
+      Conversation.create!(inbox: inbox, contact: contact, contact_inbox: contact_inbox, status: 'open')
+    end
+
+    it 'enqueues exactly 1 job with event_name=conversation.resolved' do
+      open_conversation # ensure it exists with status=open
+
+      EvoFlow::PublishEventWorker.clear
+      open_conversation.update!(status: 'resolved')
+
+      jobs = EvoFlow::PublishEventWorker.jobs.select { |j| j['args'][1]['event'] == 'conversation.resolved' }
+      expect(jobs.size).to eq(1)
+
+      sent = jobs.first['args'][1]
+      expect(sent['contactId']).to eq(contact.id.to_s)
+      expect(sent['messageId']).to be_present
+      expect(sent['properties']).to include(
+        'conversation_id' => open_conversation.id,
+        'inbox_id' => inbox.id
+      )
+    end
+  end
 end
