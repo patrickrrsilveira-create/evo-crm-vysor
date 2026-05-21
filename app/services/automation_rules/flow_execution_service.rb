@@ -228,18 +228,20 @@ class AutomationRules::FlowExecutionService
     elsif @contact
       # Ensure Current.executed_by is set to prevent loop
       Current.executed_by = @rule
-      @contact.label_list.add(labels.pluck(:title))
-      @contact.save!
+      # F-2: route through the setter so `saved_change_to_label_list?`
+      # dirty-tracks the change and Contact#publish_label_changes fires.
+      titles = labels.pluck(:title)
+      @contact.update!(label_list: (@contact.label_list + titles).uniq)
       Rails.logger.info "Automation Rule #{@rule.id}: Added #{labels.count} labels to contact #{@contact.name}"
     else
       Rails.logger.warn "Automation Rule #{@rule.id}: No conversation or contact to add labels to"
     end
   end
-  
+
   def remove_label(label_ids)
     labels = Label.where(id: label_ids)
     return if labels.empty?
-    
+
     if @conversation
       @conversation.label_list.remove(labels.pluck(:title))
       @conversation.save!
@@ -247,8 +249,9 @@ class AutomationRules::FlowExecutionService
     elsif @contact
       # Ensure Current.executed_by is set to prevent loop
       Current.executed_by = @rule
-      @contact.label_list.remove(labels.pluck(:title))
-      @contact.save!
+      # F-2: see add_label above — setter path dirties label_list.
+      titles = labels.pluck(:title)
+      @contact.update!(label_list: @contact.label_list - titles)
       Rails.logger.info "Automation Rule #{@rule.id}: Removed #{labels.count} labels from contact #{@contact.name}"
     else
       Rails.logger.warn "Automation Rule #{@rule.id}: No conversation or contact to remove labels from"
