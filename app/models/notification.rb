@@ -139,6 +139,8 @@ class Notification < ApplicationRecord
       conversation&.messages&.first&.sender
     when 'conversation_assignment'
       (conversation&.messages&.incoming&.last || conversation&.messages&.outgoing&.last)&.sender
+    when 'pipeline_task_assigned', 'pipeline_task_due_soon', 'pipeline_task_overdue', 'pipeline_task_completed'
+      nil # task events have no message actor; title/preview/sender not in scope for this iteration
     end
   end
 
