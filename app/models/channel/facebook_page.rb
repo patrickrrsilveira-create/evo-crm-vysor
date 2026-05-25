@@ -2,13 +2,14 @@
 #
 # Table name: channel_facebook_pages
 #
-#  id                :uuid             not null, primary key
-#  page_access_token :string           not null
-#  user_access_token :string           not null
-#  created_at        :datetime         not null
-#  updated_at        :datetime         not null
-#  instagram_id      :string
-#  page_id           :string           not null
+#  id                 :uuid             not null, primary key
+#  evolution_hub_meta :jsonb            not null
+#  page_access_token  :string           not null
+#  user_access_token  :string           not null
+#  created_at         :datetime         not null
+#  updated_at         :datetime         not null
+#  instagram_id       :string
+#  page_id            :string           not null
 #
 # Indexes
 #
@@ -19,6 +20,7 @@ class Channel::FacebookPage < ApplicationRecord
   include Channelable
   include Reauthorizable
   include ChannelMessageTemplates
+  include EvolutionHubChannelCleanup
 
   self.table_name = 'channel_facebook_pages'
 
@@ -26,6 +28,14 @@ class Channel::FacebookPage < ApplicationRecord
 
   after_create_commit :subscribe
   before_destroy :unsubscribe
+
+  def hub_pending?
+    evolution_hub_meta.is_a?(Hash) && evolution_hub_meta['status'] == 'pending'
+  end
+
+  def hub_active?
+    evolution_hub_meta.is_a?(Hash) && evolution_hub_meta['status'] == 'active'
+  end
 
   def name
     'Facebook'
@@ -40,6 +50,11 @@ class Channel::FacebookPage < ApplicationRecord
   end
 
   def subscribe
+    # In Hub mode the Hub already subscribed the page on its side; CRM has no
+    # app token to do it. Also skip while pending — page_access_token is empty.
+    return if MetaBaseUrl.enabled?
+    return if hub_pending?
+
     # ref https://developers.facebook.com/docs/messenger-platform/reference/webhook-events
     fields = %w[messages message_deliveries message_echoes message_reads standby messaging_handovers feed]
 
@@ -63,6 +78,8 @@ class Channel::FacebookPage < ApplicationRecord
   private
 
   def unsubscribe
+    return true if MetaBaseUrl.enabled?
+
     Facebook::Messenger::Subscriptions.unsubscribe(access_token: page_access_token)
   rescue StandardError => e
     Rails.logger.debug { "Rescued: #{e.inspect}" }
