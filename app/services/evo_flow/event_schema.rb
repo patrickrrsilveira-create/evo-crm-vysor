@@ -25,8 +25,7 @@ module EvoFlow
         middle_name: :string, last_name: :string, location: :string, country_code: :string,
         contact_type: :string, blocked: :boolean, created_at: :date, updated_at: :date,
         customAttributes: :object, additionalAttributes: :object, created_via: :string
-      },
-      allow_extra_properties: true
+      }
     },
     'contact.updated' => {
       category: :contact,
@@ -37,38 +36,32 @@ module EvoFlow
         contact_type: :string, blocked: :boolean, created_at: :date, updated_at: :date,
         customAttributes: :object, additionalAttributes: :object, created_via: :string,
         changes: :object
-      },
-      allow_extra_properties: true
+      }
     },
     'contact.deleted' => {
       category: :contact,
       required: { source: :string, deleted_at: :date },
-      optional: { reason: :string },
-      allow_extra_properties: true
+      optional: { reason: :string }
     },
     'contact.label.added' => {
       category: :contact,
       required: { labelName: :string, labelId: :string, source: :string },
-      optional: {},
-      allow_extra_properties: true
+      optional: {}
     },
     'contact.label.removed' => {
       category: :contact,
       required: { labelName: :string, labelId: :string, source: :string },
-      optional: {},
-      allow_extra_properties: true
+      optional: {}
     },
     'contact.custom_attribute.changed' => {
       category: :contact,
       required: { attributeName: :string, source: :string },
-      optional: { attributeValue: :string, changeType: :string, oldValue: :string },
-      allow_extra_properties: true
+      optional: { attributeValue: :string, changeType: :string, oldValue: :string }
     },
     'conversation.created' => {
       category: :conversation,
       required: { conversation_id: :uuid, inbox_id: :number, source: :string },
-      optional: { inbox_name: :string, channel_type: :string },
-      allow_extra_properties: true
+      optional: { inbox_name: :string, channel_type: :string }
     },
     'conversation.resolved' => {
       category: :conversation,
@@ -76,8 +69,7 @@ module EvoFlow
       optional: {
         inbox_name: :string, channel_type: :string,
         resolved_by_id: :string, resolved_by_type: :string, resolution_time_seconds: :number
-      },
-      allow_extra_properties: true
+      }
     },
     'message.created' => {
       category: :message,
@@ -85,8 +77,7 @@ module EvoFlow
         message_id: :uuid, channel_type: :string, conversation_id: :uuid,
         source: :string, message_type: :string
       },
-      optional: { content_type: :string, content: :string },
-      allow_extra_properties: true
+      optional: { content_type: :string, content: :string }
     },
     'message.delivered' => {
       category: :message,
@@ -96,8 +87,7 @@ module EvoFlow
       optional: {
         message_type: :string, content_type: :string, content: :string,
         previous_status: :string, status: :string, external_error: :string
-      },
-      allow_extra_properties: true
+      }
     },
     'message.read' => {
       category: :message,
@@ -107,8 +97,7 @@ module EvoFlow
       optional: {
         message_type: :string, content_type: :string, content: :string,
         previous_status: :string, status: :string, external_error: :string
-      },
-      allow_extra_properties: true
+      }
     },
     'message.failed' => {
       category: :message,
@@ -118,8 +107,7 @@ module EvoFlow
       optional: {
         message_type: :string, content_type: :string, content: :string,
         previous_status: :string, status: :string, external_error: :string
-      },
-      allow_extra_properties: true
+      }
     },
     'campaign.triggered' => {
       category: :campaign,
@@ -128,32 +116,27 @@ module EvoFlow
         conversation_id: :uuid, contact_id: :uuid, is_lead: :boolean,
         pipeline_name: :string, pipeline_stage_id: :uuid, pipeline_stage_name: :string,
         assigned_by_id: :number, custom_fields: :object
-      },
-      allow_extra_properties: true
+      }
     },
     'campaign.message.sent' => {
       category: :campaign,
       required: { campaign_id: :uuid, message_id: :uuid, source: :string },
-      optional: { contact_id: :uuid, channel_type: :string, template_id: :uuid },
-      allow_extra_properties: true
+      optional: { contact_id: :uuid, channel_type: :string, template_id: :uuid }
     },
     'campaign.message.opened' => {
       category: :campaign,
       required: { campaign_id: :uuid, message_id: :uuid, source: :string },
-      optional: { contact_id: :uuid, opened_at: :date },
-      allow_extra_properties: true
+      optional: { contact_id: :uuid, opened_at: :date }
     },
     'campaign.message.clicked' => {
       category: :campaign,
       required: { campaign_id: :uuid, message_id: :uuid, source: :string },
-      optional: { contact_id: :uuid, url: :string, clicked_at: :date },
-      allow_extra_properties: true
+      optional: { contact_id: :uuid, url: :string, clicked_at: :date }
     },
     'custom' => {
       category: :custom,
       required: {},
-      optional: {},
-      allow_extra_properties: true
+      optional: {}
     }
     }.each_value(&:freeze).freeze
 

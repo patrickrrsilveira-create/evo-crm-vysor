@@ -17,9 +17,9 @@ module EvoFlow
 
       schema[:required].each do |field, type|
         value = normalized[field.to_s]
-        if value.nil?
+        if missing?(value, type)
           raise EvoFlow::InvalidEventPayload.new(
-            event_name: event_name, field: field, reason: :missing_required
+            event_name: event_name, field: field.to_s, reason: :missing_required
           )
         end
         assert_type!(event_name, field, type, value)
@@ -27,11 +27,21 @@ module EvoFlow
 
       schema[:optional].each do |field, type|
         value = normalized[field.to_s]
-        next if value.nil?
+        next if missing?(value, type)
 
         assert_type!(event_name, field, type, value)
       end
     end
+
+    # AC3: a required field is missing when it is nil OR an empty string for
+    # string-like types. false/0 stay valid for their types.
+    def self.missing?(value, type)
+      return true if value.nil?
+      return true if [:string, :uuid].include?(type) && value.is_a?(String) && value.empty?
+
+      false
+    end
+    private_class_method :missing?
 
     def self.stringify_keys(hash)
       return {} if hash.nil?
@@ -44,7 +54,7 @@ module EvoFlow
       return if matches_type?(type, value)
 
       raise EvoFlow::InvalidEventPayload.new(
-        event_name: event_name, field: field, reason: :invalid_type,
+        event_name: event_name, field: field.to_s, reason: :invalid_type,
         details: "expected #{type}, got #{value.class}"
       )
     end
@@ -63,14 +73,17 @@ module EvoFlow
     end
     private_class_method :matches_type?
 
-    # Listeners pass UUIDs as strings AND raw integers (legacy contact_id paths).
-    # Accept both — server-side downstream coerces to string.
+    # Listeners pass UUIDs as canonical strings AND raw integers (legacy
+    # contact_id paths). Accept canonical UUIDs, numeric strings (string-encoded
+    # legacy ids), or any Numeric value. Arbitrary strings like "hello" are
+    # rejected so the :uuid type does not lie about validation.
     def self.matches_uuid?(value)
-      return true if value.is_a?(String) && UUID_REGEX.match?(value)
-      return true if value.is_a?(String) && value.length.positive?
       return true if value.is_a?(Integer) || value.is_a?(Numeric)
+      return false unless value.is_a?(String)
+      return false if value.empty?
+      return true if UUID_REGEX.match?(value)
 
-      false
+      !!(Integer(value) rescue false)
     end
     private_class_method :matches_uuid?
 

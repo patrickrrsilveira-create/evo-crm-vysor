@@ -68,7 +68,7 @@ RSpec.describe EvoFlow::PayloadBuilder do
         described_class.build_track(
           event_name: 'message.delivered',
           contact_id: 1,
-          properties: { channel_type: 'Channel::Whatsapp', conversation_id: 'c1', source: 'm' },
+          properties: { channel_type: 'Channel::Whatsapp', conversation_id: '550e8400-e29b-41d4-a716-446655440002', source: 'm' },
           occurred_at: occurred_at,
           message_id: 'x'
         )
@@ -169,19 +169,28 @@ RSpec.describe EvoFlow::PayloadBuilder do
   # builder raises EvoFlow::InvalidEventName. Caught in CI, not prod —
   # listeners rescue StandardError and tag enqueue-loss.
   describe 'event_name validation (AC6)' do
-    # Kitchen-sink payload covers required fields of every canonical event in
-    # EVENT_NAMES so the loop exercises name validation without tripping the
-    # EVO-1261 SchemaValidator. allow_extra_properties=true everywhere accepts
-    # the unused keys per event.
+    # L3: derive the union of required fields directly from EVENT_SCHEMA so
+    # adding a new event with a new required field automatically updates this
+    # fixture — no silent coverage gap on the loop test below.
     let(:kitchen_sink_properties) do
-      {
-        id: 'c-1', source: 'source', deleted_at: occurred_at,
-        labelName: 'lbl', labelId: 'lbl-1', attributeName: 'attr',
-        conversation_id: 'conv-1', inbox_id: 7,
-        message_id: 'msg-1', channel_type: 'Channel::Whatsapp', message_type: 'incoming',
-        pipeline_item_id: 'pi-1', pipeline_id: 'p-1',
-        campaign_id: 'cmp-1'
-      }
+      union = EvoFlow::EVENT_NAMES.each_with_object({}) do |name, acc|
+        schema = EvoFlow::EventSchema.fetch(name)
+        next unless schema
+
+        schema[:required].each { |field, type| acc[field] ||= sample_value(type) }
+      end
+      union
+    end
+
+    def sample_value(type)
+      case type
+      when :string then 'sample'
+      when :number then 7
+      when :boolean then false
+      when :object then {}
+      when :uuid then '550e8400-e29b-41d4-a716-446655440000'
+      when :date then occurred_at
+      end
     end
 
     it 'accepts canonical event_names from EvoFlow::EVENT_NAMES' do

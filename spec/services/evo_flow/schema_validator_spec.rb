@@ -28,12 +28,12 @@ RSpec.describe EvoFlow::SchemaValidator do
           described_class.validate!(
             'message.delivered',
             channel_type: 'Channel::Whatsapp',
-            conversation_id: 'conv-uuid',
+            conversation_id: '550e8400-e29b-41d4-a716-446655440001',
             source: 'messaging'
           )
         end.to raise_error(EvoFlow::InvalidEventPayload) do |err|
           expect(err.event_name).to eq('message.delivered')
-          expect(err.field).to eq(:message_id)
+          expect(err.field).to eq('message_id')
           expect(err.reason).to eq(:missing_required)
         end
       end
@@ -42,9 +42,9 @@ RSpec.describe EvoFlow::SchemaValidator do
         expect do
           described_class.validate!(
             'message.delivered',
-            message_id: 'msg-1',
+            message_id: '550e8400-e29b-41d4-a716-446655440000',
             channel_type: 'Channel::Whatsapp',
-            conversation_id: 'conv-1',
+            conversation_id: '550e8400-e29b-41d4-a716-446655440001',
             source: 'messaging'
           )
         end.not_to raise_error
@@ -54,9 +54,9 @@ RSpec.describe EvoFlow::SchemaValidator do
         expect do
           described_class.validate!(
             'message.delivered',
-            'message_id' => 'msg-1',
+            'message_id' => '550e8400-e29b-41d4-a716-446655440000',
             'channel_type' => 'Channel::Whatsapp',
-            'conversation_id' => 'conv-1',
+            'conversation_id' => '550e8400-e29b-41d4-a716-446655440001',
             'source' => 'messaging'
           )
         end.not_to raise_error
@@ -68,14 +68,84 @@ RSpec.describe EvoFlow::SchemaValidator do
         expect do
           described_class.validate!('contact.created', source: 'contact_created')
         end.to raise_error(EvoFlow::InvalidEventPayload) do |err|
-          expect(err.field).to eq(:id)
+          expect(err.field).to eq('id')
         end
       end
 
       it 'accepts contact.created when id and source are present' do
         expect do
-          described_class.validate!('contact.created', id: 'c-1', source: 'contact_created')
+          described_class.validate!('contact.created', id: '550e8400-e29b-41d4-a716-446655440000', source: 'contact_created')
         end.not_to raise_error
+      end
+    end
+
+    context 'H1: empty string is treated as missing for string-like required fields' do
+      it 'raises MissingRequiredField when message_id is empty string' do
+        expect do
+          described_class.validate!(
+            'message.delivered',
+            message_id: '',
+            channel_type: 'Channel::Whatsapp',
+            conversation_id: '550e8400-e29b-41d4-a716-446655440002',
+            source: 'messaging'
+          )
+        end.to raise_error(EvoFlow::InvalidEventPayload) do |err|
+          expect(err.field).to eq('message_id')
+          expect(err.reason).to eq(:missing_required)
+        end
+      end
+
+      it 'accepts false/0 for boolean/number fields (not treated as missing)' do
+        expect do
+          described_class.validate!(
+            'campaign.triggered',
+            pipeline_item_id: '550e8400-e29b-41d4-a716-446655440000', pipeline_id: '550e8400-e29b-41d4-a716-446655440001', source: 's',
+            is_lead: false, assigned_by_id: 0
+          )
+        end.not_to raise_error
+      end
+    end
+
+    context 'M1: :uuid type strictness' do
+      it 'rejects arbitrary non-UUID non-numeric strings' do
+        expect do
+          described_class.validate!(
+            'message.delivered',
+            message_id: 'not-a-uuid', channel_type: 'Channel::Whatsapp',
+            conversation_id: 'also-not-a-uuid', source: 's'
+          )
+        end.to raise_error(EvoFlow::InvalidEventPayload)
+      end
+
+      it 'accepts canonical UUID strings' do
+        expect do
+          described_class.validate!(
+            'message.delivered',
+            message_id: '550e8400-e29b-41d4-a716-446655440000',
+            channel_type: 'Channel::Whatsapp',
+            conversation_id: '550e8400-e29b-41d4-a716-446655440001',
+            source: 's'
+          )
+        end.not_to raise_error
+      end
+
+      it 'accepts numeric strings (legacy contact_id paths emit "42")' do
+        expect do
+          described_class.validate!(
+            'message.delivered',
+            message_id: '42', channel_type: 'Channel::Whatsapp',
+            conversation_id: '99', source: 's'
+          )
+        end.not_to raise_error
+      end
+    end
+
+    # L4: invariant — custom MUST always accept any payload.
+    context 'L4: custom sentinel invariant (AC4)' do
+      it 'has empty required and empty optional schemas' do
+        schema = EvoFlow::EventSchema.fetch('custom')
+        expect(schema[:required]).to eq({})
+        expect(schema[:optional]).to eq({})
       end
     end
 
@@ -86,11 +156,11 @@ RSpec.describe EvoFlow::SchemaValidator do
             'message.delivered',
             message_id: true,
             channel_type: 'Channel::Whatsapp',
-            conversation_id: 'conv-1',
+            conversation_id: '550e8400-e29b-41d4-a716-446655440001',
             source: 'messaging'
           )
         end.to raise_error(EvoFlow::InvalidEventPayload) do |err|
-          expect(err.field).to eq(:message_id)
+          expect(err.field).to eq('message_id')
           expect(err.reason).to eq(:invalid_type)
         end
       end
@@ -101,7 +171,7 @@ RSpec.describe EvoFlow::SchemaValidator do
             'message.created',
             message_id: 42,
             channel_type: 'Channel::Whatsapp',
-            conversation_id: 'conv-1',
+            conversation_id: '550e8400-e29b-41d4-a716-446655440001',
             source: 'messaging',
             message_type: 'incoming'
           )
@@ -142,7 +212,7 @@ RSpec.describe EvoFlow::SchemaValidator do
         expect do
           described_class.validate!(
             'conversation.created',
-            conversation_id: 'conv-1',
+            conversation_id: '550e8400-e29b-41d4-a716-446655440001',
             inbox_id: 'seven',
             source: 'conversation_management'
           )
@@ -155,7 +225,7 @@ RSpec.describe EvoFlow::SchemaValidator do
         expect do
           described_class.validate!(
             'conversation.created',
-            conversation_id: 'conv-1', inbox_id: 7, source: 'conversation_management'
+            conversation_id: '550e8400-e29b-41d4-a716-446655440001', inbox_id: 7, source: 'conversation_management'
           )
         end.not_to raise_error
       end
@@ -164,7 +234,7 @@ RSpec.describe EvoFlow::SchemaValidator do
         expect do
           described_class.validate!(
             'conversation.created',
-            conversation_id: 'conv-1', inbox_id: 7, source: 'conversation_management',
+            conversation_id: '550e8400-e29b-41d4-a716-446655440001', inbox_id: 7, source: 'conversation_management',
             channel_type: 12345
           )
         end.to raise_error(EvoFlow::InvalidEventPayload)

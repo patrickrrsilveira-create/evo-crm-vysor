@@ -11,10 +11,12 @@ module EvoFlow
 
     def initialize(event_name:, field:, reason:, details: nil)
       @event_name = event_name
-      @field = field
+      # L2 fix: field is always a String so alerts/dashboards parsing both
+      # Ruby and TS error shapes get the same value.
+      @field = field.to_s
       @reason = reason
       details_str = details ? " (#{details})" : ''
-      super("Invalid EvoFlow payload for #{event_name.inspect}: #{reason} on field #{field.inspect}#{details_str}")
+      super("Invalid EvoFlow payload for #{event_name.inspect}: #{reason} on field #{@field.inspect}#{details_str}")
     end
   end
 end
