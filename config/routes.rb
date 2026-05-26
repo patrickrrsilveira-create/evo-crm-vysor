@@ -614,6 +614,15 @@ Rails.application.routes.draw do
               post :add_participant_to_meeting
             end
           end
+          # Evolution Hub — proxy autenticado pra endpoints do user no Hub.
+          # Frontend usa pra renderizar dropdown de Meta Apps disponíveis
+          # antes de criar canal (decisão shared vs BYO).
+          resource :evolution_hub, controller: 'evolution_hub', only: [] do
+            collection do
+              get :meta_app_options
+              get :plan
+            end
+          end
         end
       end
     end
