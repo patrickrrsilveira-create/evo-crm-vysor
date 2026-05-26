@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_05_18_133933) do
+ActiveRecord::Schema[7.1].define(version: 2026_05_20_192951) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -342,6 +342,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_05_18_133933) do
     t.datetime "created_at", precision: nil, null: false
     t.datetime "updated_at", precision: nil, null: false
     t.string "instagram_id"
+    t.jsonb "evolution_hub_meta", default: {}, null: false
     t.index ["page_id"], name: "index_channel_facebook_pages_on_page_id", unique: true
   end
 
@@ -351,6 +352,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_05_18_133933) do
     t.string "instagram_id", null: false
     t.datetime "created_at", precision: nil, null: false
     t.datetime "updated_at", precision: nil, null: false
+    t.jsonb "evolution_hub_meta", default: {}, null: false
     t.index ["instagram_id"], name: "index_channel_instagram_on_instagram_id", unique: true
   end
 
