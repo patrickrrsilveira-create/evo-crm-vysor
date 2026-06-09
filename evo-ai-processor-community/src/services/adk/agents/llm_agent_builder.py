@@ -920,6 +920,19 @@ class LlmAgentBuilder:
 
             crm_tools_instructions.append("\n".join(calendar_instructions))
 
+        # Check if TTS integration is enabled and add instructions
+        tts_config = integrations.get("tts") or integrations.get("elevenlabs")
+        if tts_config and tts_config.get("apiKey") and (tts_config.get("voice") or tts_config.get("voice_id")):
+            respond_in_audio = tts_config.get("respondInAudio", "when_client_asks")
+            if respond_in_audio == "always":
+                crm_tools_instructions.append(
+                    "Text-to-Speech Tool: Available. You MUST use the text_to_speech tool to generate an audio version of your response for EVERY message you send. Return the generated audio URL."
+                )
+            elif respond_in_audio == "when_client_asks":
+                crm_tools_instructions.append(
+                    "Text-to-Speech Tool: Available. Use the text_to_speech tool to generate an audio version of your response ONLY when the user explicitly requests an audio response or sends a voice message."
+                )
+
         if crm_tools_instructions:
             agent_config_sections.append(
                 "<available-tools>\n" + "\n\n".join(crm_tools_instructions) + "\n</available-tools>"
