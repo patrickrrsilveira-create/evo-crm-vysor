@@ -459,7 +459,7 @@ class LlmAgentBuilder:
                 continue
             row_config = dict(item.get("config") or {})
             row_config.setdefault("connected", True)
-            existing_integrations.setdefault(provider, row_config)
+            existing_integrations[provider] = row_config
         merged_config["integrations"] = existing_integrations
 
         # Get custom tools from the configuration
