@@ -4,8 +4,8 @@ import { Button } from '@evoapi/design-system/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@evoapi/design-system/select';
 import { Label } from '@evoapi/design-system/label';
 import AgentBotsService from '@/services/channels/agentBotsService';
-import { toast } from 'react-hot-toast';
-import { api } from '@/services/core/api';
+import { toast } from 'sonner';
+import api from "@/services/core/api";
 
 interface LinkAgentModalProps {
   isOpen: boolean;
@@ -35,7 +35,7 @@ export const LinkAgentModal: React.FC<LinkAgentModalProps> = ({
     setIsFetching(true);
     try {
       const response = await AgentBotsService.getAll();
-      setAgents(response.data);
+      setAgents((response as any).data || response);
     } catch (error) {
       toast.error('Erro ao carregar agentes');
     } finally {

@@ -9,6 +9,8 @@ import PermissionRoute from './PermissionRoute';
 import { PluginRoutes, type PluginRoute as PluginRouteType } from '@/plugin-host';
 
 import MainLayout from '@/components/layout/MainLayout';
+import ErrorBoundary from '@/components/ErrorBoundary';
+import LoadingScreen from '@/components/LoadingScreen';
 
 // Páginas públicas
 import Auth from '@/pages/Auth';
@@ -1486,7 +1488,7 @@ const AppRouter = () => {
             path="/settings/canned-responses"
             element={
               <ErrorBoundary>
-                <Suspense fallback={<LoadingSpinner />}>
+                <Suspense fallback={<LoadingScreen />}>
                   <CannedResponses />
                 </Suspense>
               </ErrorBoundary>
@@ -1497,7 +1499,7 @@ const AppRouter = () => {
             path="/settings/knowledge-base"
             element={
               <ErrorBoundary>
-                <Suspense fallback={<LoadingSpinner />}>
+                <Suspense fallback={<LoadingScreen />}>
                   <KnowledgeBasePage />
                 </Suspense>
               </ErrorBoundary>

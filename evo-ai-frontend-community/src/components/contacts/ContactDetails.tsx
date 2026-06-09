@@ -205,7 +205,7 @@ export default function ContactDetails({
           </Avatar>
 
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 shrink-0 justify-end">
+            <div className="flex flex-wrap items-center gap-2 justify-end mb-2">
               <Button
                 variant="outline"
                 size="sm"

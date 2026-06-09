@@ -448,3 +448,10 @@
   --xy-handle-background-color-default: var(--color-muted-foreground);
   --xy-handle-border-color-default: var(--color-foreground);
 }
+
+/* Global responsive tables fix */
+.table-responsive-wrapper,
+div:has(> table) {
+  overflow-x: auto;
+  max-width: 100%;
+}

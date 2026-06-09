@@ -171,6 +171,8 @@ export interface OpenAIConfig {
   api_key: string;
   label_suggestion?: boolean;
   model?: string;
+  provider?: string;
+  base_url?: string;
   temperature?: number;
   max_tokens?: number;
   enable_audio_transcription?: boolean;
@@ -184,6 +186,9 @@ export interface OpenAIHook extends IntegrationHook {
 export interface OpenAIFormData {
   api_key: string;
   enable_audio_transcription?: boolean;
+  provider?: string;
+  model?: string;
+  base_url?: string;
 }
 
 // BMS Integration types

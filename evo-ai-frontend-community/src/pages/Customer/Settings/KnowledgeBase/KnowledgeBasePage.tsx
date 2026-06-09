@@ -1,20 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@evoapi/design-system/card';
 import { Button } from '@evoapi/design-system/button';
-import { useLanguage } from '@/hooks/useLanguage';
+
 import { FileText, Link, Bot, Plus, BookOpen, Upload } from 'lucide-react';
 
 import { KnowledgeBase, knowledgeBasesService } from '@/services/knowledgeBases';
-import { LoadingSpinner } from '@evoapi/design-system/loading-spinner';
-import { toast } from 'react-hot-toast';
+import { Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { CreateKnowledgeBaseModal } from './CreateKnowledgeBaseModal';
 import { UploadDocumentModal } from './UploadDocumentModal';
 import { LinkAgentModal } from './LinkAgentModal';
-import { ProcessorApiService } from '@/services/core/processorApiService';
-
 const KnowledgeBasePage = () => {
-  const { t } = useLanguage('settings');
-  const [activeTab, setActiveTab] = useState<'bases' | 'agents'>('bases');
   const [bases, setBases] = useState<KnowledgeBase[]>([]);
   const [selectedBase, setSelectedBase] = useState<KnowledgeBase | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -26,9 +22,10 @@ const KnowledgeBasePage = () => {
     setIsLoading(true);
     try {
       const response = await knowledgeBasesService.list();
-      setBases(response.data);
+      const data = (response as any).data || response;
+      setBases(data);
       if (selectedBase) {
-        const updatedSelected = response.data.find((b: KnowledgeBase) => b.id === selectedBase.id);
+        const updatedSelected = data.find((b: KnowledgeBase) => b.id === selectedBase.id);
         if (updatedSelected) setSelectedBase(updatedSelected);
       }
     } catch (error) {
@@ -68,7 +65,7 @@ const KnowledgeBasePage = () => {
               <CardContent>
                 {isLoading ? (
                   <div className="flex justify-center p-8">
-                    <LoadingSpinner size="lg" />
+                    <Loader2 className="w-8 h-8 animate-spin text-primary" />
                   </div>
                 ) : bases.length === 0 ? (
                   <div className="flex flex-col items-center justify-center p-8 text-center border-2 border-dashed rounded-lg border-muted">

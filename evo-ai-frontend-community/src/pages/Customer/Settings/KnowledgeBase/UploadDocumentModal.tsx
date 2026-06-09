@@ -4,7 +4,7 @@ import { Button } from '@evoapi/design-system/button';
 import { Input } from '@evoapi/design-system/input';
 import { Label } from '@evoapi/design-system/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@evoapi/design-system/tabs';
-import { toast } from 'react-hot-toast';
+import { toast } from 'sonner';
 import { Upload, Link as LinkIcon } from 'lucide-react';
 import { agentProcessorApi } from '@/services/core/agentProcessorApi';
 

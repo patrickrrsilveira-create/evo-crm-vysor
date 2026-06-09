@@ -25,6 +25,7 @@ import {
   // Filter,
   // Megaphone,
   // Route,
+  BookOpen,
   ShieldCheck,
 } from 'lucide-react';
 

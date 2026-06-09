@@ -5,7 +5,7 @@ import { Input } from '@evoapi/design-system/input';
 import { Label } from '@evoapi/design-system/label';
 import { Textarea } from '@evoapi/design-system/textarea';
 import { knowledgeBasesService } from '@/services/knowledgeBases';
-import { toast } from 'react-hot-toast';
+import { toast } from 'sonner';
 
 interface CreateKnowledgeBaseModalProps {
   isOpen: boolean;

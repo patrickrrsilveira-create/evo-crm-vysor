@@ -256,7 +256,7 @@ const SubAgentsForm = ({
                               </Badge>
                             </div>
                             {agent.description && (
-                              <p className="text-xs text-muted-foreground truncate">
+                              <p className="text-xs text-muted-foreground break-words whitespace-normal mt-0.5">
                                 {agent.description}
                               </p>
                             )}

@@ -12,6 +12,8 @@ import {
   Switch,
   Label
 } from '@evoapi/design-system';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@evoapi/design-system/select';
+import ModelSelector from '@/components/ai_agents/ModelSelector';
 import { Brain, AlertCircle, ExternalLink } from 'lucide-react';
 import { OpenAIHook, OpenAIFormData, IntegrationHook } from '@/types/integrations';
 
@@ -36,8 +38,25 @@ export default function OpenAIModal({
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<OpenAIFormData>({
     api_key: '',
-    enable_audio_transcription: false
+    enable_audio_transcription: false,
+    provider: 'openai',
+    model: '',
+    base_url: ''
   });
+
+  const providers = [
+    { id: 'openai', name: 'OpenAI' },
+    { id: 'gemini', name: 'Google Gemini' },
+    { id: 'anthropic', name: 'Anthropic' },
+    { id: 'openrouter', name: 'OpenRouter' },
+    { id: 'deepseek', name: 'DeepSeek' },
+    { id: 'together_ai', name: 'Together AI' },
+    { id: 'fireworks_ai', name: 'Fireworks AI' },
+    { id: 'perplexity', name: 'Perplexity' },
+    { id: 'bedrock', name: 'AWS Bedrock' },
+    { id: 'vertex_ai', name: 'Google Vertex AI' },
+    { id: 'custom_openai_compatible', name: 'Custom (OpenAI Compatible)' }
+  ];
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -46,12 +65,18 @@ export default function OpenAIModal({
     if (openaiHook?.settings) {
       setFormData({
         api_key: openaiHook.settings.api_key || '',
-        enable_audio_transcription: openaiHook.settings.enable_audio_transcription || false
+        enable_audio_transcription: openaiHook.settings.enable_audio_transcription || false,
+        provider: openaiHook.settings.provider || 'openai',
+        model: openaiHook.settings.model || '',
+        base_url: openaiHook.settings.base_url || ''
       });
     } else {
       setFormData({
         api_key: '',
-        enable_audio_transcription: false
+        enable_audio_transcription: false,
+        provider: 'openai',
+        model: '',
+        base_url: ''
       });
     }
     setErrors({});
@@ -62,8 +87,6 @@ export default function OpenAIModal({
 
     if (!formData.api_key.trim()) {
       newErrors.api_key = t('openai.modal.fields.apiKey.required');
-    } else if (!formData.api_key.startsWith('sk-')) {
-      newErrors.api_key = t('openai.modal.fields.apiKey.invalid');
     }
 
     setErrors(newErrors);
@@ -107,6 +130,37 @@ export default function OpenAIModal({
 
             <div className="space-y-4">
               <div>
+                <label htmlFor="provider" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  Provedor *
+                </label>
+                <Select
+                  value={formData.provider || 'openai'}
+                  onValueChange={(val) => setFormData(prev => ({ ...prev, provider: val, model: '' }))}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Selecione um provedor" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {providers.map(p => (
+                      <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label htmlFor="base_url" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  URL Base (Opcional)
+                </label>
+                <Input
+                  id="base_url"
+                  placeholder="Ex: https://api.openai.com/v1"
+                  value={formData.base_url || ''}
+                  onChange={(e) => setFormData(prev => ({ ...prev, base_url: e.target.value }))}
+                />
+              </div>
+
+              <div>
                 <label htmlFor="api_key" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                   {t('openai.modal.fields.apiKey.label')} *
                 </label>
@@ -124,6 +178,17 @@ export default function OpenAIModal({
                 <p className="text-xs text-slate-500 mt-1">
                   {t('openai.modal.fields.apiKey.hint')}
                 </p>
+              </div>
+
+              <div>
+                <ModelSelector
+                  label="Modelo"
+                  value={formData.model || ''}
+                  onChange={(val) => setFormData(prev => ({ ...prev, model: val }))}
+                  apiKeys={[{ id: 'temp-id', name: 'Temp', provider: formData.provider || 'openai' } as any]}
+                  apiKeyId="temp-id"
+                  className="w-full"
+                />
               </div>
 
               {/* Audio Transcription Toggle */}
