@@ -27,8 +27,6 @@ function createPremiumSchema() {
     APP_LOGIN_LOGO_URL: z.string().optional().nullable(),
     APP_LOGIN_LOGO_WIDTH: z.string().optional().nullable(),
     APP_LOGIN_LOGO_HEIGHT: z.string().optional().nullable(),
-    APP_LOGO_WIDTH: z.string().optional().nullable(),
-    APP_LOGO_HEIGHT: z.string().optional().nullable(),
     SIDEBAR_COPYRIGHT_TEXT: z.string().optional().nullable(),
     SUPPORT_LINK: z.string().optional().nullable(),
     DOCS_LINK: z.string().optional().nullable(),
