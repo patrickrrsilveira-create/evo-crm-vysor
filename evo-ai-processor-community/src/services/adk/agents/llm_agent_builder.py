@@ -1145,12 +1145,7 @@ class LlmAgentBuilder:
             # "after_model_callback": advanced_usage_tracker,
         }
 
-        if (
-            agent.model == "gemini/gemini-2.0-flash-exp"
-            or agent.model == "gemini/gemini-2.0-flash-live-001"
-            or agent.model == "gemini/gemini-2.5-flash-preview-native-audio-dialog"
-            or agent.model == "gemini/gemini-2.5-flash-exp-native-audio-thinking-dialog"
-        ):
+        if agent.model and agent.model.startswith("gemini/"):
             model_name = agent.model.replace("gemini/", "")
             llm_agent_kwargs["model"] = GeminiWithApiKey(
                 model=model_name, api_key=api_key
