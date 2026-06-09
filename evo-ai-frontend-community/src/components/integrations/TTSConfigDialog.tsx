@@ -14,7 +14,7 @@ import {
   SelectValue,
   Slider,
 } from '@evoapi/design-system';
-import { Play, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { useLanguage } from '@/hooks/useLanguage';
 
 interface TTSConfig {
