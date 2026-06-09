@@ -255,20 +255,36 @@ class AgentBots::HttpRequestService
   end
 
   def extract_message_content
-    case @payload[:event]
-    when 'message_created', 'message_updated'
-      @payload[:content] || 'No content'
-    when 'inactivity_action'
-      @payload[:content] || 'Generate an appropriate message to re-engage the customer'
-    when 'conversation_opened'
-      'Conversation opened'
-    when 'conversation_resolved'
-      'Conversation resolved'
-    when 'webwidget_triggered'
-      'Widget triggered'
-    else
-      'Unknown event'
+    base_content = case @payload[:event]
+                   when 'message_created', 'message_updated'
+                     @payload[:content] || ''
+                   when 'inactivity_action'
+                     @payload[:content] || 'Generate an appropriate message to re-engage the customer'
+                   when 'conversation_opened'
+                     'Conversation opened'
+                   when 'conversation_resolved'
+                     'Conversation resolved'
+                   when 'webwidget_triggered'
+                     'Widget triggered'
+                   else
+                     'Unknown event'
+                   end
+
+    # Extract audio transcriptions from attachments if present
+    attachments = @payload[:attachments] || []
+    if attachments.is_a?(Array)
+      transcriptions = attachments.filter_map do |att|
+        meta = att[:meta] || {}
+        text = meta[:transcribed_text] || meta['transcribed_text'] || att[:transcribed_text] || att['transcribed_text']
+        text if text.present?
+      end
+
+      if transcriptions.any?
+        base_content = [base_content, *transcriptions].reject(&:blank?).join("\n\n")
+      end
     end
+
+    base_content.presence || 'No content'
   end
 
   def extract_context_id
