@@ -10,7 +10,7 @@ import { toast } from 'sonner';
 interface CreateKnowledgeBaseModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSuccess: () => void;
+  onSuccess: (baseId?: number) => void;
 }
 
 export const CreateKnowledgeBaseModal: React.FC<CreateKnowledgeBaseModalProps> = ({
@@ -28,9 +28,10 @@ export const CreateKnowledgeBaseModal: React.FC<CreateKnowledgeBaseModalProps> =
 
     setIsLoading(true);
     try {
-      await knowledgeBasesService.create({ name, description });
+      const result = await knowledgeBasesService.create({ name, description });
+      const createdBase = (result as any).data || result;
       toast.success('Base de conhecimento criada com sucesso!');
-      onSuccess();
+      onSuccess(createdBase?.id);
       onClose();
       setName('');
       setDescription('');

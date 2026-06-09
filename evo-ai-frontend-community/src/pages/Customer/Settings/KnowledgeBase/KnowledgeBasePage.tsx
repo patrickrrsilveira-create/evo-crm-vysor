@@ -18,13 +18,16 @@ const KnowledgeBasePage = () => {
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [isLinkAgentModalOpen, setIsLinkAgentModalOpen] = useState(false);
 
-  const fetchBases = async () => {
+  const fetchBases = async (newBaseId?: number) => {
     setIsLoading(true);
     try {
       const response = await knowledgeBasesService.list();
       const data = (response as any).data || response;
       setBases(data);
-      if (selectedBase) {
+      if (newBaseId) {
+        const newlyCreated = data.find((b: KnowledgeBase) => b.id === newBaseId);
+        if (newlyCreated) setSelectedBase(newlyCreated);
+      } else if (selectedBase) {
         const updatedSelected = data.find((b: KnowledgeBase) => b.id === selectedBase.id);
         if (updatedSelected) setSelectedBase(updatedSelected);
       }
