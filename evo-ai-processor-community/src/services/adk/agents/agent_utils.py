@@ -181,15 +181,19 @@ async def get_sub_agents(
     return sub_agents, all_state_params
 
 
-async def get_api_key(db: Session, agent: Agent) -> str:
-    """Get the API key for the agent."""
+async def get_api_key(db: Session, agent: Agent) -> Tuple[str, Optional[str]]:
+    """Get the API key and base URL for the agent."""
     api_key = None
+    base_url = None
 
     # Get API key from api_key_id
     if hasattr(agent, "api_key_id") and agent.api_key_id:
-        if decrypted_key := get_decrypted_api_key(db, agent.api_key_id):
+        from src.services.apikey_service import get_api_key as get_db_api_key
+        key_record = get_db_api_key(db, agent.api_key_id)
+        if key_record and key_record.is_active:
             logger.info(f"Using stored API key for agent {agent.name}")
-            api_key = decrypted_key
+            api_key = decrypt_api_key(key_record.key)
+            base_url = getattr(key_record, "base_url", None)
         else:
             logger.error(f"Stored API key not found for agent {agent.name}")
             raise ValueError(
@@ -203,9 +207,12 @@ async def get_api_key(db: Session, agent: Agent) -> str:
             # Check if it is a UUID of a stored key
             try:
                 key_id = uuid.UUID(config_api_key)
-                if decrypted_key := get_decrypted_api_key(db, key_id):
+                from src.services.apikey_service import get_api_key as get_db_api_key
+                key_record = get_db_api_key(db, key_id)
+                if key_record and key_record.is_active:
                     logger.info("Config API key is a valid reference")
-                    api_key = decrypted_key
+                    api_key = decrypt_api_key(key_record.key)
+                    base_url = getattr(key_record, "base_url", None)
                 else:
                     # Use the key directly
                     api_key = config_api_key
@@ -216,7 +223,7 @@ async def get_api_key(db: Session, agent: Agent) -> str:
             logger.error(f"No API key configured for agent {agent.name}")
             raise ValueError(f"Agent {agent.name} does not have a configured API key")
 
-    return api_key
+    return api_key, base_url
 
 
 def sanitize_for_formatting(instruction: str) -> str:

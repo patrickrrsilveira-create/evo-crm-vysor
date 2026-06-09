@@ -994,7 +994,7 @@ class LlmAgentBuilder:
             )
 
         # Get API key from api_key_id
-        api_key = await get_api_key(self.db, agent)
+        api_key, api_base = await get_api_key(self.db, agent)
 
         # Get output_key from config if specified
         output_key = agent.config.get("output_key") if agent.config else None
@@ -1131,7 +1131,7 @@ class LlmAgentBuilder:
         
         llm_agent_kwargs = {
             "name": agent.name,
-            "model": LiteLlm(model=agent.model, api_key=api_key),
+            "model": LiteLlm(model=agent.model, api_key=api_key, api_base=api_base),
             "instruction": formatted_prompt,
             "description": agent.description,
             "tools": all_tools,
