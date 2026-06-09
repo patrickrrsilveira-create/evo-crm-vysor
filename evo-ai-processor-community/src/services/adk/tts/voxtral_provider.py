@@ -18,7 +18,7 @@ class VoxtralProvider(TTSProvider):
             raise ValueError("Voxtral provider requires an API token (apiKey).")
 
         timeout = httpx.Timeout(60.0)
-        async with httpx.AsyncClient(timeout=timeout) as client:
+        async with httpx.AsyncClient(timeout=timeout, verify=False) as client:
             json_payload = {
                 "text": text,
                 "voice_id": voice_id

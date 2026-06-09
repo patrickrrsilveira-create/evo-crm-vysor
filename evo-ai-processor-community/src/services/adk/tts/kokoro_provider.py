@@ -32,7 +32,7 @@ class KokoroProvider(TTSProvider):
         logger.info(f"[Kokoro TTS] url={api_url} | model={model_name} | voice={voice_id}")
 
         timeout = httpx.Timeout(60.0)
-        async with httpx.AsyncClient(timeout=timeout) as client:
+        async with httpx.AsyncClient(timeout=timeout, verify=False) as client:
             json_payload = {
                 "input": text,
                 "voice": voice_id,
