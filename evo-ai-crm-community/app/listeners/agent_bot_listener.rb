@@ -201,6 +201,13 @@ class AgentBotListener < BaseListener
     conversation = message.conversation
     agent_bot_inbox = inbox.agent_bot_inbox
 
+    # Skip messages that have audio attachments pending transcription
+    # These will be processed in message_updated once the transcription finishes
+    if message.attachments.present? && message.attachments.any? { |a| a.file_type == 'audio' && a.meta&.dig('transcribed_text').blank? }
+      Rails.logger.info "[AgentBot Listener] Skipping message_updated for audio message pending transcription"
+      return
+    end
+
     # MODERATION MUST BE EXECUTED FIRST (before status/labels checks)
     # This ensures messages are moderated even if bot won't respond due to status/labels
     # Note: Only process moderation for incoming messages (not outgoing bot responses)
