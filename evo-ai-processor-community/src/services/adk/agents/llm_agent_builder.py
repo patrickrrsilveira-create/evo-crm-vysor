@@ -994,7 +994,7 @@ class LlmAgentBuilder:
             )
 
         # Get API key from api_key_id
-        api_key, api_base = await get_api_key(self.db, agent)
+        api_key = await get_api_key(self.db, agent)
 
         # Get output_key from config if specified
         output_key = agent.config.get("output_key") if agent.config else None
@@ -1129,15 +1129,9 @@ class LlmAgentBuilder:
                 except Exception as e:
                     logger.error(f"❌ Error calling to_function_declaration() on {mcp_tools[0].name}: {e}")
         
-        # Ensure custom/local models have the 'openai/' prefix for LiteLLM routing if api_base is present
-        prefixed_model_name = agent.model
-        if api_base and prefixed_model_name and not "/" in prefixed_model_name:
-            prefixed_model_name = f"openai/{prefixed_model_name}"
-            logger.info(f"Prefixed model name with 'openai/' for LiteLLM routing: {prefixed_model_name}")
-
         llm_agent_kwargs = {
             "name": agent.name,
-            "model": LiteLlm(model=prefixed_model_name, api_key=api_key, api_base=api_base),
+            "model": LiteLlm(model=agent.model, api_key=api_key),
             "instruction": formatted_prompt,
             "description": agent.description,
             "tools": all_tools,

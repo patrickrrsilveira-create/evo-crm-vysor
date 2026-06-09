@@ -181,22 +181,17 @@ async def get_sub_agents(
     return sub_agents, all_state_params
 
 
-async def get_api_key(db: Session, agent: Agent) -> Tuple[str, Optional[str]]:
-    """Get the API key and base URL for the agent."""
+async def get_api_key(db: Session, agent: Agent) -> str:
+    """Get the API key for the agent."""
     api_key = None
-    base_url = None
 
     # Get API key from api_key_id
     if hasattr(agent, "api_key_id") and agent.api_key_id:
-        decrypted_key = get_decrypted_api_key(db, agent.api_key_id, agent)
-        if decrypted_key is not None:
+        if decrypted_key := get_decrypted_api_key(db, agent.api_key_id):
             logger.info(f"Using stored API key for agent {agent.name}")
-            if "|" in decrypted_key:
-                base_url, api_key = decrypted_key.split("|", 1)
-            else:
-                api_key = decrypted_key
+            api_key = decrypted_key
         else:
-            logger.error(f"Stored API key not found or decryption failed for agent {agent.name}")
+            logger.error(f"Stored API key not found for agent {agent.name}")
             raise ValueError(
                 f"API key with ID {agent.api_key_id} not found or inactive"
             )
@@ -208,27 +203,20 @@ async def get_api_key(db: Session, agent: Agent) -> Tuple[str, Optional[str]]:
             # Check if it is a UUID of a stored key
             try:
                 key_id = uuid.UUID(config_api_key)
-                decrypted_key = get_decrypted_api_key(db, key_id, agent)
-                if decrypted_key is not None:
+                if decrypted_key := get_decrypted_api_key(db, key_id):
                     logger.info("Config API key is a valid reference")
-                    if "|" in decrypted_key:
-                        base_url, api_key = decrypted_key.split("|", 1)
-                    else:
-                        api_key = decrypted_key
+                    api_key = decrypted_key
                 else:
                     # Use the key directly
                     api_key = config_api_key
             except (ValueError, TypeError):
                 # It is not a UUID, use directly
-                if "|" in config_api_key:
-                    base_url, api_key = config_api_key.split("|", 1)
-                else:
-                    api_key = config_api_key
+                api_key = config_api_key
         else:
             logger.error(f"No API key configured for agent {agent.name}")
             raise ValueError(f"Agent {agent.name} does not have a configured API key")
 
-    return api_key, base_url
+    return api_key
 
 
 def sanitize_for_formatting(instruction: str) -> str:
