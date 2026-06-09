@@ -20,6 +20,7 @@ import { useLanguage } from '@/hooks/useLanguage';
 interface TTSConfig {
   provider: 'elevenlabs' | 'fish' | 'cartesia' | 'kokoro' | 'voxtral';
   apiKey: string;
+  api_url?: string; // Custom API URL for Kokoro/Voxtral (e.g., OpenRouter endpoint)
   respondInAudio: 'when_client_asks' | 'always' | 'never';
   voice: string;
   // ElevenLabs specific
@@ -52,6 +53,7 @@ const TTSConfigDialog = ({
   const [config, setConfig] = useState<TTSConfig>({
     provider: initialConfig?.provider || 'elevenlabs',
     apiKey: initialConfig?.apiKey || '',
+    api_url: initialConfig?.api_url || '',
     respondInAudio: initialConfig?.respondInAudio || 'when_client_asks',
     voice: initialConfig?.voice || '',
     stability: initialConfig?.stability ?? 80,
@@ -67,6 +69,7 @@ const TTSConfigDialog = ({
       setConfig({
         provider: initialConfig.provider || 'elevenlabs',
         apiKey: initialConfig.apiKey || '',
+        api_url: initialConfig.api_url || '',
         respondInAudio: initialConfig.respondInAudio || 'when_client_asks',
         voice: initialConfig.voice || '',
         stability: initialConfig.stability ?? 80,
@@ -179,6 +182,33 @@ const TTSConfigDialog = ({
               onChange={(e) => setConfig({ ...config, apiKey: e.target.value })}
             />
           </div>
+
+          {/* URL da API — somente para Kokoro e Voxtral */}
+          {(config.provider === 'kokoro' || config.provider === 'voxtral') && (
+            <div className="space-y-2">
+              <Label htmlFor="api_url">URL da API</Label>
+              <Input
+                id="api_url"
+                type="text"
+                placeholder={
+                  config.provider === 'kokoro'
+                    ? 'https://openrouter.ai/api/v1/audio/speech  (OpenRouter) ou deixe vazio para Kokoro direto'
+                    : 'https://api.voxtral.ai/v1/tts  (ou endpoint customizado)'
+                }
+                value={config.api_url || ''}
+                onChange={(e) => setConfig({ ...config, api_url: e.target.value })}
+              />
+              {config.provider === 'kokoro' && (
+                <p className="text-xs text-muted-foreground">
+                  Para usar via OpenRouter coloque:{' '}
+                  <code className="bg-muted px-1 rounded">https://openrouter.ai/api/v1/audio/speech</code>
+                  <br />
+                  Voz feminina: <code className="bg-muted px-1 rounded">pf_dora</code> · Voz masculina:{' '}
+                  <code className="bg-muted px-1 rounded">pm_alex</code>
+                </p>
+              )}
+            </div>
+          )}
 
           {/* Quando responder em áudio */}
           {config.apiKey && !voicesError && (
