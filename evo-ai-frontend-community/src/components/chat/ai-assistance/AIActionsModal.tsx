@@ -76,7 +76,7 @@ const AIActionsModal: React.FC<AIActionsModalProps> = ({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid gap-2 py-4">
+        <div className="grid gap-2 py-4 max-h-[50vh] sm:max-h-[60vh] overflow-y-auto pr-2">
           {actions.map(action => (
             <Button
               key={action.key}
