@@ -206,7 +206,7 @@ class Messages::AudioTranscriptionService
 
     uri = URI(transcription_url)
     http = Net::HTTP.new(uri.host, uri.port)
-    http.use_ssl = true
+    http.use_ssl = (uri.scheme == 'https')
 
     request = Net::HTTP::Post.new(uri.path)
     request['Authorization'] = "Bearer #{api_key}"
