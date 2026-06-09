@@ -22,7 +22,11 @@ function createPremiumSchema() {
   return z.object({
     COMPANY_NAME: z.string().optional().nullable(),
     APP_LOGO_URL: z.string().optional().nullable(),
-    APP_PRIMARY_COLOR: z.string().regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, 'Deve ser um código HEX (ex: #0044FF)').optional().nullable().or(z.literal('')),
+    APP_LOGO_WIDTH: z.string().optional().nullable(),
+    APP_LOGO_HEIGHT: z.string().optional().nullable(),
+    APP_LOGIN_LOGO_URL: z.string().optional().nullable(),
+    APP_LOGIN_LOGO_WIDTH: z.string().optional().nullable(),
+    APP_LOGIN_LOGO_HEIGHT: z.string().optional().nullable(),
     APP_LOGO_WIDTH: z.string().optional().nullable(),
     APP_LOGO_HEIGHT: z.string().optional().nullable(),
     SIDEBAR_COPYRIGHT_TEXT: z.string().optional().nullable(),
@@ -36,9 +40,11 @@ type PremiumFormData = z.infer<ReturnType<typeof createPremiumSchema>>;
 const DEFAULTS: PremiumFormData = {
   COMPANY_NAME: '',
   APP_LOGO_URL: '',
-  APP_PRIMARY_COLOR: '',
   APP_LOGO_WIDTH: '',
   APP_LOGO_HEIGHT: '',
+  APP_LOGIN_LOGO_URL: '',
+  APP_LOGIN_LOGO_WIDTH: '',
+  APP_LOGIN_LOGO_HEIGHT: '',
   SIDEBAR_COPYRIGHT_TEXT: '',
   SUPPORT_LINK: '',
   DOCS_LINK: '',
@@ -48,9 +54,11 @@ function buildFormValues(data: Record<string, unknown>): PremiumFormData {
   return {
     COMPANY_NAME: (data.COMPANY_NAME as string) ?? '',
     APP_LOGO_URL: (data.APP_LOGO_URL as string) ?? '',
-    APP_PRIMARY_COLOR: (data.APP_PRIMARY_COLOR as string) ?? '',
     APP_LOGO_WIDTH: (data.APP_LOGO_WIDTH as string) ?? '',
     APP_LOGO_HEIGHT: (data.APP_LOGO_HEIGHT as string) ?? '',
+    APP_LOGIN_LOGO_URL: (data.APP_LOGIN_LOGO_URL as string) ?? '',
+    APP_LOGIN_LOGO_WIDTH: (data.APP_LOGIN_LOGO_WIDTH as string) ?? '',
+    APP_LOGIN_LOGO_HEIGHT: (data.APP_LOGIN_LOGO_HEIGHT as string) ?? '',
     SIDEBAR_COPYRIGHT_TEXT: (data.SIDEBAR_COPYRIGHT_TEXT as string) ?? '',
     SUPPORT_LINK: (data.SUPPORT_LINK as string) ?? '',
     DOCS_LINK: (data.DOCS_LINK as string) ?? '',
@@ -78,6 +86,7 @@ export default function PremiumConfig() {
   });
 
   const currentLogoUrl = watch('APP_LOGO_URL');
+  const currentLoginLogoUrl = watch('APP_LOGIN_LOGO_URL');
 
   const loadConfig = useCallback(async () => {
     setLoading(true);
@@ -131,11 +140,53 @@ export default function PremiumConfig() {
     reader.readAsDataURL(file);
   };
 
+  const handleLoginImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('Por favor, selecione um arquivo de imagem válido.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        let width = img.width;
+        let height = img.height;
+
+        if (width > MAX_IMAGE_WIDTH) {
+          height = Math.round((height * MAX_IMAGE_WIDTH) / width);
+          width = MAX_IMAGE_WIDTH;
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          const compressedBase64 = canvas.toDataURL(file.type, 0.9);
+          setValue('APP_LOGIN_LOGO_URL', compressedBase64, { shouldDirty: true });
+        }
+      };
+      img.src = event.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  };
+
   const removeImage = () => {
     setValue('APP_LOGO_URL', '', { shouldDirty: true });
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
+  };
+
+  const removeLoginImage = () => {
+    setValue('APP_LOGIN_LOGO_URL', '', { shouldDirty: true });
+    // Note: We'll need a separate ref if we wanted to clear the input, 
+    // but the value is managed via react-hook-form anyway.
   };
 
   const onSubmit = async (formData: PremiumFormData) => {
@@ -144,9 +195,11 @@ export default function PremiumConfig() {
       const payload: Record<string, unknown> = {
         COMPANY_NAME: formData.COMPANY_NAME || '',
         APP_LOGO_URL: formData.APP_LOGO_URL || '',
-        APP_PRIMARY_COLOR: formData.APP_PRIMARY_COLOR || '',
         APP_LOGO_WIDTH: formData.APP_LOGO_WIDTH || '',
         APP_LOGO_HEIGHT: formData.APP_LOGO_HEIGHT || '',
+        APP_LOGIN_LOGO_URL: formData.APP_LOGIN_LOGO_URL || '',
+        APP_LOGIN_LOGO_WIDTH: formData.APP_LOGIN_LOGO_WIDTH || '',
+        APP_LOGIN_LOGO_HEIGHT: formData.APP_LOGIN_LOGO_HEIGHT || '',
         SIDEBAR_COPYRIGHT_TEXT: formData.SIDEBAR_COPYRIGHT_TEXT || '',
         SUPPORT_LINK: formData.SUPPORT_LINK || '',
         DOCS_LINK: formData.DOCS_LINK || '',
@@ -196,7 +249,7 @@ export default function PremiumConfig() {
               <CardTitle className="flex items-center gap-2 text-xl">
                 <Palette className="h-5 w-5 text-indigo-500" /> Identidade Visual
               </CardTitle>
-              <CardDescription>Defina sua marca e cores principais</CardDescription>
+              <CardDescription>Defina o nome da sua marca</CardDescription>
             </CardHeader>
             <CardContent className="space-y-5">
               <div className="space-y-2">
@@ -211,25 +264,6 @@ export default function PremiumConfig() {
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="APP_PRIMARY_COLOR" className="flex items-center gap-2">
-                  <Palette className="h-4 w-4 text-muted-foreground" /> Cor Primária (HEX)
-                </Label>
-                <div className="flex gap-3">
-                  <Input
-                    id="APP_PRIMARY_COLOR"
-                    placeholder="#0044FF"
-                    className="flex-1 bg-background/50 focus:bg-background transition-colors uppercase"
-                    {...register('APP_PRIMARY_COLOR')}
-                  />
-                  <input
-                    type="color"
-                    className="w-10 h-10 p-0 border-0 rounded-md cursor-pointer flex-shrink-0 bg-transparent"
-                    value={watch('APP_PRIMARY_COLOR') || '#1f93ff'}
-                    onChange={(e) => setValue('APP_PRIMARY_COLOR', e.target.value, { shouldDirty: true })}
-                    title="Selecione a cor"
-                  />
-                </div>
               </div>
             </CardContent>
           </Card>
@@ -239,9 +273,9 @@ export default function PremiumConfig() {
             <div className="h-1 w-full bg-gradient-to-r from-emerald-400 to-teal-500" />
             <CardHeader className="pb-4">
               <CardTitle className="flex items-center gap-2 text-xl">
-                <ImageIcon className="h-5 w-5 text-teal-500" /> Logomarca
+                <ImageIcon className="h-5 w-5 text-teal-500" /> Logo do Dashboard
               </CardTitle>
-              <CardDescription>Faça o upload do seu logo e ajuste o tamanho</CardDescription>
+              <CardDescription>Logo exibida na barra lateral do painel</CardDescription>
             </CardHeader>
             <CardContent className="space-y-5">
               <div className="space-y-3">
@@ -296,6 +330,73 @@ export default function PremiumConfig() {
                     placeholder="Ex: 40"
                     className="bg-background/50 focus:bg-background"
                     {...register('APP_LOGO_HEIGHT')}
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* LOGO DE LOGIN */}
+          <Card className="border-sidebar-border/50 shadow-sm hover:shadow-md transition-shadow overflow-hidden">
+            <div className="h-1 w-full bg-gradient-to-r from-blue-400 to-cyan-500" />
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center gap-2 text-xl">
+                <ImageIcon className="h-5 w-5 text-cyan-500" /> Logo de Login
+              </CardTitle>
+              <CardDescription>Logo exclusiva para a tela de autenticação</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-5">
+              <div className="space-y-3">
+                <Label>Upload da Imagem</Label>
+                {currentLoginLogoUrl ? (
+                  <div className="relative group rounded-lg border-2 border-dashed border-border bg-background/50 p-4 flex flex-col items-center justify-center gap-4 transition-all hover:bg-accent/50">
+                    <img src={currentLoginLogoUrl} alt="Login Logo Preview" className="max-h-24 max-w-full object-contain" />
+                    <Button 
+                      type="button" 
+                      variant="destructive" 
+                      size="sm" 
+                      onClick={removeLoginImage}
+                      className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-border rounded-lg cursor-pointer bg-background/50 hover:bg-accent/50 transition-colors group">
+                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                      <UploadCloud className="w-8 h-8 mb-3 text-muted-foreground group-hover:text-primary transition-colors" />
+                      <p className="mb-1 text-sm text-muted-foreground font-medium"><span className="text-primary font-semibold">Clique para enviar</span> ou arraste</p>
+                      <p className="text-xs text-muted-foreground/70">PNG, JPG ou SVG (Máx. 800px)</p>
+                    </div>
+                    <input 
+                      type="file" 
+                      className="hidden" 
+                      accept="image/*" 
+                      onChange={handleLoginImageUpload} 
+                    />
+                  </label>
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 pt-2">
+                <div className="space-y-2">
+                  <Label htmlFor="APP_LOGIN_LOGO_WIDTH" className="text-xs text-muted-foreground">Largura (px)</Label>
+                  <Input
+                    id="APP_LOGIN_LOGO_WIDTH"
+                    type="number"
+                    placeholder="Ex: 250"
+                    className="bg-background/50 focus:bg-background"
+                    {...register('APP_LOGIN_LOGO_WIDTH')}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="APP_LOGIN_LOGO_HEIGHT" className="text-xs text-muted-foreground">Altura (px)</Label>
+                  <Input
+                    id="APP_LOGIN_LOGO_HEIGHT"
+                    type="number"
+                    placeholder="Ex: 80"
+                    className="bg-background/50 focus:bg-background"
+                    {...register('APP_LOGIN_LOGO_HEIGHT')}
                   />
                 </div>
               </div>
