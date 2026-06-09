@@ -1,0 +1,122 @@
+{
+  "profile": {
+    "language": "Language",
+    "myProfile": "My Profile",
+    "logout": "Sign Out",
+    "userInitial": "U",
+    "defaultUser": "User"
+  },
+  "logout": {
+    "title": "Logout Confirmation",
+    "description": "Are you sure you want to sign out of your account?",
+    "cancel": "Cancel",
+    "confirm": "Sign Out",
+    "loggingOut": "Signing out...",
+    "success": "Successfully signed out!",
+    "error": "Error signing out"
+  },
+  "notifications": {
+    "bell": {
+      "ariaLabel": "Notifications"
+    },
+    "item": {
+      "someTimeAgo": "Some time ago",
+      "noAssignee": "NA",
+      "noContent": "No content"
+    },
+    "push": {
+      "fallbackTitle": "New notification",
+      "bodyWithAssignee": "Assigned to {{name}}"
+    },
+    "panel": {
+      "title": "Notifications",
+      "markAllAsRead": "Mark all as read",
+      "loading": "Loading notifications...",
+      "emptyTitle": "You're all caught up!",
+      "emptyDescription": "You don't have any notifications at the moment.",
+      "pagination": {
+        "separator": " - "
+      },
+      "types": {
+        "conversation_assignment": "Assignment",
+        "conversation_mention": "Mention",
+        "conversation_creation": "New Conversation",
+        "conversation_status_changed": "Status Changed",
+        "message_created": "New Message",
+        "assigned_conversation_new_message": "New Message in Assigned Conversation",
+        "conversation_assigned": "Conversation Assigned",
+        "conversation_unassigned": "Conversation Unassigned",
+        "conversation_resolved": "Conversation Resolved",
+        "conversation_opened": "Conversation Opened",
+        "conversation_closed": "Conversation Closed",
+        "message_updated": "Message Updated",
+        "message_deleted": "Message Deleted",
+        "channel_message": "New message via {{channel}}"
+      }
+    }
+  },
+  "organizationSwitcher": {
+    "selectOrganization": "Select organization",
+    "searchPlaceholder": "Search organizations...",
+    "noResults": "No organization found",
+    "noOrganizations": "No organization available",
+    "roles": {
+      "administrator": "Administrator",
+      "agent": "Team Member"
+    }
+  },
+  "sidebar": {
+    "openMenu": "Open menu",
+    "navigationMenu": "Navigation menu",
+    "organization": "Organization",
+    "expand": "Expand sidebar",
+    "collapse": "Collapse sidebar",
+    "closeSubmenu": "Close submenu",
+    "footer": {
+      "brand": "Evo CRM",
+      "copyright": "© {{year}} Evolution Foundation. All rights reserved.",
+      "documentation": "Documentation",
+      "support": "I need support"
+    }
+  },
+  "menu": {
+    "customer": {
+      "dashboard": "Dashboard",
+      "conversations": "Conversations",
+      "contacts": "Contacts",
+      "pipelines": "Pipelines",
+      "products": "Products",
+      "agents": "AI Agents",
+      "channels": "Channels",
+      "automation": "Automations",
+      "tutorials": "Tutorials",
+      "settings": "Settings",
+      "campaigns": "Campaigns",
+      "journeys": "Journeys"
+    },
+    "contacts": {
+      "list": "Contacts",
+      "scheduledActions": "Scheduled Actions"
+    },
+    "agents": {
+      "list": "AI Agents",
+      "customTools": "Custom Tools",
+      "customMcps": "Custom MCPs"
+    },
+    "settings": {
+      "account": "Account",
+      "users": "Team Members",
+      "teams": "Teams",
+      "labels": "Labels",
+      "customAttributes": "Custom Attributes",
+      "cannedResponses": "Canned Responses",
+      "macros": "Macros",
+      "templates": "Templates",
+      "integrations": "Integrations",
+      "accessTokens": "Access Tokens",
+      "roles": "Roles & Permissions",
+      "admin": "Admin Settings",
+      "segments": "Segments"
+    }
+  }
+}

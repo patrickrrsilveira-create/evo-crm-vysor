@@ -1,0 +1,404 @@
+import { useState } from 'react';
+import { useLanguage } from '@/hooks/useLanguage';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  Button,
+} from '@evoapi/design-system';
+import { ExternalLink, Plug, Check, Settings, Loader2, AlertCircle, Volume2 } from 'lucide-react';
+import TTSConfigDialog from '@/components/integrations/TTSConfigDialog';
+import GoogleCalendarConfigDialog from '@/components/integrations/GoogleCalendarConfigDialog';
+import GoogleSheetsConfigDialog from '@/components/integrations/GoogleSheetsConfigDialog';
+import KnowledgeNexusConfigDialog, {
+  type KnowledgeNexusConfig,
+} from '@/components/integrations/KnowledgeNexusConfigDialog';
+import { useIntegrations } from '@/hooks/useIntegrations';
+import { agentIntegrationsService } from '@/services/agents/agentIntegrationsService';
+import { toast } from 'sonner';
+import BrandIcon from '@/components/BrandIcon';
+
+interface Integration {
+  id: string;
+  name: string;
+  description: string;
+}
+
+interface IntegrationsSectionProps {
+  integrations?: Record<string, unknown>;
+  onIntegrationsChange?: (integrations: Record<string, unknown>) => void;
+  agentId: string;
+}
+
+const IntegrationsSection = ({
+  integrations = {},
+  onIntegrationsChange,
+  agentId,
+}: IntegrationsSectionProps) => {
+  const { t } = useLanguage('aiAgents');
+  const [showTTSConfig, setShowTTSConfig] = useState(false);
+  const [showGoogleCalendarConfig, setShowGoogleCalendarConfig] = useState(false);
+  const [showGoogleSheetsConfig, setShowGoogleSheetsConfig] = useState(false);
+  const [showKnowledgeNexusConfig, setShowKnowledgeNexusConfig] = useState(false);
+
+  // Use custom hook for integrations status
+  const { credentialsConfigured, isCheckingIntegrations, isConnected, reloadConfigs } =
+    useIntegrations(agentId);
+
+  // Persist an integration immediately via the backend Upsert endpoint, then
+  // update local state. This is necessary because `agent.config.integrations`
+  // is ignored by the backend's persistence layer for OAuth/native integrations
+  // — the canonical store is the `agent_integrations` table behind
+  // POST /agents/:id/integrations.
+  const persistIntegration = async (
+    provider: string,
+    config: Record<string, unknown>
+  ): Promise<boolean> => {
+    if (!agentId) {
+      toast.error(t('messages.saveError') || 'Agent must be saved first');
+      return false;
+    }
+    try {
+      await agentIntegrationsService.upsertIntegration(agentId, provider, {
+        ...config,
+        connected: true,
+      });
+      if (onIntegrationsChange) {
+        onIntegrationsChange({ ...integrations, [provider]: { ...config, connected: true } });
+      }
+      await reloadConfigs();
+      toast.success(t('edit.integrations.activated') || 'Integration activated');
+      return true;
+    } catch (error) {
+      console.error(`Error upserting integration ${provider}:`, error);
+      toast.error(t('edit.integrations.activationError') || 'Failed to activate integration');
+      return false;
+    }
+  };
+
+  const removeIntegration = async (provider: string): Promise<boolean> => {
+    if (!agentId) return false;
+    try {
+      await agentIntegrationsService.deleteIntegration(agentId, provider);
+      if (onIntegrationsChange) {
+        const next = { ...integrations };
+        delete next[provider];
+        onIntegrationsChange(next);
+      }
+      await reloadConfigs();
+      toast.success(t('edit.integrations.deactivated') || 'Integration deactivated');
+      return true;
+    } catch (error) {
+      console.error(`Error deleting integration ${provider}:`, error);
+      toast.error(t('edit.integrations.deactivationError') || 'Failed to deactivate integration');
+      return false;
+    }
+  };
+
+  // Integrações que sempre estão disponíveis porque o usuário fornece sua
+  // própria credencial (API key) — não dependem de OAuth global configurado
+  // pelo administrador. Google Calendar / Sheets usam OAuth global e portanto
+  // só ficam disponíveis quando `credentialsConfigured` indica que o admin
+  // configurou as chaves correspondentes.
+  const ALWAYS_AVAILABLE_INTEGRATIONS = ['tts', 'knowledge-nexus', 'google-calendar', 'google-sheets'];
+
+  const availableIntegrations: Integration[] = [
+    {
+      id: 'tts',
+      name: 'Motor TTS',
+      description: 'Dê capacidade de voz ao seu agente escolhendo entre ElevenLabs ou Fish Audio para humanizar o atendimento.',
+    },
+    {
+      id: 'google-calendar',
+      name: 'Google Calendar',
+      description:
+        t('edit.integrations.googleCalendar.description') ||
+        'Permite agendar eventos, verificar disponibilidade e gerenciar calendários.',
+    },
+    {
+      id: 'google-sheets',
+      name: 'Google Sheets',
+      description:
+        t('edit.integrations.googleSheets.description') ||
+        'Permite criar, ler, atualizar e gerenciar planilhas do Google Sheets.',
+    },
+    {
+      id: 'knowledge-nexus',
+      name: 'Knowledge Nexus',
+      description:
+        t('edit.integrations.knowledgeNexus.description') ||
+        'Permite que o agente consulte a base de conhecimento do EvoNexus (busca híbrida) antes de responder.',
+    },
+    // {
+    //   id: 'gmail',
+    //   name: 'Gmail',
+    //   description: t('edit.integrations.gmail.description') || 'Conecte o agente ao Gmail para ler, enviar e gerenciar emails automaticamente.',
+    // },
+    // {
+    //   id: 'google-drive',
+    //   name: 'Google Drive',
+    //   description: t('edit.integrations.googleDrive.description') || 'Permite que o agente acesse, busque e gerencie arquivos no Google Drive.',
+    // }
+  ];
+
+  return (
+    <div className="space-y-8">
+      {/* Cabeçalho da Seção */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-3 pb-2 border-b">
+          <div className="p-2 rounded-lg bg-indigo-500/10">
+            <Plug className="h-5 w-5 text-indigo-500" />
+          </div>
+          <div>
+            <h3 className="text-lg font-semibold">
+              {t('edit.integrations.title') || 'Integrações'}
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              {t('edit.integrations.subtitle') ||
+                'Conecte o seu agente a outros aplicativos, isso permite que ele obtenha informações mais precisas ou agende reuniões para você.'}
+            </p>
+          </div>
+        </div>
+
+        <div className="pl-11">
+          {isCheckingIntegrations ? (
+            <div className="flex flex-col gap-3 items-center py-12 h-32 text-muted-foreground">
+              <Loader2 className="h-7 w-7 animate-spin" />
+              <div className="text-sm">
+                {t('integrations.checking') || 'Verificando integrações...'}
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {availableIntegrations.map(integration => {
+                // Integrações que sempre estão disponíveis (ElevenLabs usa API Key, Google Calendar configurado localmente)
+                const isAlwaysAvailable = ALWAYS_AVAILABLE_INTEGRATIONS.includes(integration.id);
+                const hasCredentials =
+                  isAlwaysAvailable || (credentialsConfigured[integration.id] ?? false);
+                const connected = isConnected(integration.id);
+
+                return (
+                  <Card
+                    key={integration.id}
+                    className="hover:border-primary/50 transition-colors flex flex-col"
+                  >
+                    <CardHeader className="flex flex-col items-center text-center space-y-4 pb-4">
+                      {/* Logo centralizada e maior — BrandIcon aplica a cor oficial da marca */}
+                      <div className="flex items-center justify-center w-20 h-20 p-3 rounded-lg bg-muted/50">
+                        {integration.id === 'tts' ? <Volume2 size={48} className="h-12 w-12 text-primary" /> : <BrandIcon id={integration.id} size={48} className="h-12 w-12" />}
+                      </div>
+
+                      {/* Título */}
+                      <CardTitle className="text-xl font-semibold">{integration.name}</CardTitle>
+
+                      {/* Coming Soon Badge — only for integrations that depend on OAuth credentials
+                          not yet configured globally. ElevenLabs / Google Calendar / Google Sheets
+                          are always available (API key or per-agent OAuth), so no "coming soon"
+                          badge for them — just the ATIVAR / ATIVO state below. */}
+                      {!connected && !isAlwaysAvailable && (
+                        <span className="px-1 py-0.5 text-[12px] font-medium bg-blue-500/20 text-blue-400 rounded border border-blue-500/30">
+                          {t('edit.integrations.comingSoon') || 'Em breve'}
+                        </span>
+                      )}
+
+                      {/* Descrição */}
+                      <CardDescription className="text-sm leading-relaxed">
+                        {integration.description}
+                      </CardDescription>
+                    </CardHeader>
+
+                    {/* Botões */}
+                    <CardContent className="mt-auto pt-0 space-y-2">
+                      {connected ? (
+                        <>
+                          {/* Botão de Status - Conectado */}
+                          <Button
+                            variant="success"
+                            className="w-full gap-2 bg-green-600 text-white hover:bg-green-700 border-green-600 cursor-default"
+                            disabled
+                          >
+                            <Check className="h-4 w-4" />
+                            {t('edit.integrations.active') || 'ATIVO'}
+                          </Button>
+                          {/* Botão de Configuração */}
+                          <Button
+                            variant="outline"
+                            className="w-full gap-2"
+                            onClick={() => {
+                              if (integration.id === 'tts' || integration.id === 'elevenlabs') {
+                                setShowTTSConfig(true);
+                              } else if (integration.id === 'google-calendar') {
+                                setShowGoogleCalendarConfig(true);
+                              } else if (integration.id === 'google-sheets') {
+                                setShowGoogleSheetsConfig(true);
+                              } else if (integration.id === 'knowledge-nexus') {
+                                setShowKnowledgeNexusConfig(true);
+                              }
+                            }}
+                          >
+                            <Settings className="h-4 w-4" />
+                            {t('edit.integrations.configure') || 'CONFIGURAR'}
+                          </Button>
+                        </>
+                      ) : hasCredentials ? (
+                        <Button
+                          variant="outline"
+                          className="w-full gap-2"
+                          onClick={() => {
+                            if (integration.id === 'tts' || integration.id === 'elevenlabs') {
+                              setShowTTSConfig(true);
+                            } else if (integration.id === 'google-calendar') {
+                              setShowGoogleCalendarConfig(true);
+                            } else if (integration.id === 'google-sheets') {
+                              setShowGoogleSheetsConfig(true);
+                            } else if (integration.id === 'knowledge-nexus') {
+                              setShowKnowledgeNexusConfig(true);
+                            }
+                          }}
+                        >
+                          <ExternalLink className="h-4 w-4" />
+                          {t('edit.integrations.activate') || 'ATIVAR'}
+                        </Button>
+                      ) : (
+                        <>
+                          {/* Credenciais globais não configuradas */}
+                          <Button
+                            variant="outline"
+                            className="w-full gap-2 border-gray-300 text-gray-500 cursor-not-allowed"
+                            disabled
+                          >
+                            <AlertCircle className="h-4 w-4" />
+                            {t('edit.integrations.notAvailable') || 'NÃO DISPONÍVEL'}
+                          </Button>
+                        </>
+                      )}
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Dialog de configuração TTS */}
+      <TTSConfigDialog
+        open={showTTSConfig}
+        onOpenChange={setShowTTSConfig}
+        initialConfig={
+          (integrations.tts || integrations.elevenlabs) as any
+        }
+        onSave={async config => {
+          await persistIntegration('tts', config as unknown as Record<string, unknown>);
+        }}
+        onDeactivate={
+          (integrations.tts || integrations.elevenlabs)
+            ? async () => {
+                await removeIntegration('tts');
+                // Força remoção do antigo
+                if (integrations.elevenlabs) {
+                  await removeIntegration('elevenlabs');
+                }
+              }
+            : undefined
+        }
+      />
+
+      {/* Dialog de configuração Google Calendar */}
+      <GoogleCalendarConfigDialog
+        open={showGoogleCalendarConfig}
+        onOpenChange={setShowGoogleCalendarConfig}
+        agentId={agentId}
+        initialConfig={
+          integrations['google-calendar'] as Parameters<
+            typeof GoogleCalendarConfigDialog
+          >[0]['initialConfig']
+        }
+        onSave={config => {
+          if (onIntegrationsChange) {
+            onIntegrationsChange({
+              ...integrations,
+              'google-calendar': config,
+            });
+          }
+          // Reload configs to update status
+          reloadConfigs();
+        }}
+        onDisconnect={
+          integrations['google-calendar']
+            ? () => {
+                if (onIntegrationsChange) {
+                  const newIntegrations = { ...integrations };
+                  delete newIntegrations['google-calendar'];
+                  onIntegrationsChange(newIntegrations);
+                }
+                // Reload configs to update status
+                reloadConfigs();
+              }
+            : undefined
+        }
+      />
+
+      {/* Dialog de configuração Google Sheets */}
+      <GoogleSheetsConfigDialog
+        open={showGoogleSheetsConfig}
+        onOpenChange={setShowGoogleSheetsConfig}
+        agentId={agentId}
+        initialConfig={
+          integrations['google-sheets'] as Parameters<
+            typeof GoogleSheetsConfigDialog
+          >[0]['initialConfig']
+        }
+        onSave={config => {
+          if (onIntegrationsChange) {
+            onIntegrationsChange({
+              ...integrations,
+              'google-sheets': config,
+            });
+          }
+          // Reload configs to update status
+          reloadConfigs();
+        }}
+        onDisconnect={
+          integrations['google-sheets']
+            ? () => {
+                if (onIntegrationsChange) {
+                  const newIntegrations = { ...integrations };
+                  delete newIntegrations['google-sheets'];
+                  onIntegrationsChange(newIntegrations);
+                }
+                // Reload configs to update status
+                reloadConfigs();
+              }
+            : undefined
+        }
+      />
+
+      {/* Dialog de configuração Knowledge Nexus */}
+      <KnowledgeNexusConfigDialog
+        open={showKnowledgeNexusConfig}
+        onOpenChange={setShowKnowledgeNexusConfig}
+        initialConfig={
+          integrations['knowledge-nexus'] as Partial<KnowledgeNexusConfig> | undefined
+        }
+        onSave={async config => {
+          await persistIntegration(
+            'knowledge-nexus',
+            config as unknown as Record<string, unknown>
+          );
+        }}
+        onDeactivate={
+          integrations['knowledge-nexus']
+            ? async () => {
+                await removeIntegration('knowledge-nexus');
+              }
+            : undefined
+        }
+      />
+    </div>
+  );
+};
+
+export default IntegrationsSection;

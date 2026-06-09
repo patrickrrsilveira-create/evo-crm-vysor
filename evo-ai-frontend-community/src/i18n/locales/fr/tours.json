@@ -1,0 +1,494 @@
+{
+  "welcome": {
+    "title": "Bienvenue sur Evo CRM !",
+    "description": "Souhaitez-vous faire une visite guidée pour découvrir les fonctionnalités de la plateforme ?",
+    "startButton": "Démarrer la visite guidée",
+    "skipButton": "Je préfère explorer par moi-même"
+  },
+  "viewPageTour": "Voir le tour de cette page",
+  "soloHint": {
+    "title": "Besoin d'aide ?",
+    "content": "Si vous avez des questions, cliquez ici pour démarrer la visite guidée à tout moment."
+  },
+  "stepOf": "{{current}} sur {{total}}",
+  "next": "Suivant",
+  "back": "Précédent",
+  "finish": "Terminer",
+  "close": "Fermer",
+  "dashboard": {
+    "step1": {
+      "title": "Filtres du Tableau de Bord",
+      "content": "Filtrez les données par période, canal et agent pour analyser exactement ce dont vous avez besoin."
+    },
+    "step2": {
+      "title": "Messages Reçus",
+      "content": "Total des messages reçus dans la période sélectionnée. Utilisez les filtres pour comparer différentes plages de temps."
+    },
+    "step3": {
+      "title": "Temps de Réponse Moyen",
+      "content": "Surveille la vitesse de votre service. Plus il est bas, meilleure est l'expérience client."
+    },
+    "step4": {
+      "title": "CSAT Moyen",
+      "content": "Indice de satisfaction des clients envers le service. Suivez-le pour maintenir la qualité du service."
+    },
+    "step5": {
+      "title": "Suivis en Attente",
+      "content": "Conversations nécessitant de l'attention et non encore reprises. Gardez ce nombre bas pour ne pas perdre de clients."
+    },
+    "step6": {
+      "title": "IA vs Humain",
+      "content": "Distribution des réponses entre l'IA et les agents humains. Aide à calibrer l'automatisation de votre équipe."
+    },
+    "step7": {
+      "title": "Conversations Actives Maintenant",
+      "content": "Backlog opérationnel en temps réel. Voyez combien de conversations sont ouvertes et qui les gère."
+    },
+    "step8": {
+      "title": "Conversations sans Responsable",
+      "content": "Conversations ouvertes non encore assignées à un agent. Gardez ce nombre proche de zéro pour éviter des clients sans assistance."
+    },
+    "step9": {
+      "title": "Conversations par Jour",
+      "content": "Tendance quotidienne des conversations sur la période sélectionnée. Identifie les pics de volume et les jours les plus chargés."
+    },
+    "step10": {
+      "title": "Temps de 1ère Réponse par Jour",
+      "content": "Évolution quotidienne du temps moyen de première réponse. Surveille si l'équipe améliore ou dégrade sa vitesse de service."
+    },
+    "step11": {
+      "title": "Participation par Canal",
+      "content": "Répartition en pourcentage des conversations par canal de communication. Voyez quels canaux concentrent le plus de volume sur la période."
+    },
+    "step12": {
+      "title": "Insights des Canaux",
+      "content": "Résumé des canaux : canal leader, concentration du Top 3, total des canaux actifs et valeur totale générée par les canaux."
+    },
+    "step13": {
+      "title": "Carte de Chaleur",
+      "content": "Identifie les heures et jours de plus grand volume de messages pour aider à planifier votre équipe."
+    },
+    "step14": {
+      "title": "Distribution des Notes CSAT",
+      "content": "Voyez comment les évaluations des clients se répartissent de 1 à 5 étoiles. Identifie les patterns de satisfaction et les axes d'amélioration du service."
+    },
+    "step15": {
+      "title": "Entonnoir par Étape",
+      "content": "Suivez vos opportunités tout au long de l'entonnoir de vente. Chaque barre indique le nombre et la valeur cumulée à chaque étape du pipeline."
+    },
+    "step16": {
+      "title": "Résumé de l'Entonnoir",
+      "content": "Métriques consolidées de l'entonnoir : pourcentage de conversations entrées dans le pipeline, ticket moyen et valeur totale des opportunités sur la période."
+    },
+    "step17": {
+      "title": "Performance par Canal",
+      "content": "Répartition des conversations et de la valeur générée par chaque canal de communication. Identifie les canaux qui apportent le plus de volume et de revenus."
+    },
+    "step18": {
+      "title": "Canaux à Plus Forte Valeur",
+      "content": "Classement des canaux générant le plus de revenus sur la période. À utiliser pour prioriser les investissements et les stratégies de communication."
+    },
+    "step19": {
+      "title": "Performance des Agents",
+      "content": "Performance individuelle de l'équipe : conversations traitées, temps de réponse et satisfaction par agent."
+    },
+    "step20": {
+      "title": "Performance des Agents IA",
+      "content": "Volume et participation des agents IA dans les réponses. Suivez quels agents sont les plus actifs et génèrent le plus d'interactions."
+    }
+  },
+  "conversations": {
+    "step1": {
+      "title": "Vos Conversations",
+      "content": "Toutes les conversations de votre équipe sont ici. Sélectionnez-en une pour commencer à répondre."
+    },
+    "step2": {
+      "title": "Recherche de Conversations",
+      "content": "Recherchez des conversations par le nom du contact ou par le contenu du message."
+    },
+    "step3": {
+      "title": "Filtres de Conversation",
+      "content": "Filtrez les conversations par statut (ouverte, résolue, en attente), agent assigné, équipe ou canal de service."
+    },
+    "step4": {
+      "title": "Liste des Conversations",
+      "content": "Cliquez sur n'importe quelle conversation pour l'ouvrir. Le point bleu indique les messages non lus. Cliquez avec le bouton droit pour des actions rapides."
+    },
+    "step5": {
+      "title": "Zone de Service",
+      "content": "Lorsque vous sélectionnez une conversation, l'historique des messages apparaît ici. En haut, vous trouverez les informations du contact et les actions comme résoudre, mettre en pause et transférer."
+    }
+  },
+  "contacts": {
+    "step1": {
+      "title": "Gestion des Contacts",
+      "content": "Ici, vous gérez tous les contacts de votre base de données. Utilisez la recherche pour trouver un contact rapidement."
+    },
+    "step2": {
+      "title": "Créer un Contact",
+      "content": "Cliquez ici pour ajouter manuellement un nouveau contact. Vous pouvez également importer une liste CSV ou exporter votre base de données."
+    },
+    "step3": {
+      "title": "Filtres Avancés",
+      "content": "Filtrez votre base par attributs tels que l'e-mail, le téléphone, le tag, le pipeline ou tout champ personnalisé."
+    },
+    "step4": {
+      "title": "Mode d'Affichage",
+      "content": "Basculez entre l'affichage en cartes (grille) et en tableau selon vos préférences."
+    },
+    "step5": {
+      "title": "Liste des Contacts",
+      "content": "Cliquez sur un contact pour voir les détails, démarrer une conversation, modifier ou supprimer. Sélectionnez plusieurs pour des actions en lot."
+    },
+    "step6": {
+      "title": "Navigation entre Pages",
+      "content": "Naviguez entre les pages de votre base de contacts et ajustez le nombre d'enregistrements affichés par page."
+    }
+  },
+  "agents": {
+    "step1": {
+      "title": "Gestion des Agents",
+      "content": "Ici, vous gérez tous vos agents IA. Utilisez la recherche pour trouver un agent rapidement."
+    },
+    "step2": {
+      "title": "Créer un Agent",
+      "content": "Cliquez ici pour créer un nouvel agent IA. L'assistant vous guidera étape par étape dans la configuration."
+    },
+    "step3": {
+      "title": "Clés API",
+      "content": "Gérez les clés API pour intégrer vos agents avec d'autres systèmes et plateformes."
+    },
+    "step4": {
+      "title": "Mode d'Affichage",
+      "content": "Basculez entre l'affichage en cartes (grille) et en tableau selon vos préférences."
+    },
+    "step5": {
+      "title": "Liste des Agents",
+      "content": "Voyez tous vos agents ici. Cliquez sur modifier pour configurer les comportements, les intégrations et la personnalité de l'agent."
+    }
+  },
+  "channels": {
+    "step1": {
+      "title": "Gestion des Canaux",
+      "content": "Ici, vous gérez tous les canaux de communication connectés. Utilisez la recherche pour trouver un canal rapidement."
+    },
+    "step2": {
+      "title": "Créer un Canal",
+      "content": "Cliquez ici pour connecter un nouveau canal. Nous prenons en charge WhatsApp, l'e-mail, Instagram et d'autres canaux de communication."
+    },
+    "step3": {
+      "title": "Mode d'Affichage",
+      "content": "Basculez entre l'affichage en cartes (grille) et en tableau selon vos préférences."
+    },
+    "step4": {
+      "title": "Liste des Canaux",
+      "content": "Voyez tous les canaux connectés ici. Cliquez sur les paramètres pour ajuster chaque canal individuellement ou supprimez les canaux qui ne sont plus nécessaires."
+    },
+    "step5": {
+      "title": "Navigation entre Pages",
+      "content": "Naviguez entre les pages de vos canaux et ajustez le nombre d'enregistrements affichés par page."
+    }
+  },
+  "pipelines": {
+    "step1": {
+      "title": "Gestion des Pipelines",
+      "content": "Ici, vous organisez le flux de service de vos contacts en étapes. Utilisez la recherche pour trouver un pipeline rapidement."
+    },
+    "step2": {
+      "title": "Créer un Pipeline",
+      "content": "Cliquez ici pour créer un nouveau pipeline. Définissez des étapes personnalisées pour organiser l'entonnoir de service de votre équipe."
+    },
+    "step3": {
+      "title": "Mode d'Affichage",
+      "content": "Basculez entre l'affichage en cartes (grille) et en tableau selon vos préférences."
+    },
+    "step4": {
+      "title": "Liste des Pipelines",
+      "content": "Voyez tous vos pipelines ici. Cliquez sur un pipeline pour ouvrir le kanban avec les étapes et contacts. Vous pouvez également modifier, dupliquer ou supprimer des pipelines via le menu d'actions."
+    }
+  },
+  "settings": {
+    "step1": {
+      "title": "Paramètres du Compte",
+      "content": "Ici, vous gérez tous les paramètres de votre compte, tels que le nom, la langue, les utilisateurs, les équipes et les intégrations. Utilisez le menu latéral pour naviguer entre les sections."
+    },
+    "step2": {
+      "title": "Paramètres Généraux",
+      "content": "Définissez le nom de votre compte, la langue par défaut de l'interface et d'autres préférences de base. N'oubliez pas de sauvegarder après avoir effectué des modifications."
+    },
+    "step3": {
+      "title": "Résolution Automatique",
+      "content": "Configurez le délai pour que les conversations inactives soient résolues automatiquement. Vous pouvez définir un message de clôture et appliquer une étiquette à la fin."
+    },
+    "step4": {
+      "title": "ID du Compte",
+      "content": "Voici l'identifiant unique de votre compte. Vous pourriez en avoir besoin pour contacter le support ou configurer des intégrations externes."
+    }
+  },
+  "settingsAgents": {
+    "step1": {
+      "title": "Agents",
+      "content": "Dans cette section, vous gérez tous les agents de votre équipe."
+    },
+    "step2": {
+      "title": "Barre d'Outils",
+      "content": "Utilisez la recherche pour trouver des agents, créez-en de nouveaux ou envoyez des invitations groupées."
+    },
+    "step3": {
+      "title": "Mode d'Affichage",
+      "content": "Basculez entre l'affichage en cartes et en tableau selon votre préférence."
+    },
+    "step4": {
+      "title": "Liste des Agents",
+      "content": "Tous les agents sont affichés ici. Cliquez sur un pour modifier ou supprimer."
+    }
+  },
+  "settingsTeams": {
+    "step1": {
+      "title": "Équipes",
+      "content": "Organisez vos agents en équipes pour faciliter la distribution des conversations."
+    },
+    "step2": {
+      "title": "Barre d'Outils",
+      "content": "Créez de nouvelles équipes, importez/exportez des données et recherchez des équipes existantes."
+    },
+    "step3": {
+      "title": "Mode d'Affichage",
+      "content": "Basculez entre l'affichage en cartes et en tableau."
+    },
+    "step4": {
+      "title": "Liste des Équipes",
+      "content": "Consultez toutes les équipes enregistrées. Cliquez sur \"Gérer les Membres\" pour ajouter ou retirer des agents d'une équipe."
+    }
+  },
+  "settingsLabels": {
+    "step1": {
+      "title": "Étiquettes",
+      "content": "Créez des étiquettes colorées pour catégoriser et organiser vos conversations."
+    },
+    "step2": {
+      "title": "Barre d'Outils",
+      "content": "Recherchez des étiquettes existantes ou créez-en une nouvelle en cliquant sur \"Nouvelle Étiquette\"."
+    },
+    "step3": {
+      "title": "Liste des Étiquettes",
+      "content": "Toutes les étiquettes sont affichées ici avec leur nom, description et couleur. Cliquez sur les icônes d'action pour modifier ou supprimer."
+    }
+  },
+  "settingsCustomAttributes": {
+    "step1": {
+      "title": "Attributs Personnalisés",
+      "content": "Créez des champs supplémentaires pour enrichir les informations des conversations, contacts et pipelines."
+    },
+    "step2": {
+      "title": "Barre d'Outils",
+      "content": "Recherchez des attributs ou ajoutez-en de nouveaux en cliquant sur \"Nouvel Attribut\"."
+    },
+    "step3": {
+      "title": "Catégories d'Attributs",
+      "content": "Utilisez les onglets pour filtrer entre les attributs de Conversation, Contact ou Pipeline."
+    }
+  },
+  "settingsCannedResponses": {
+    "step1": {
+      "title": "Réponses Rapides",
+      "content": "Créez des raccourcis texte pour accélérer le service avec des réponses prédéfinies."
+    },
+    "step2": {
+      "title": "Barre d'Outils",
+      "content": "Recherchez des réponses par code ou contenu, ou créez une nouvelle réponse rapide."
+    },
+    "step3": {
+      "title": "Liste des Réponses Rapides",
+      "content": "Toutes les réponses enregistrées sont listées ici avec leur code de raccourci et contenu. Pendant le service, tapez \"/\" pour y accéder rapidement."
+    }
+  },
+  "settingsMacros": {
+    "step1": {
+      "title": "Macros",
+      "content": "Les macros sont des séquences d'actions automatisées qui peuvent être appliquées aux conversations en un seul clic."
+    },
+    "step2": {
+      "title": "Barre d'Outils",
+      "content": "Créez de nouveaux macros ou recherchez parmi les existants par nom."
+    },
+    "step3": {
+      "title": "Liste des Macros",
+      "content": "Tous les macros enregistrés apparaissent ici. Cliquez sur un macro pour modifier ses actions, ou utilisez le bouton d'exécution pour l'appliquer."
+    }
+  },
+  "settingsIntegrations": {
+    "step1": {
+      "title": "Intégrations",
+      "content": "Connectez le système à des outils externes comme CRM, communication, productivité et IA."
+    },
+    "step2": {
+      "title": "Titre et Description",
+      "content": "Vue d'ensemble des intégrations disponibles sur la plateforme."
+    },
+    "step3": {
+      "title": "Recherche d'Intégrations",
+      "content": "Trouvez rapidement une intégration spécifique par nom ou description."
+    },
+    "step4": {
+      "title": "Catégories",
+      "content": "Filtrez les intégrations par catégorie : CRM, Communication, Productivité, IA ou Personnalisées. Chaque carte permet de configurer ou d'activer/désactiver l'intégration."
+    }
+  },
+  "settingsAccessTokens": {
+    "step1": {
+      "title": "Jetons d'Accès",
+      "content": "Générez et gérez des jetons d'API pour intégrer le système avec des applications externes en toute sécurité."
+    },
+    "step2": {
+      "title": "Barre d'Outils",
+      "content": "Créez de nouveaux jetons ou recherchez parmi les existants par nom, valeur ou portée."
+    },
+    "step3": {
+      "title": "Liste des Jetons",
+      "content": "Tous les jetons apparaissent ici avec nom, portées et expiration. Utilisez les actions pour voir la valeur complète, régénérer ou supprimer le jeton."
+    }
+  },
+  "campaigns": {
+    "step1": {
+      "title": "Gestion des Campagnes",
+      "content": "Ici, vous créez et suivez toutes les campagnes de communication. Utilisez la recherche pour trouver une campagne rapidement."
+    },
+    "step2": {
+      "title": "Créer une Campagne",
+      "content": "Cliquez ici pour créer une nouvelle campagne. L'assistant vous guidera à travers les étapes de configuration de l'audience, du contenu et de la planification."
+    },
+    "step3": {
+      "title": "Filtres",
+      "content": "Filtrez vos campagnes par statut, type, canal et d'autres critères pour trouver exactement ce dont vous avez besoin."
+    },
+    "step4": {
+      "title": "Liste des Campagnes",
+      "content": "Voyez toutes vos campagnes ici. Suivez le statut en temps réel, démarrez, mettez en pause, reprenez ou supprimez des campagnes selon les besoins."
+    },
+    "step5": {
+      "title": "Navigation entre Pages",
+      "content": "Naviguez entre les pages de vos campagnes et ajustez le nombre d'enregistrements affichés par page."
+    }
+  },
+  "journey": {
+    "step1": {
+      "title": "Automatisations de Parcours",
+      "content": "Ici, vous créez et gérez des parcours automatisés pour engager vos contacts avec des flux de messages intelligents."
+    },
+    "step2": {
+      "title": "Créer un Parcours",
+      "content": "Cliquez ici pour créer un nouveau parcours. Définissez le nom, la description, puis configurez les déclencheurs et actions dans l'éditeur de flux."
+    },
+    "step3": {
+      "title": "Liste des Parcours",
+      "content": "Voyez tous vos parcours ici. Activez ou désactivez chaque parcours via le bouton de statut, ouvrez l'éditeur de flux pour personnaliser les étapes ou dupliquez des parcours existants pour accélérer la création."
+    }
+  },
+  "channelGrid": {
+    "step1": {
+      "title": "Choisissez le type de canal",
+      "content": "Sélectionnez le canal de communication que vous souhaitez connecter. Chaque option a une configuration spécifique pour s'intégrer à votre compte."
+    },
+    "step2": {
+      "title": "Rechercher un canal",
+      "content": "Utilisez la recherche pour trouver rapidement un type de canal spécifique par nom ou description."
+    },
+    "step3": {
+      "title": "Canaux disponibles",
+      "content": "Cliquez sur n'importe quel canal pour démarrer la configuration. WhatsApp, Instagram et Facebook peuvent nécessiter des identifiants externes. Telegram, API et Widget Web sont les plus simples à configurer."
+    }
+  },
+  "channelTelegram": {
+    "step1": {
+      "title": "Token du Bot",
+      "content": "Collez ici le token de votre bot Telegram. Vous obtenez ce token en créant un bot via @BotFather — c'est une séquence unique de chiffres et de lettres pour votre bot."
+    },
+    "step2": {
+      "title": "Comment créer votre bot",
+      "content": "Suivez les étapes : ouvrez Telegram, accédez à @BotFather, envoyez /newbot, choisissez un nom et un nom d'utilisateur, et copiez le token fourni."
+    }
+  },
+  "channelApi": {
+    "step1": {
+      "title": "Nom du Canal",
+      "content": "Définissez un nom convivial pour identifier ce canal. Le nom interne sera généré automatiquement à partir du nom affiché."
+    },
+    "step2": {
+      "title": "URL du Webhook",
+      "content": "Saisissez l'adresse (URL) qui recevra les notifications de messages de ce canal. C'est facultatif, mais nécessaire pour l'intégration avec des systèmes externes."
+    },
+    "step3": {
+      "title": "À propos du Canal API",
+      "content": "Le canal API permet une intégration personnalisée avec n'importe quel système. Consultez la documentation pour voir les endpoints disponibles et des exemples d'utilisation."
+    }
+  },
+  "channelWebWidget": {
+    "step1": {
+      "title": "Informations de Base",
+      "content": "Définissez le nom du canal et l'URL du site web où le widget sera installé. Ces champs sont obligatoires pour identifier et restreindre le domaine d'utilisation."
+    },
+    "step2": {
+      "title": "Apparence du Widget",
+      "content": "Personnalisez les couleurs, le titre et le sous-titre du widget de chat. Ces paramètres définissent comment le bouton et la fenêtre de chat apparaissent à vos visiteurs."
+    },
+    "step3": {
+      "title": "Comportement",
+      "content": "Configurez si le widget doit s'ouvrir automatiquement, afficher le formulaire de pré-service et d'autres options de comportement lors du chargement sur le site."
+    }
+  },
+  "channelWhatsappCloud": {
+    "step1": {
+      "title": "Se connecter à Meta",
+      "content": "Cliquez sur 'Continuer avec Facebook' pour vous authentifier avec votre compte Meta Business et autoriser l'accès à l'API WhatsApp Cloud automatiquement."
+    },
+    "step2": {
+      "title": "Identifiants API",
+      "content": "Renseignez les données de votre compte Meta : nom du canal, numéro de téléphone, Access Token, Phone Number ID, Business Account ID et WABA ID. Toutes ces informations sont disponibles dans Meta Business Manager."
+    }
+  },
+  "channelSms": {
+    "step1": {
+      "title": "Identifiants du Fournisseur",
+      "content": "Saisissez les identifiants d'authentification de votre fournisseur SMS (Twilio ou Bandwidth). Vous trouverez ces informations dans le tableau de bord de votre fournisseur."
+    },
+    "step2": {
+      "title": "Configuration du Téléphone",
+      "content": "Choisissez d'utiliser un numéro de téléphone direct ou un Messaging Service SID pour l'envoi. Le Messaging Service est recommandé pour une plus grande échelle et redondance."
+    }
+  },
+  "channelInstagram": {
+    "step1": {
+      "title": "Connecter Instagram",
+      "content": "Pour connecter Instagram, vous devrez autoriser l'accès via le compte Facebook lié à votre page d'entreprise. Assurez-vous que votre compte Instagram est configuré en tant que profil professionnel."
+    }
+  },
+  "channelFacebook": {
+    "step1": {
+      "title": "Connecter Facebook Messenger",
+      "content": "Cliquez sur 'Se connecter avec Facebook' pour autoriser l'accès au Messenger de votre Page. Vous aurez besoin des droits d'administrateur sur la Page Facebook que vous souhaitez connecter."
+    }
+  },
+  "channelEmail": {
+    "step1": {
+      "title": "Fournisseur d'E-mail",
+      "content": "Choisissez votre fournisseur d'e-mail : Gmail (Google), Outlook (Microsoft) ou un autre fournisseur compatible IMAP/SMTP. Le flux d'authentification démarrera après la sélection."
+    }
+  },
+  "providerSelection": {
+    "step1": {
+      "title": "Sélectionnez un Fournisseur",
+      "content": "Choisissez le fournisseur d'API à utiliser pour ce canal. Chaque fournisseur a des fonctionnalités, des tarifs et des exigences de configuration différents."
+    }
+  },
+  "channelWhatsappProvider": {
+    "step1": {
+      "title": "Identifiants du Canal",
+      "content": "Remplissez les informations d'authentification de votre fournisseur WhatsApp. Vous les trouverez dans le tableau de bord de votre fournisseur."
+    },
+    "step2": {
+      "title": "Paramètres Avancés",
+      "content": "Ajustez les paramètres de l'instance selon vos besoins. Consultez la documentation du fournisseur pour plus de détails."
+    }
+  }
+}

@@ -1,0 +1,61 @@
+import { render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it } from 'vitest';
+import { FlowFeedbackBanner } from './FlowFeedbackBanner';
+import { clearFlowToken, injectFlowToken, readFlowToken } from '../test-utils';
+
+describe('FlowFeedbackBanner', () => {
+  it.each(['info', 'warn', 'error', 'success'] as const)(
+    'renders variant %s with the matching token class set',
+    (variant) => {
+      render(
+        <FlowFeedbackBanner variant={variant} data-testid="banner">
+          message
+        </FlowFeedbackBanner>,
+      );
+      const banner = screen.getByTestId('banner');
+      expect(banner.className).toContain(`flow-feedback-${variant}-bg`);
+      expect(banner.className).toContain(`flow-feedback-${variant}-fg`);
+      expect(banner.className).toContain(`flow-feedback-${variant}-border`);
+    },
+  );
+
+  it.each([
+    ['warn', 'alert'],
+    ['error', 'alert'],
+    ['info', 'status'],
+    ['success', 'status'],
+  ] as const)('uses role=%s → %s default mapping', (variant, expectedRole) => {
+    render(
+      <FlowFeedbackBanner variant={variant} data-testid="banner">
+        {variant}
+      </FlowFeedbackBanner>,
+    );
+    expect(screen.getByTestId('banner').getAttribute('role')).toBe(expectedRole);
+  });
+
+  it('honors a consumer-provided role over the default mapping', () => {
+    render(
+      <FlowFeedbackBanner variant="error" role="region" data-testid="banner">
+        custom role
+      </FlowFeedbackBanner>,
+    );
+    expect(screen.getByTestId('banner').getAttribute('role')).toBe('region');
+  });
+
+  describe('CSS variable surface (computed style)', () => {
+    const TOKEN = 'flow-feedback-error-bg';
+    afterEach(() => clearFlowToken(TOKEN));
+
+    it('renders into a document tree that exposes --color-flow-feedback-error-bg', () => {
+      const expected = 'oklch(0.95 0.04 25)';
+      injectFlowToken(TOKEN, expected);
+      const { container, getByTestId } = render(
+        <FlowFeedbackBanner variant="error" data-testid="banner">
+          message
+        </FlowFeedbackBanner>,
+      );
+      expect(readFlowToken(TOKEN)).toBe(expected);
+      expect(container.contains(getByTestId('banner'))).toBe(true);
+    });
+  });
+});

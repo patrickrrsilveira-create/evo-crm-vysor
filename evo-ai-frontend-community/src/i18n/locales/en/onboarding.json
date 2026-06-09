@@ -1,0 +1,98 @@
+{
+  "survey": {
+    "title": "Personalize your experience",
+    "subtitle": "These questions help us configure the system according to your operation.",
+    "placeholder": "Select...",
+    "progress": {
+      "of": "of"
+    },
+    "teamSize": {
+      "label": "How many people handle customer service on your team?",
+      "options": ["Just me", "2 to 5 people", "5 to 10 people", "10 to 20 people", "More than 20 people"]
+    },
+    "dailyVolume": {
+      "label": "How many support interactions do you handle per day, on average?",
+      "options": ["Less than 20", "20 to 100", "100 to 500", "More than 500"]
+    },
+    "channel": {
+      "label": "What is your main support channel?",
+      "other": "Other",
+      "otherPlaceholder": "Describe the channel you use...",
+      "options": ["WhatsApp", "Instagram", "Facebook", "Telegram", "Email", "Website chat", "SMS", "API", "Twitter / X", "LINE", "Other"]
+    },
+    "ai": {
+      "label": "Do you already use artificial intelligence in customer service?",
+      "options": ["Not yet", "Basic chatbot", "AI agent", "AI with advanced integrations"]
+    },
+    "pain": {
+      "label": "What is your biggest pain point in customer service today?",
+      "options": ["High response time", "Disorganized service", "Lack of team visibility", "Many channels without integration", "High support costs"]
+    },
+    "crm": {
+      "label": "Have you ever used a CRM or customer service system?",
+      "options": ["Never used one", "Used one, but it was difficult", "I have CRM experience", "Migrating from another system"]
+    },
+    "goal": {
+      "label": "What is your main goal with Evo CRM?",
+      "options": ["Organize customer service", "Automate with AI", "Scale the team", "Centralize channels", "Track metrics"]
+    },
+    "submit": {
+      "idle": "Start using Evo CRM",
+      "loading": "Saving..."
+    },
+    "footer": "Takes less than 1 minute · You can change this later in settings"
+  },
+  "language": {
+    "portuguese": "Português",
+    "english": "English",
+    "spanish": "Español",
+    "french": "Français",
+    "italian": "Italiano"
+  },
+  "createAccount": {
+    "title": "Welcome!",
+    "subtitle": "To start using the system, you need to create your first organization.",
+    "form": {
+      "organizationName": {
+        "label": "Organization Name",
+        "placeholder": "Ex: My Company LLC",
+        "errors": {
+          "required": "Organization name is required",
+          "minLength": "Organization name must be at least 2 characters"
+        }
+      },
+      "userFullName": {
+        "label": "Your Full Name",
+        "placeholder": "Ex: John Smith",
+        "errors": {
+          "required": "Your full name is required",
+          "minLength": "Name must be at least 2 characters"
+        }
+      },
+      "email": {
+        "label": "Email",
+        "helper": "This is the email used to create your account"
+      },
+      "support_email": {
+        "label": "Support Email",
+        "helper": "This is the support email for your account",
+        "errors": {
+          "required": "Support email is required",
+          "invalid": "Support email must be a valid email address"
+        }
+      },
+      "submitButton": {
+        "idle": "Create Organization",
+        "loading": "Creating organization..."
+      }
+    },
+    "success": {
+      "title": "Organization created successfully!",
+      "description": "Your account has been created and you can now start using the system."
+    },
+    "error": {
+      "generic": "Error creating organization"
+    },
+    "footer": "By creating an organization, you become its administrator and can add other users later."
+  }
+}

@@ -1,0 +1,157 @@
+{
+  "nav": {
+    "github": "GitHub",
+    "docs": "Docs",
+    "getStarted": "Comenzar"
+  },
+  "hero": {
+    "badge": "v{{version}} ya disponible",
+    "title": "Tu equipo de IA,",
+    "titleHighlight": "ya armado.",
+    "subtitle": "38 agentes que recuerdan, agendan y cumplen metas. De finanzas a ingeniería — todo conectado. Open source. Un comando.",
+    "cta": "Comienza Ahora, es gratis",
+    "viewGithub": "Ver en GitHub",
+    "discord": "Únete a 17,000+ devs en Discord",
+    "stats": {
+      "community": "Miembros en la comunidad",
+      "agents": "Agentes de IA",
+      "skills": "Skills",
+      "integrations": "Integraciones"
+    }
+  },
+  "howWorkGetsDone": {
+    "sectionTitle": "Cómo se hace el trabajo",
+    "sectionSubtitle": "No es un menú de features. Es una estructura que sigue trabajando cuando cierras el laptop.",
+    "beat1": {
+      "title": "Define la meta una vez",
+      "body": "EvoNexus organiza el trabajo en cuatro niveles: Misión → Proyecto → Meta → Tarea. Defines qué es éxito — \"100 clientes pagantes para el Q4\" — y el sistema lo rastrea automáticamente. Las metas avanzan cuando las tareas se marcan como hechas. Los agentes reciben el contexto completo antes de actuar.",
+      "example": "Misión: MRR $1M Q4 2026 → Proyecto: Evo AI → Meta: 100 clientes pagantes para 30/jun (progreso: 23/100, 45 días restantes) → Tareas asignadas a los agentes."
+    },
+    "beat2": {
+      "title": "Cada agente en su lugar",
+      "body": "Activa un agente con un slash command — /clawdia, /flux, /apex — o deja que los heartbeats los despierten en horario. Cada agente tiene alcance definido, memoria de largo plazo propia y autoridad de decisión dentro de su dominio. No necesitan reconfigurarse en cada sesión. Recuerdan quién eres y lo que ya se decidió.",
+      "example": "Atlas revisa Linear cada 4 horas. Si un bloqueador lleva más de 24 horas abierto sin respuesta, escala — sin que lo pidas. Lees el resumen en el briefing de la mañana."
+    },
+    "beat3": {
+      "title": "Documentos que los agentes realmente leen",
+      "body": "Sube PDFs, documentos internos, SOPs, transcripciones — los agentes los consultan verbatim. EvoNexus viene con un sistema RAG híbrido (búsqueda por palabra clave + semántica) en tu propio Postgres. Tú traes los datos, los agentes traen el contexto. Sin alucinaciones sobre lo que dicen tus políticas — citan la fuente.",
+      "example": "Lex revisa un nuevo contrato de proveedor. Consulta tu base de conocimiento legal, encuentra la cláusula que contradice tu template estándar de NDA y la señala con el párrafo exacto de la fuente. Revisas el diff, no el documento entero."
+    },
+    "beat4": {
+      "title": "Todo lo que pasa queda registrado",
+      "body": "Los tickets persisten. Las ejecuciones de heartbeat se registran con costo, duración y decisión tomada. El progreso de metas se rastrea automáticamente por la finalización de tareas. El log de auditoría muestra quién hizo qué, cuándo y por qué. Nada sucede en una caja negra. Cada acción de agente es atribuible.",
+      "example": "Zara clasifica 14 tickets de soporte durante la noche. En la mañana ves: 11 resueltos, 2 escalados con resumen, 1 esperando respuesta del cliente. Costo: $0.23. Apruebas las escalaciones — la clasificación ya está hecha."
+    }
+  },
+  "screenshots": {
+    "sectionTitle": "Centro de comando de tu equipo de IA",
+    "sectionSubtitle": "Ve y controla cada agente, rutina y costo de IA en tiempo real.",
+    "sectionNote": "Dashboard web incluido. Sin configuración extra.",
+    "clickToExpand": "Clic para ampliar",
+    "overview": "Dashboard General",
+    "multiAgents": "Multi Agentes",
+    "integrationsTitle": "Integraciones",
+    "costTracking": "Control de Costos",
+    "chatUI": "Chat con Agentes"
+  },
+  "howItWorks": {
+    "sectionTitle": "De cero a operaciones con IA en minutos",
+    "step1": {
+      "title": "Instalar",
+      "desc": "El asistente de CLI configura todo"
+    },
+    "step2": {
+      "title": "Iniciar Dashboard",
+      "desc": "UI web con setup de admin y scheduler incluidos"
+    },
+    "step3": {
+      "title": "Usar Tus Agentes",
+      "code": "Di 'buenos días'",
+      "desc": "Tu equipo de IA se hace cargo de tus rutinas"
+    }
+  },
+  "agents": {
+    "sectionTitle": "Conoce a tu nuevo equipo",
+    "sectionSubtitle": "38 agentes especializados listos para gestionar tus operaciones y tu código. 17 de negocio + 21 de ingeniería.",
+    "seeAll": "Ver los 38 agentes",
+    "attribution": "19 agentes de ingeniería derivados de oh-my-claudecode (MIT, por Yeachan Heo) + 2 nativos",
+    "clawdia": {
+      "role": "Ops",
+      "desc": "Responde correos, agenda reuniones, entrega tu briefing diario antes de abrir el portátil."
+    },
+    "flux": {
+      "role": "Finanzas",
+      "desc": "Stripe, integración con ERP, reportes de flujo de caja y cierre mensual. Sin hoja de cálculo, sin sorpresas."
+    },
+    "atlas": {
+      "role": "Proyectos",
+      "desc": "PRs en GitHub, issues en Linear, seguimiento de sprint. Una sola vista de todo lo que está en marcha."
+    },
+    "oracle": {
+      "role": "Conocimiento",
+      "desc": "Consultor de onboarding. Entrevista tu negocio, mapea las capacidades del workspace y entrega un plan de implementación."
+    },
+    "pixel": {
+      "role": "Social",
+      "desc": "Calendario de contenido, borradores de posts, reportes de analytics en YouTube, Instagram, LinkedIn."
+    },
+    "pulse": {
+      "role": "Comunidad",
+      "desc": "Monitoreo de Discord y WhatsApp, sincronización de FAQ, análisis de sentimiento. Tu comunidad nunca se queda sin respuesta."
+    },
+    "apex": {
+      "role": "Arquitecto",
+      "desc": "Diseño arquitectural, debugging de solo lectura, análisis de trade-offs. Razonamiento nivel Opus."
+    },
+    "bolt": {
+      "role": "Ejecutor",
+      "desc": "Implementación con el mínimo diff viable. Archivos cambiados, tests pasando, sin scope creep."
+    }
+  },
+  "knowledge": {
+    "sectionTitle": "Agentes que sí leen tus documentos",
+    "sectionSubtitle": "Sube tus documentos una vez. Cada agente los consulta en contexto — verbatim, con citas.",
+    "body": "EvoNexus viene con un sistema RAG híbrido: búsqueda por palabra clave + embeddings semánticos (MPNet local, OpenAI o Gemini con MRL 768/1536/3072). Tu conocimiento vive en tu propio Postgres. Los agentes consultan en tiempo de ejecución — sin alucinaciones sobre lo que dicen tus SOPs, sin respuestas genéricas cuando existe una fuente. Citan el párrafo, no su mejor suposición.",
+    "bullet1": "Soporta PDF, DOCX, PPTX, XLSX, HTML, EPUB y texto plano. Ingesta una vez por la UI de Knowledge o CLI.",
+    "bullet2": "Recuperación híbrida: búsqueda por palabra clave para precisión, búsqueda semántica para cobertura. Los dos, no uno u otro.",
+    "bullet3": "Trae tu propio Postgres — Supabase, Neon, RDS o on-prem. Tus datos se quedan en tu infraestructura."
+  },
+  "heartbeats": {
+    "sectionTitle": "Agentes en piloto automático",
+    "sectionSubtitle": "Cron para tus agentes, con guardrails. Configura cuándo hace check-in cada uno — solo actúan cuando hace falta.",
+    "body": "Los heartbeats son ejecuciones programadas de agentes con un paso de decisión integrado. Defines el intervalo y la condición. El agente despierta, revisa el estado y actúa — o salta, si nada justifica acción. No es un cron job que siempre ejecuta. Es un agente que siempre despierta pero solo actúa cuando debe. Costo cuando está ocioso: casi cero.",
+    "bullet1": "Atlas revisa Linear cada 4h — escala bloqueadores abiertos más de 24h sin respuesta.",
+    "bullet2": "Zara barre la cola de soporte cada 2h — tría, responde, escala basándose en las reglas que definas.",
+    "bullet3": "Flux revisa Stripe y Omie cada 6h — señala anomalías, redacta el reporte diario de pulse.",
+    "example": "Te desconectas un fin de semana. Atlas está pendiente. El sábado por la mañana encuentra un PR bloqueado por un CI con fallos que Danilo no ha visto. Abre un ticket, lo reasigna a la cola y registra la acción. El lunes por la mañana lees el log, no la sorpresa."
+  },
+  "socialProof": {
+    "production": "Usado en producción",
+    "since": "desde 2024",
+    "agents": "agentes",
+    "skills": "skills",
+    "communityMembers": "miembros en la comunidad",
+    "license": "Licencia"
+  },
+  "quickstart": {
+    "sectionTitle": "Empieza en 60 segundos",
+    "sectionSubtitle": "Un comando. Eso es todo.",
+    "comment": "# O manualmente: git clone + make setup + make dashboard-app",
+    "viewGuide": "Ver Guía de Inicio Rápido"
+  },
+  "integrations": {
+    "label": "Conecta con todo lo que usas"
+  },
+  "banner": {
+    "text": "Un proyecto open source de Evolution Foundation.",
+    "cta": "Saber más"
+  },
+  "footer": {
+    "tagline": "Un proyecto de Evolution Foundation.",
+    "links": "Links",
+    "documentation": "Documentación",
+    "contributing": "Contribuir",
+    "changelog": "Changelog",
+    "disclaimer": "Toolkit no oficial para Claude Code. Sin vínculo con Anthropic."
+  }
+}

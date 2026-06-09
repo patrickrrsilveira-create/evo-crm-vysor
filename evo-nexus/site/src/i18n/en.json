@@ -1,0 +1,157 @@
+{
+  "nav": {
+    "github": "GitHub",
+    "docs": "Docs",
+    "getStarted": "Get Started"
+  },
+  "hero": {
+    "badge": "v{{version}} is now live",
+    "title": "Your AI team,",
+    "titleHighlight": "pre-assembled.",
+    "subtitle": "38 agents that remember, schedule, and hit targets. From finance to engineering — all wired up. Open source. One command.",
+    "cta": "Get Started, it's free",
+    "viewGithub": "View on GitHub",
+    "discord": "Join 17,000+ developers on Discord",
+    "stats": {
+      "community": "Community members",
+      "agents": "AI Agents",
+      "skills": "Skills",
+      "integrations": "Integrations"
+    }
+  },
+  "howWorkGetsDone": {
+    "sectionTitle": "How work gets done",
+    "sectionSubtitle": "Not a menu of features. A structure that keeps working when you close the laptop.",
+    "beat1": {
+      "title": "Set the goal once",
+      "body": "EvoNexus organizes work across four levels: Mission → Project → Goal → Task. You define what success looks like — \"100 paying customers by Q4\" — and the system tracks it automatically. Goals update when tasks are marked done. Agents receive the full cascade as context before they act.",
+      "example": "Mission: MRR $1M Q4 2026 → Project: Evo AI → Goal: 100 paying customers by Jun 30 (progress: 23/100, 45 days left) → Tasks assigned to agents."
+    },
+    "beat2": {
+      "title": "Agents that know their lane",
+      "body": "Activate an agent with a slash command — /clawdia, /flux, /apex — or let heartbeats wake them on schedule. Each agent has a defined scope, its own long-term memory, and decision authority within its domain. They do not need to be reconfigured every session. They remember who you are and what's been decided.",
+      "example": "Atlas checks Linear every 4 hours. If a blocker has been open for 24+ hours with no response, it escalates — without being asked. You read the summary in your morning briefing."
+    },
+    "beat3": {
+      "title": "Docs your agents actually read",
+      "body": "Upload PDFs, internal docs, SOPs, transcripts — agents query them verbatim. EvoNexus ships with a hybrid RAG system (keyword + semantic search) backed by your own Postgres. You bring the data, agents bring the context. No hallucinations about what your policies say — they cite the source.",
+      "example": "Lex reviews a new vendor contract. It queries your legal knowledge base, finds the clause that contradicts your standard NDA template, and flags it with the exact source paragraph. You review the diff, not the whole document."
+    },
+    "beat4": {
+      "title": "Every action, traceable",
+      "body": "Tickets persist. Heartbeat runs are logged with cost, duration, and decision. Goal progress is tracked automatically by task completion. The audit log shows who did what, when, and why. Nothing happens in a black box. Every agent action is attributable.",
+      "example": "Zara triages 14 support tickets overnight. In the morning you see: 11 resolved, 2 escalated with summary, 1 waiting on customer reply. Cost: $0.23. You approve the escalations, not the triage."
+    }
+  },
+  "screenshots": {
+    "sectionTitle": "Command center for your AI team",
+    "sectionSubtitle": "See and control every agent, routine, and AI cost in real time.",
+    "sectionNote": "Web dashboard included. No extra setup.",
+    "clickToExpand": "Click to expand",
+    "overview": "Overview Dashboard",
+    "multiAgents": "Multi Agents",
+    "integrationsTitle": "Integrations",
+    "costTracking": "Cost Tracking",
+    "chatUI": "Agent Chat UI"
+  },
+  "howItWorks": {
+    "sectionTitle": "From zero to AI ops in minutes",
+    "step1": {
+      "title": "Install",
+      "desc": "CLI wizard configures everything"
+    },
+    "step2": {
+      "title": "Start Dashboard",
+      "desc": "Web UI with admin setup, scheduler included"
+    },
+    "step3": {
+      "title": "Use Your Agents",
+      "code": "Say 'good morning'",
+      "desc": "Your AI team takes over your routines"
+    }
+  },
+  "agents": {
+    "sectionTitle": "Meet your new team",
+    "sectionSubtitle": "38 specialized agents ready to handle your operations and your code. 17 business + 21 engineering.",
+    "seeAll": "See all 38 agents",
+    "attribution": "19 engineering agents derived from oh-my-claudecode (MIT, by Yeachan Heo) + 2 native",
+    "clawdia": {
+      "role": "Ops",
+      "desc": "Responds to emails, schedules meetings, delivers your daily briefing before you open the laptop."
+    },
+    "flux": {
+      "role": "Finance",
+      "desc": "Stripe, ERP integration, cash flow reports, and monthly close. No spreadsheets, no surprises."
+    },
+    "atlas": {
+      "role": "Projects",
+      "desc": "GitHub PRs, Linear issues, sprint tracking. One view of everything in motion."
+    },
+    "oracle": {
+      "role": "Knowledge",
+      "desc": "Onboarding consultant. Interviews your business, maps workspace capabilities, delivers an implementation plan."
+    },
+    "pixel": {
+      "role": "Social",
+      "desc": "Content calendar, post drafts, analytics reports across YouTube, Instagram, LinkedIn."
+    },
+    "pulse": {
+      "role": "Community",
+      "desc": "Discord and WhatsApp monitoring, FAQ sync, sentiment analysis. Your community is never left hanging."
+    },
+    "apex": {
+      "role": "Architect",
+      "desc": "Architectural design, read-only debugging, tradeoff analysis. Opus-tier reasoning."
+    },
+    "bolt": {
+      "role": "Executor",
+      "desc": "Smallest viable diff implementation. Files changed, tests green, no scope creep."
+    }
+  },
+  "knowledge": {
+    "sectionTitle": "Agents that actually read your docs",
+    "sectionSubtitle": "Upload your documents once. Every agent queries them in context — verbatim, with citations.",
+    "body": "EvoNexus ships with a hybrid RAG system: keyword search + semantic embeddings (local MPNet, OpenAI, or Gemini with MRL 768/1536/3072). Your knowledge lives in your own Postgres database. Agents query it at runtime — no hallucinations about what your SOPs say, no generic answers when a source exists. They cite the paragraph, not their best guess.",
+    "bullet1": "Supports PDF, DOCX, PPTX, XLSX, HTML, EPUB, and plain text. Ingest once via the Knowledge UI or CLI.",
+    "bullet2": "Hybrid retrieval: keyword match for precision, semantic search for coverage. Both, not either/or.",
+    "bullet3": "Bring your own Postgres — Supabase, Neon, RDS, or on-prem. Your data stays in your infrastructure."
+  },
+  "heartbeats": {
+    "sectionTitle": "Agents on autopilot",
+    "sectionSubtitle": "Cron for your agents, with guardrails. Configure when each one checks in — they act only when needed.",
+    "body": "Heartbeats are scheduled agent runs with a built-in decision step. You define the interval and the condition. The agent wakes, checks state, and acts — or skips if nothing warrants action. This is not a cron job that always runs. It is an agent that always wakes up but only acts when it should. Cost when idle: near zero.",
+    "bullet1": "Atlas checks Linear every 4h — escalates blockers open >24h with no response.",
+    "bullet2": "Zara scans the support queue every 2h — triages, responds, escalates based on rules you set.",
+    "bullet3": "Flux checks Stripe and Omie every 6h — flags anomalies, drafts the daily pulse report.",
+    "example": "You go offline for a weekend. Atlas is watching. On Saturday morning it finds a PR blocked by a failing CI run that Danilo hasn't seen. It opens a ticket, assigns it back to the queue, and logs the action. Monday morning you read the log, not the surprise."
+  },
+  "socialProof": {
+    "production": "Used in production",
+    "since": "since 2024",
+    "agents": "agents",
+    "skills": "skills",
+    "communityMembers": "community members",
+    "license": "License"
+  },
+  "quickstart": {
+    "sectionTitle": "Start in 60 seconds",
+    "sectionSubtitle": "One command. That's all it takes.",
+    "comment": "# Or manually: git clone + make setup + make dashboard-app",
+    "viewGuide": "View Quick Start Guide"
+  },
+  "integrations": {
+    "label": "Connects with everything you use"
+  },
+  "banner": {
+    "text": "An Evolution Foundation open source project.",
+    "cta": "Learn more"
+  },
+  "footer": {
+    "tagline": "An Evolution Foundation project.",
+    "links": "Links",
+    "documentation": "Documentation",
+    "contributing": "Contributing",
+    "changelog": "Changelog",
+    "disclaimer": "Unofficial toolkit for Claude Code. Not affiliated with Anthropic."
+  }
+}

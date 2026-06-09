@@ -1,0 +1,450 @@
+@import 'tailwindcss';
+
+/* Define o variant dark para o Tailwind v4 */
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Flow Builder design system (EVO-1253) — scoped to the journey/_ui surface.
+     Light and dark values live in :root and .dark blocks below this @theme. */
+  --color-flow-node-trigger-bg: var(--flow-node-trigger-bg);
+  --color-flow-node-trigger-fg: var(--flow-node-trigger-fg);
+  --color-flow-node-trigger-border: var(--flow-node-trigger-border);
+  --color-flow-node-action-message-bg: var(--flow-node-action-message-bg);
+  --color-flow-node-action-message-fg: var(--flow-node-action-message-fg);
+  --color-flow-node-action-message-border: var(--flow-node-action-message-border);
+  --color-flow-node-action-webhook-bg: var(--flow-node-action-webhook-bg);
+  --color-flow-node-action-webhook-fg: var(--flow-node-action-webhook-fg);
+  --color-flow-node-action-webhook-border: var(--flow-node-action-webhook-border);
+  --color-flow-node-action-label-bg: var(--flow-node-action-label-bg);
+  --color-flow-node-action-label-fg: var(--flow-node-action-label-fg);
+  --color-flow-node-action-label-border: var(--flow-node-action-label-border);
+  --color-flow-node-action-pipeline-bg: var(--flow-node-action-pipeline-bg);
+  --color-flow-node-action-pipeline-fg: var(--flow-node-action-pipeline-fg);
+  --color-flow-node-action-pipeline-border: var(--flow-node-action-pipeline-border);
+  --color-flow-node-condition-bg: var(--flow-node-condition-bg);
+  --color-flow-node-condition-fg: var(--flow-node-condition-fg);
+  --color-flow-node-condition-border: var(--flow-node-condition-border);
+  --color-flow-node-control-bg: var(--flow-node-control-bg);
+  --color-flow-node-control-fg: var(--flow-node-control-fg);
+  --color-flow-node-control-border: var(--flow-node-control-border);
+  --color-flow-node-exit-bg: var(--flow-node-exit-bg);
+  --color-flow-node-exit-fg: var(--flow-node-exit-fg);
+  --color-flow-node-exit-border: var(--flow-node-exit-border);
+  --color-flow-canvas-bg: var(--flow-canvas-bg);
+  --color-flow-canvas-grid: var(--flow-canvas-grid);
+  --color-flow-canvas-grid-strong: var(--flow-canvas-grid-strong);
+  --color-flow-palette-bg: var(--flow-palette-bg);
+  --color-flow-palette-surface: var(--flow-palette-surface);
+  --color-flow-palette-divider: var(--flow-palette-divider);
+  --color-flow-panel-bg: var(--flow-panel-bg);
+  --color-flow-panel-header-bg: var(--flow-panel-header-bg);
+  --color-flow-panel-divider: var(--flow-panel-divider);
+  --color-flow-edge-default: var(--flow-edge-default);
+  --color-flow-edge-active: var(--flow-edge-active);
+  --color-flow-edge-error: var(--flow-edge-error);
+  --color-flow-feedback-info-bg: var(--flow-feedback-info-bg);
+  --color-flow-feedback-info-fg: var(--flow-feedback-info-fg);
+  --color-flow-feedback-info-border: var(--flow-feedback-info-border);
+  --color-flow-feedback-warn-bg: var(--flow-feedback-warn-bg);
+  --color-flow-feedback-warn-fg: var(--flow-feedback-warn-fg);
+  --color-flow-feedback-warn-border: var(--flow-feedback-warn-border);
+  --color-flow-feedback-error-bg: var(--flow-feedback-error-bg);
+  --color-flow-feedback-error-fg: var(--flow-feedback-error-fg);
+  --color-flow-feedback-error-border: var(--flow-feedback-error-border);
+  --color-flow-feedback-success-bg: var(--flow-feedback-success-bg);
+  --color-flow-feedback-success-fg: var(--flow-feedback-success-fg);
+  --color-flow-feedback-success-border: var(--flow-feedback-success-border);
+}
+
+:root {
+  /* Flow Builder design tokens — LIGHT mode values (EVO-1253). */
+  --flow-node-trigger-bg: oklch(0.95 0.05 150);
+  --flow-node-trigger-fg: oklch(0.30 0.12 150);
+  --flow-node-trigger-border: oklch(0.55 0.13 150);
+  --flow-node-action-message-bg: oklch(0.95 0.04 250);
+  --flow-node-action-message-fg: oklch(0.35 0.18 250);
+  --flow-node-action-message-border: oklch(0.65 0.16 250);
+  --flow-node-action-webhook-bg: oklch(0.95 0.04 305);
+  --flow-node-action-webhook-fg: oklch(0.35 0.18 305);
+  --flow-node-action-webhook-border: oklch(0.65 0.16 305);
+  --flow-node-action-label-bg: oklch(0.95 0.04 175);
+  --flow-node-action-label-fg: oklch(0.32 0.12 175);
+  --flow-node-action-label-border: oklch(0.55 0.13 175);
+  --flow-node-action-pipeline-bg: oklch(0.95 0.04 350);
+  --flow-node-action-pipeline-fg: oklch(0.35 0.18 350);
+  --flow-node-action-pipeline-border: oklch(0.65 0.17 350);
+  --flow-node-condition-bg: oklch(0.95 0.05 85);
+  --flow-node-condition-fg: oklch(0.32 0.14 85);
+  --flow-node-condition-border: oklch(0.55 0.14 85);
+  --flow-node-control-bg: oklch(0.95 0.05 40);
+  --flow-node-control-fg: oklch(0.35 0.16 40);
+  --flow-node-control-border: oklch(0.55 0.17 40);
+  --flow-node-exit-bg: oklch(0.95 0.04 25);
+  --flow-node-exit-fg: oklch(0.35 0.18 25);
+  --flow-node-exit-border: oklch(0.65 0.18 25);
+  --flow-canvas-bg: oklch(0.99 0 0);
+  --flow-canvas-grid: oklch(0.85 0 0);
+  --flow-canvas-grid-strong: oklch(0.75 0 0);
+  --flow-palette-bg: oklch(0.98 0 0);
+  --flow-palette-surface: oklch(0.97 0 0);
+  --flow-palette-divider: oklch(0.90 0 0);
+  --flow-panel-bg: oklch(1 0 0);
+  --flow-panel-header-bg: oklch(0.97 0 0);
+  --flow-panel-divider: oklch(0.92 0 0);
+  --flow-edge-default: oklch(0.65 0 0);
+  --flow-edge-active: oklch(0.55 0.20 250);
+  --flow-edge-error: oklch(0.55 0.22 25);
+  --flow-feedback-info-bg: oklch(0.95 0.04 250);
+  --flow-feedback-info-fg: oklch(0.35 0.18 250);
+  --flow-feedback-info-border: oklch(0.65 0.16 250);
+  --flow-feedback-warn-bg: oklch(0.95 0.05 85);
+  --flow-feedback-warn-fg: oklch(0.32 0.14 85);
+  --flow-feedback-warn-border: oklch(0.70 0.14 85);
+  --flow-feedback-error-bg: oklch(0.95 0.04 25);
+  --flow-feedback-error-fg: oklch(0.35 0.18 25);
+  --flow-feedback-error-border: oklch(0.65 0.18 25);
+  --flow-feedback-success-bg: oklch(0.95 0.05 150);
+  --flow-feedback-success-fg: oklch(0.30 0.12 150);
+  --flow-feedback-success-border: oklch(0.70 0.13 150);
+}
+
+.dark {
+  /* Flow Builder design tokens — DARK mode overrides (EVO-1253). */
+  --flow-node-trigger-bg: oklch(0.22 0.05 150);
+  --flow-node-trigger-fg: oklch(0.90 0.10 150);
+  --flow-node-trigger-border: oklch(0.55 0.12 150);
+  --flow-node-action-message-bg: oklch(0.22 0.05 250);
+  --flow-node-action-message-fg: oklch(0.85 0.12 250);
+  --flow-node-action-message-border: oklch(0.50 0.15 250);
+  --flow-node-action-webhook-bg: oklch(0.22 0.05 305);
+  --flow-node-action-webhook-fg: oklch(0.85 0.13 305);
+  --flow-node-action-webhook-border: oklch(0.55 0.18 305);
+  --flow-node-action-label-bg: oklch(0.22 0.04 175);
+  --flow-node-action-label-fg: oklch(0.88 0.10 175);
+  --flow-node-action-label-border: oklch(0.50 0.11 175);
+  --flow-node-action-pipeline-bg: oklch(0.22 0.05 350);
+  --flow-node-action-pipeline-fg: oklch(0.85 0.14 350);
+  --flow-node-action-pipeline-border: oklch(0.55 0.17 350);
+  --flow-node-condition-bg: oklch(0.22 0.05 85);
+  --flow-node-condition-fg: oklch(0.88 0.13 85);
+  --flow-node-condition-border: oklch(0.50 0.14 85);
+  --flow-node-control-bg: oklch(0.22 0.05 40);
+  --flow-node-control-fg: oklch(0.85 0.16 40);
+  --flow-node-control-border: oklch(0.55 0.17 40);
+  --flow-node-exit-bg: oklch(0.22 0.05 25);
+  --flow-node-exit-fg: oklch(0.85 0.16 25);
+  --flow-node-exit-border: oklch(0.55 0.18 25);
+  --flow-canvas-bg: oklch(0.16 0 0);
+  --flow-canvas-grid: oklch(0.30 0 0);
+  --flow-canvas-grid-strong: oklch(0.40 0 0);
+  --flow-palette-bg: oklch(0.17 0 0);
+  --flow-palette-surface: oklch(0.20 0 0);
+  --flow-palette-divider: oklch(0.28 0 0);
+  --flow-panel-bg: oklch(0.18 0 0);
+  --flow-panel-header-bg: oklch(0.20 0 0);
+  --flow-panel-divider: oklch(0.28 0 0);
+  --flow-edge-default: oklch(0.55 0 0);
+  --flow-edge-active: oklch(0.75 0.18 250);
+  --flow-edge-error: oklch(0.65 0.22 25);
+  --flow-feedback-info-bg: oklch(0.22 0.05 250);
+  --flow-feedback-info-fg: oklch(0.85 0.12 250);
+  --flow-feedback-info-border: oklch(0.50 0.15 250);
+  --flow-feedback-warn-bg: oklch(0.22 0.05 85);
+  --flow-feedback-warn-fg: oklch(0.88 0.13 85);
+  --flow-feedback-warn-border: oklch(0.50 0.14 85);
+  --flow-feedback-error-bg: oklch(0.22 0.05 25);
+  --flow-feedback-error-fg: oklch(0.85 0.16 25);
+  --flow-feedback-error-border: oklch(0.55 0.18 25);
+  --flow-feedback-success-bg: oklch(0.22 0.05 150);
+  --flow-feedback-success-fg: oklch(0.90 0.10 150);
+  --flow-feedback-success-border: oklch(0.45 0.12 150);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  html,
+  body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+
+  #root {
+    height: 100%;
+  }
+
+  /* Desliga transições enquanto troca tema */
+  html.theme-switching *,
+  html.theme-switching *::before,
+  html.theme-switching *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+@layer base {
+
+  /* 🎨 Scrollbar padrão global otimizado para tema escuro */
+  *::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: transparent;
+    border-radius: 4px;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.15);
+    border-radius: 4px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+    transition: background-color 0.2s ease;
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(255, 255, 255, 0.25);
+  }
+
+  *::-webkit-scrollbar-thumb:active {
+    background-color: rgba(255, 255, 255, 0.35);
+  }
+
+  /* Firefox - otimizado para tema escuro */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+  }
+
+  /* Hide scrollbar on mobile but keep functionality */
+  @media (max-width: 768px) {
+    * {
+      scrollbar-width: none;
+    }
+
+    ::-webkit-scrollbar {
+      display: none;
+    }
+  }
+}
+
+@layer utilities {
+
+  /* Scrollbar oculta - quando necessário */
+  .scrollbar-hidden {
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+  }
+
+  .scrollbar-hidden::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  /* Scrollbar mais fina para espaços pequenos */
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px !important;
+    height: 6px !important;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: rgba(156, 163, 175, 0.3) !important;
+    border-radius: 3px !important;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(156, 163, 175, 0.5) !important;
+  }
+
+  /* 🎨 Chat animations */
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes slideInFromRight {
+    from {
+      opacity: 0;
+      transform: translateX(20px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes slideInFromLeft {
+    from {
+      opacity: 0;
+      transform: translateX(-20px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  .animate-fadeIn {
+    animation: fadeIn 0.3s ease-out forwards;
+  }
+
+  .animate-slideInFromRight {
+    animation: slideInFromRight 0.3s ease-out forwards;
+  }
+
+  .animate-slideInFromLeft {
+    animation: slideInFromLeft 0.3s ease-out forwards;
+  }
+
+  /* Email HTML content isolation - prevent CSS contamination */
+  .email-html-content-wrapper {
+    isolation: isolate !important;
+    contain: layout style paint !important;
+    position: relative !important;
+    max-width: 100% !important;
+    overflow: auto !important;
+    word-break: break-word !important;
+    display: block !important;
+    box-sizing: border-box !important;
+    /* Create a new stacking context */
+    z-index: 0 !important;
+    /* Prevent theme colors from affecting HTML - use transparent to let HTML's own colors show */
+    color: transparent !important;
+    background-color: transparent !important;
+  }
+
+  /* Isolate email HTML content from affecting parent */
+  .email-html-content {
+    display: block !important;
+    box-sizing: border-box !important;
+    max-width: 100% !important;
+    /* Prevent styles from leaking out */
+    position: relative !important;
+    z-index: 0 !important;
+    /* Reset color inheritance - HTML will use its own colors from inline styles */
+    color: transparent !important;
+    background-color: transparent !important;
+  }
+
+  /* Reset potentially problematic styles inside email content */
+  .email-html-content-wrapper * {
+    box-sizing: border-box !important;
+  }
+
+  /* Prevent email HTML from affecting elements outside */
+  .email-html-content-wrapper img,
+  .email-html-content-wrapper a,
+  .email-html-content-wrapper div,
+  .email-html-content-wrapper p,
+  .email-html-content-wrapper span {
+    max-width: 100% !important;
+  }
+
+  /* Force all elements inside to use their own colors from inline styles or default black */
+  /* Elements with inline color styles will use those, others will use default black */
+  /* This ensures HTML email templates maintain their original colors regardless of theme */
+  .email-html-content-wrapper *:not([style*="color"]) {
+    color: #000000 !important;
+  }
+
+  /* Elements without explicit color should use black, not theme colors */
+  .email-html-content-wrapper p:not([style*="color"]),
+  .email-html-content-wrapper div:not([style*="color"]),
+  .email-html-content-wrapper span:not([style*="color"]),
+  .email-html-content-wrapper td:not([style*="color"]),
+  .email-html-content-wrapper th:not([style*="color"]) {
+    color: #000000 !important;
+  }
+}
+
+/*
+ * React Flow theming bridge (EVO-1270).
+ *
+ * React Flow ships its own `--xy-*` design tokens with light defaults
+ * scoped to `.react-flow {}` and dark defaults scoped to
+ * `.react-flow.dark {}`. The CRM theme toggle drives that `.dark` class
+ * on the React Flow wrapper via the `colorMode` prop on <ReactFlow>
+ * (set in BaseFlowCanvas from the `useDarkMode()` hook), so the
+ * package's own dark switching now works correctly out of the box.
+ *
+ * We still want the chrome (Controls, MiniMap internals, edges,
+ * attribution, handle) to look like the rest of the CRM, so this block
+ * remaps the relevant `--xy-*-default` tokens onto the shadcn semantic
+ * tokens (--color-card, --color-foreground, --color-border, etc.).
+ * Each shadcn token has its own light/dark resolution in @evoapi/
+ * design-system/styles, so the chrome tracks the global theme via the
+ * shadcn cascade.
+ *
+ * Specificity is bumped to `.react-flow.react-flow` so this block beats
+ * the package's `.react-flow.dark {}` selector when both load (the
+ * package CSS is imported in main.tsx before globals.css so cascade
+ * order also favours this file).
+ */
+.react-flow.react-flow {
+  --xy-controls-button-background-color-default: var(--color-card);
+  --xy-controls-button-background-color-hover-default: var(--color-accent);
+  --xy-controls-button-color-default: var(--color-foreground);
+  --xy-controls-button-color-hover-default: var(--color-foreground);
+  --xy-controls-button-border-color-default: var(--color-border);
+  --xy-minimap-background-color-default: var(--color-flow-palette-bg);
+  --xy-edge-stroke-default: var(--color-flow-edge-default);
+  --xy-edge-stroke-selected-default: var(--color-flow-edge-active);
+  --xy-connectionline-stroke-default: var(--color-flow-edge-active);
+  --xy-attribution-background-color-default: color-mix(in srgb, var(--color-card) 50%, transparent);
+  --xy-handle-background-color-default: var(--color-muted-foreground);
+  --xy-handle-border-color-default: var(--color-foreground);
+}

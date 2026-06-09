@@ -1,0 +1,2 @@
+ALTER TABLE evo_core_agents DROP IF EXISTS COLUMN goal;
+ALTER TABLE evo_core_agents DROP IF EXISTS COLUMN role;
