@@ -19,12 +19,23 @@ module BotRuntime
     private
 
     def build_message_event
+      content = @message.content.to_s
+
+      if content.blank? && @message.attachments.present?
+        transcriptions = @message.attachments.filter_map do |att|
+          meta = att.meta || {}
+          text = meta['transcribed_text'] || meta[:transcribed_text]
+          text if text.present?
+        end
+        content = transcriptions.join("\n\n") if transcriptions.any?
+      end
+
       {
         agent_bot_id: @agent_bot.id,
         conversation_id: @conversation.display_id,
         contact_id: stable_contact_id,
         message_id: @message.id.to_s,
-        message_content: @message.content.to_s,
+        message_content: content,
         api_key: @agent_bot.api_key.to_s,
         outgoing_url: @agent_bot.outgoing_url.to_s,
         bot_config: build_bot_config,
