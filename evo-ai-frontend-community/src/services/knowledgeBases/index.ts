@@ -12,27 +12,27 @@ export interface KnowledgeBase {
 
 export const knowledgeBasesService = {
   list: async (): Promise<ApiResponse<KnowledgeBase[]>> => {
-    const response = await api.get<ApiResponse<KnowledgeBase[]>>('/api/v1/knowledge_bases');
+    const response = await api.get<ApiResponse<KnowledgeBase[]>>('/knowledge_bases');
     return response.data;
   },
   
   get: async (id: number | string): Promise<ApiResponse<KnowledgeBase>> => {
-    const response = await api.get<ApiResponse<KnowledgeBase>>(`/api/v1/knowledge_bases/${id}`);
+    const response = await api.get<ApiResponse<KnowledgeBase>>(`/knowledge_bases/${id}`);
     return response.data;
   },
 
   create: async (data: { name: string; description?: string }): Promise<ApiResponse<KnowledgeBase>> => {
-    const response = await api.post<ApiResponse<KnowledgeBase>>('/api/v1/knowledge_bases', { knowledge_base: data });
+    const response = await api.post<ApiResponse<KnowledgeBase>>('/knowledge_bases', { knowledge_base: data });
     return response.data;
   },
 
   update: async (id: number | string, data: { name?: string; description?: string }): Promise<ApiResponse<KnowledgeBase>> => {
-    const response = await api.put<ApiResponse<KnowledgeBase>>(`/api/v1/knowledge_bases/${id}`, { knowledge_base: data });
+    const response = await api.put<ApiResponse<KnowledgeBase>>(`/knowledge_bases/${id}`, { knowledge_base: data });
     return response.data;
   },
 
   delete: async (id: number | string): Promise<ApiResponse<void>> => {
-    const response = await api.delete<ApiResponse<void>>(`/api/v1/knowledge_bases/${id}`);
+    const response = await api.delete<ApiResponse<void>>(`/knowledge_bases/${id}`);
     return response.data;
   }
 };
