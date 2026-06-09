@@ -1,5 +1,5 @@
 import { api } from '../core/api';
-import { ApiResponse } from '@/types/api';
+import { ApiResponse } from '@/types/core/api';
 
 export interface KnowledgeBase {
   id: number;
