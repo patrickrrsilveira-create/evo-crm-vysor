@@ -11,6 +11,9 @@ class VoxtralProvider(TTSProvider):
         voice_id = config.get("voice_id") or config.get("voice") or "default"
         api_url = config.get("api_url", "https://api.voxtral.ai/v1/tts")
 
+        if token and "|" in token:
+            api_url, token = token.split("|", 1)
+
         if not token:
             raise ValueError("Voxtral provider requires an API token (apiKey).")
 

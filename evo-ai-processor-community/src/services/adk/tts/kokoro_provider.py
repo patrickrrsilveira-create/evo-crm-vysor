@@ -11,6 +11,9 @@ class KokoroProvider(TTSProvider):
         voice_id = config.get("voice_id") or config.get("voice") or "af_heart"
         api_url = config.get("api_url", "https://api.kokoro.io/v1/audio/speech")
 
+        if token and "|" in token:
+            api_url, token = token.split("|", 1)
+
         if not token:
             raise ValueError("Kokoro provider requires an API token (apiKey).")
 
