@@ -975,27 +975,11 @@ async def handle_message_send(
     text = extract_text_from_message(message)
     files = extract_files_from_message(message)
 
-    # Allow empty text if we have files
-    if not text and not files:
-        return error_response(
-            request=request,
-            code=map_status_to_error_code(status.HTTP_400_BAD_REQUEST),
-            message="Invalid params",
-            status_code=status.HTTP_400_BAD_REQUEST,
-            details={
-                "jsonrpc": "2.0",
-                "id": request_id,
-                "error": {
-                    "code": -32602,
-                    "message": "Invalid params",
-                    "data": {"missing": "text content or files in message parts"},
-                },
-            }
-        )
-
-    # Use default text if only files provided
+    # Use default text if only files provided or if message is completely empty
     if not text and files:
         text = "Analyze the provided files"
+    elif not text:
+        text = " "  # Send a blank space to prevent LLM validation errors
 
     logger.info(f"📝 Extracted text: {text}")
     logger.info(f"📎 Extracted files: {len(files)}")
@@ -1175,9 +1159,11 @@ async def handle_message_stream(
     files = extract_files_from_message(message)
     context_id = params.get("contextId", str(uuid.uuid4()))
 
-    # Use default text if only files provided
+    # Use default text if only files provided or if message is completely empty
     if not text and files:
         text = "Analyze the provided files"
+    elif not text:
+        text = " "  # Send a blank space to prevent LLM validation errors
 
     # Extract and combine conversation history
     conversation_history = await extract_conversation_history(str(agent_id), context_id, db=db)
