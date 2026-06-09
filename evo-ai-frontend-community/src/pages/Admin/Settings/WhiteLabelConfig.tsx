@@ -263,8 +263,6 @@ export default function PremiumConfig() {
                   {...register('COMPANY_NAME')}
                 />
               </div>
-
-              </div>
             </CardContent>
           </Card>
 
