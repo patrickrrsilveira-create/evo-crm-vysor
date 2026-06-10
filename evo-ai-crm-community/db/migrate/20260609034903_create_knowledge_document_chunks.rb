@@ -3,8 +3,8 @@ class CreateKnowledgeDocumentChunks < ActiveRecord::Migration[7.0]
     # Ensure pgvector is enabled
     enable_extension 'vector' unless extension_enabled?('vector')
 
-    create_table :knowledge_document_chunks do |t|
-      t.references :knowledge_document, null: false, foreign_key: true
+    create_table :knowledge_document_chunks, id: :uuid, default: -> { "gen_random_uuid()" } do |t|
+      t.references :knowledge_document, null: false, foreign_key: true, type: :uuid
       t.text :content, null: false
       t.vector :embedding, limit: 1536 # OpenAI text-embedding-ada-002 size
 
