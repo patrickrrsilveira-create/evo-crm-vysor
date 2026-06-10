@@ -1,8 +1,8 @@
 class CreateKnowledgeBaseAgentBots < ActiveRecord::Migration[7.0]
   def change
-    create_table :knowledge_base_agent_bots do |t|
-      t.references :knowledge_base, null: false, foreign_key: true
-      t.references :agent_bot, null: false, foreign_key: true
+    create_table :knowledge_base_agent_bots, id: :uuid, default: -> { "gen_random_uuid()" } do |t|
+      t.references :knowledge_base, null: false, foreign_key: true, type: :uuid
+      t.references :agent_bot, null: false, foreign_key: true, type: :uuid
 
       t.timestamps
     end

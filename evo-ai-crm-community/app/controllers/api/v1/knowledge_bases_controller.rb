@@ -4,14 +4,14 @@ class Api::V1::KnowledgeBasesController < Api::V1::BaseController
   before_action :set_knowledge_base, only: [:show, :update, :destroy]
 
   def index
-    @knowledge_bases = Current.account.knowledge_bases
+    @knowledge_bases = KnowledgeBase.all
   end
 
   def show
   end
 
   def create
-    @knowledge_base = Current.account.knowledge_bases.new(knowledge_base_params)
+    @knowledge_base = KnowledgeBase.new(knowledge_base_params)
 
     if @knowledge_base.save
       render :show, status: :created
@@ -36,7 +36,7 @@ class Api::V1::KnowledgeBasesController < Api::V1::BaseController
   private
 
   def set_knowledge_base
-    @knowledge_base = Current.account.knowledge_bases.find(params[:id])
+    @knowledge_base = KnowledgeBase.find(params[:id])
   end
 
   def knowledge_base_params
