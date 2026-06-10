@@ -1104,11 +1104,11 @@ export default function PipelineKanban() {
         </div>
 
         {/* Kanban Board */}
-        <div className="flex-1 overflow-hidden">
-          <div className="h-full overflow-x-auto overflow-y-hidden px-4 sm:px-6 lg:px-8 py-6">
+        <div className="flex-1 min-h-0 overflow-hidden">
+          <div className="h-full overflow-x-auto overflow-y-auto px-4 sm:px-6 lg:px-8 py-6 scrollbar-thin scrollbar-thumb-muted-foreground/20 scrollbar-track-transparent">
             {/* Kanban Content */}
             <div
-              className="flex gap-6 h-full pb-6"
+              className="flex gap-6 h-full pb-2"
               style={{ width: 'fit-content', minWidth: '100%' }}
             >
               {/* Stage Columns */}
