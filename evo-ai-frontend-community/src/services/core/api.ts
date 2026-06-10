@@ -69,7 +69,7 @@ api.interceptors.request.use(config => {
     config.headers.Authorization = authHeader.Authorization;
   }
 
-  if (config.data instanceof FormData && config.headers['Content-Type'] === undefined) {
+  if (config.data instanceof FormData) {
     delete config.headers['Content-Type'];
     delete config.headers['content-type'];
   }
