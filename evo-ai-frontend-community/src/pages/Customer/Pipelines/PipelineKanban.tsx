@@ -1104,10 +1104,8 @@ export default function PipelineKanban() {
         </div>
 
         {/* Kanban Board */}
-        <div className="flex-1 min-h-0 min-w-0 overflow-hidden">
-          <div className="h-full w-full overflow-x-auto overflow-y-hidden px-4 sm:px-6 lg:px-8 py-6">
-            {/* Kanban Content */}
-            <div className="flex gap-6 h-full pb-6 w-max min-w-full">
+        <div className="flex-1 min-h-0 min-w-0 overflow-x-auto overflow-y-hidden">
+          <div className="flex gap-6 h-full px-4 sm:px-6 lg:px-8 py-6 w-max min-w-full">
               {/* Stage Columns */}
               {stages.map((stage: PipelineStage) => (
                 <div key={stage.id} className="min-w-[320px] w-[320px] max-w-[320px] flex-shrink-0">
@@ -1529,7 +1527,7 @@ export default function PipelineKanban() {
               ))}
 
               {/* Add Stage Column */}
-              <div className="w-80 flex-shrink-0">
+              <div className="min-w-[320px] w-[320px] max-w-[320px] flex-shrink-0">
                 <div
                   className="bg-muted/50 rounded-xl p-6 h-full border-2 border-dashed border-border flex flex-col items-center justify-center text-muted-foreground hover:border-primary/50 hover:text-primary transition-colors cursor-pointer"
                   onClick={() => setShowCreateStageModal(true)}
