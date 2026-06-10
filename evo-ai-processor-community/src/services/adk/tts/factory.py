@@ -5,6 +5,7 @@ from .fish_audio_provider import FishAudioProvider
 from .cartesia_provider import CartesiaProvider
 from .kokoro_provider import KokoroProvider
 from .voxtral_provider import VoxtralProvider
+from .openrouter_provider import OpenRouterProvider
 
 _PROVIDERS: Dict[str, Type[TTSProvider]] = {
     "elevenlabs": ElevenLabsProvider,
@@ -13,6 +14,7 @@ _PROVIDERS: Dict[str, Type[TTSProvider]] = {
     "cartesia": CartesiaProvider,
     "kokoro": KokoroProvider,
     "voxtral": VoxtralProvider,
+    "openrouter": OpenRouterProvider,
 }
 
 def get_tts_provider(provider_name: str) -> TTSProvider:
