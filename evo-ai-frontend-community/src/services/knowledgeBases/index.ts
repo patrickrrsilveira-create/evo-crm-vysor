@@ -34,5 +34,15 @@ export const knowledgeBasesService = {
   delete: async (id: number | string): Promise<ApiResponse<void>> => {
     const response = await api.delete<ApiResponse<void>>(`/knowledge_bases/${id}`);
     return response.data;
+  },
+
+  getDocuments: async (id: number | string): Promise<any> => {
+    const response = await api.get(`/knowledge_bases/${id}/knowledge_documents`);
+    return response.data;
+  },
+
+  getAgentBots: async (id: number | string): Promise<any> => {
+    const response = await api.get(`/knowledge_bases/${id}/agent_bots`);
+    return response.data;
   }
 };

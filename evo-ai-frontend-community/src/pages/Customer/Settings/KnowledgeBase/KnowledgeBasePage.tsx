@@ -17,6 +17,9 @@ const KnowledgeBasePage = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [isLinkAgentModalOpen, setIsLinkAgentModalOpen] = useState(false);
+  const [documents, setDocuments] = useState<any[]>([]);
+  const [agentBots, setAgentBots] = useState<any[]>([]);
+  const [isFetchingDetails, setIsFetchingDetails] = useState(false);
 
   const fetchBases = async (newBaseId?: number) => {
     setIsLoading(true);
@@ -41,6 +44,31 @@ const KnowledgeBasePage = () => {
   useEffect(() => {
     fetchBases();
   }, []);
+
+  const fetchBaseDetails = async (baseId: number) => {
+    setIsFetchingDetails(true);
+    try {
+      const [docsResponse, agentsResponse] = await Promise.all([
+        knowledgeBasesService.getDocuments(baseId),
+        knowledgeBasesService.getAgentBots(baseId)
+      ]);
+      setDocuments((docsResponse as any).data || docsResponse);
+      setAgentBots((agentsResponse as any).data || agentsResponse);
+    } catch (error) {
+      toast.error('Erro ao carregar detalhes da base');
+    } finally {
+      setIsFetchingDetails(false);
+    }
+  };
+
+  useEffect(() => {
+    if (selectedBase) {
+      fetchBaseDetails(selectedBase.id);
+    } else {
+      setDocuments([]);
+      setAgentBots([]);
+    }
+  }, [selectedBase]);
 
   return (
     <div className="flex flex-col gap-6 p-6 max-w-6xl mx-auto w-full h-full">
@@ -176,28 +204,63 @@ const KnowledgeBasePage = () => {
               </div>
             </CardHeader>
             <CardContent className="p-0">
-              <div className="flex h-[400px]">
-                <div className="w-1/2 p-6 border-r overflow-y-auto">
-                  <h3 className="font-medium flex items-center gap-2 mb-4">
-                    <FileText className="h-4 w-4 text-primary" />
-                    Documentos
-                  </h3>
-                  <div className="text-sm text-muted-foreground text-center py-8">
-                    Esta seção exibirá os documentos ingeridos.<br />
-                    Integração com PGVector concluída.
+              {isFetchingDetails ? (
+                <div className="flex h-[400px] items-center justify-center">
+                  <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                </div>
+              ) : (
+                <div className="flex h-[400px]">
+                  <div className="w-1/2 p-6 border-r overflow-y-auto">
+                    <h3 className="font-medium flex items-center gap-2 mb-4">
+                      <FileText className="h-4 w-4 text-primary" />
+                      Documentos ({documents.length})
+                    </h3>
+                    {documents.length === 0 ? (
+                      <div className="text-sm text-muted-foreground text-center py-8">
+                        Nenhum documento adicionado ainda.<br />
+                        Clique em "Adicionar PDF / Link".
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {documents.map((doc) => (
+                          <div key={doc.id} className="flex flex-col gap-1 p-3 border rounded-md">
+                            <div className="flex items-center gap-2">
+                              {doc.content_type === 'url' ? <Link className="h-4 w-4 text-primary" /> : <FileText className="h-4 w-4 text-primary" />}
+                              <span className="font-medium text-sm truncate" title={doc.title}>{doc.title}</span>
+                            </div>
+                            <span className="text-xs text-muted-foreground ml-6 truncate" title={doc.file_url}>{doc.file_url}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <div className="w-1/2 p-6 overflow-y-auto">
+                    <h3 className="font-medium flex items-center gap-2 mb-4">
+                      <Bot className="h-4 w-4 text-primary" />
+                      Agentes Vinculados ({agentBots.length})
+                    </h3>
+                    {agentBots.length === 0 ? (
+                      <div className="text-sm text-muted-foreground text-center py-8">
+                        Nenhum agente vinculado.<br />
+                        Clique em "Vincular Agente".
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {agentBots.map((agent) => (
+                          <div key={agent.id} className="flex items-center gap-3 p-3 border rounded-md">
+                            <div className="bg-primary/10 p-2 rounded-md text-primary">
+                              <Bot className="h-4 w-4" />
+                            </div>
+                            <div>
+                              <p className="font-medium text-sm">{agent.name}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
-                <div className="w-1/2 p-6 overflow-y-auto">
-                  <h3 className="font-medium flex items-center gap-2 mb-4">
-                    <Bot className="h-4 w-4 text-primary" />
-                    Agentes Vinculados
-                  </h3>
-                  <div className="text-sm text-muted-foreground text-center py-8">
-                    Esta seção exibirá os agentes vinculados.<br />
-                    Pronto para consultar.
-                  </div>
-                </div>
-              </div>
+              )}
             </CardContent>
           </Card>
         )}
