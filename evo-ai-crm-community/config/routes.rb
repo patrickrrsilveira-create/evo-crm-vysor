@@ -244,8 +244,8 @@ Rails.application.routes.draw do
       end
 
       namespace :knowledge do
-        post 'ingest/file', to: '/api/v1/knowledge_ingest#file'
-        post 'ingest/url', to: '/api/v1/knowledge_ingest#url'
+        post 'ingest/file', to: 'knowledge_ingest#file'
+        post 'ingest/url', to: 'knowledge_ingest#url'
       end
 
       # Product Catalog (EVO-1109)

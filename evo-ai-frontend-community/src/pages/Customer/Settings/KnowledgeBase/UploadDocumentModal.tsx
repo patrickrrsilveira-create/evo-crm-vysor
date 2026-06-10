@@ -48,11 +48,7 @@ export const UploadDocumentModal: React.FC<UploadDocumentModalProps> = ({
         formData.append('title', title);
         formData.append('file', file);
 
-        await api.post('/knowledge/ingest/file', formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        });
+        await api.post('/knowledge/ingest/file', formData);
       } else {
         if (!url.trim()) {
           toast.error('A URL é obrigatória');
