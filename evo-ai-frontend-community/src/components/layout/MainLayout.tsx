@@ -139,8 +139,8 @@ export default function MainLayout({ children }: MainLayoutProps) {
         />
 
         {/* Main Content */}
-        <main className="flex-1 min-h-0 flex flex-col relative bg-background transition-colors duration-150 ease-in-out">
-          <div className="flex-1 min-h-0 overflow-auto flex flex-col">{children}</div>
+        <main className="flex-1 min-h-0 overflow-auto bg-background transition-colors duration-150 ease-in-out">
+          <div className="h-full">{children}</div>
         </main>
 
       </div>
