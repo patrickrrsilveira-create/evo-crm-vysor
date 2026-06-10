@@ -23,14 +23,14 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/knowledge", tags=["Knowledge"])
 
 class IngestUrlRequest(BaseModel):
-    knowledge_base_id: int
+    knowledge_base_id: str
     url: str
     title: str
 
 @router.post("/ingest/file")
 async def ingest_file(
     background_tasks: BackgroundTasks,
-    knowledge_base_id: int = Form(...),
+    knowledge_base_id: str = Form(...),
     title: str = Form(...),
     file: UploadFile = File(...),
     account_id: int = Depends(verify_evo_auth),
@@ -41,8 +41,8 @@ async def ingest_file(
     """
     # Verify knowledge base belongs to account
     kb = await db.fetch_one(
-        "SELECT id FROM knowledge_bases WHERE id = $1 AND account_id = $2",
-        knowledge_base_id, account_id
+        "SELECT id FROM knowledge_bases WHERE id = $1",
+        knowledge_base_id
     )
     if not kb:
         raise HTTPException(status_code=404, detail="Knowledge base not found or unauthorized")
@@ -90,10 +90,10 @@ async def ingest_url(
     """
     Ingest a web page URL into the RAG Knowledge Base
     """
-    # Verify knowledge base belongs to account
+    # Verify knowledge base exists
     kb = await db.fetch_one(
-        "SELECT id FROM knowledge_bases WHERE id = $1 AND account_id = $2",
-        req.knowledge_base_id, account_id
+        "SELECT id FROM knowledge_bases WHERE id = $1",
+        req.knowledge_base_id
     )
     if not kb:
         raise HTTPException(status_code=404, detail="Knowledge base not found or unauthorized")
