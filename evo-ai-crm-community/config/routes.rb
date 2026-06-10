@@ -243,7 +243,7 @@ Rails.application.routes.draw do
         resources :agent_bots, controller: 'knowledge_bases/agent_bots', only: [:index, :create, :destroy]
       end
 
-      namespace :knowledge do
+      scope 'knowledge' do
         post 'ingest/file', to: 'knowledge_ingest#file'
         post 'ingest/url', to: 'knowledge_ingest#url'
       end
