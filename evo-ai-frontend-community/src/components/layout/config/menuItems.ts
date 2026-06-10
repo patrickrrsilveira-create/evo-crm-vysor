@@ -127,13 +127,13 @@ export const getCustomerMenuItems = (t: (key: string) => string): MenuItem[] => 
   //   resource: 'journeys',
   //   action: 'read',
   // },
-  // {
-  //   name: t('menu.customer.campaigns'),
-  //   href: '/campaigns',
-  //   icon: Megaphone,
-  //   resource: 'campaigns',
-  //   action: 'read',
-  // },
+  {
+    name: t('menu.customer.campaigns'),
+    href: '/campaigns',
+    icon: Megaphone,
+    resource: 'campaigns',
+    action: 'read',
+  },
   {
     id: 'customer-agents',
     name: t('menu.customer.agents'),
