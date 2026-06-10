@@ -254,6 +254,19 @@ const KnowledgeBasePage = () => {
                             <div>
                               <p className="font-medium text-sm">{agent.name}</p>
                             </div>
+                            <Button variant="ghost" size="sm" className="ml-auto text-red-500 hover:text-red-700 hover:bg-red-50" onClick={async () => {
+                              if (window.confirm('Desvincular este agente da base?')) {
+                                try {
+                                  await knowledgeBasesService.unlinkAgentBot(selectedBase.id, agent.id);
+                                  toast.success('Agente desvinculado!');
+                                  fetchBaseDetails(selectedBase.id);
+                                } catch (e) {
+                                  toast.error('Erro ao desvincular agente');
+                                }
+                              }
+                            }}>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
                           </div>
                         ))}
                       </div>

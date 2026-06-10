@@ -114,8 +114,8 @@ class KnowledgeService:
 
     async def process_and_store_document(
         self, 
-        knowledge_base_id: int, 
-        document_id: int, 
+        knowledge_base_id: str, 
+        document_id: str, 
         text_content: str
     ):
         """Process text, generate chunks, generate embeddings, and store in DB."""
@@ -150,7 +150,7 @@ class KnowledgeService:
                     
         logger.info(f"Successfully stored {len(chunks)} embedded chunks for document {document_id}")
 
-    async def retrieve_knowledge(self, query: str, knowledge_base_ids: List[int], limit: int = 5) -> str:
+    async def retrieve_knowledge(self, query: str, knowledge_base_ids: List[str], limit: int = 5) -> str:
         """Search for relevant chunks across given knowledge bases."""
         if not knowledge_base_ids:
             return ""
@@ -174,7 +174,7 @@ class KnowledgeService:
             SELECT c.content, c.embedding <=> $1::vector AS distance
             FROM knowledge_document_chunks c
             JOIN knowledge_documents d ON c.knowledge_document_id = d.id
-            WHERE d.knowledge_base_id = ANY($2::int[])
+            WHERE d.knowledge_base_id = ANY($2::uuid[])
             ORDER BY c.embedding <=> $1::vector
             LIMIT $3
         """
@@ -188,7 +188,7 @@ class KnowledgeService:
         combined_text = "\n\n---\n\n".join([row["content"] for row in results])
         return combined_text
 
-    async def search_agent_knowledge(self, agent_bot_id: int, query: str, limit: int = 5) -> str:
+    async def search_agent_knowledge(self, agent_bot_id: str, query: str, limit: int = 5) -> str:
         """Search for relevant chunks across all knowledge bases attached to an agent bot."""
         pool = await self.db.get_pool()
         
