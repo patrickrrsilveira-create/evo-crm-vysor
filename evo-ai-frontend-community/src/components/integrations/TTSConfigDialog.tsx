@@ -18,9 +18,10 @@ import { Loader2 } from 'lucide-react';
 import { useLanguage } from '@/hooks/useLanguage';
 
 interface TTSConfig {
-  provider: 'elevenlabs' | 'fish' | 'cartesia' | 'kokoro' | 'voxtral';
+  provider: 'elevenlabs' | 'fish' | 'cartesia' | 'kokoro' | 'voxtral' | 'openrouter';
   apiKey: string;
   api_url?: string; // Custom API URL for Kokoro/Voxtral (e.g., OpenRouter endpoint)
+  model?: string;   // Model Reference ID for OpenRouter
   respondInAudio: 'when_client_asks' | 'always' | 'never';
   voice: string;
   // ElevenLabs specific
@@ -54,6 +55,7 @@ const TTSConfigDialog = ({
     provider: initialConfig?.provider || 'elevenlabs',
     apiKey: initialConfig?.apiKey || '',
     api_url: initialConfig?.api_url || '',
+    model: initialConfig?.model || '',
     respondInAudio: initialConfig?.respondInAudio || 'when_client_asks',
     voice: initialConfig?.voice || '',
     stability: initialConfig?.stability ?? 80,
@@ -70,6 +72,7 @@ const TTSConfigDialog = ({
         provider: initialConfig.provider || 'elevenlabs',
         apiKey: initialConfig.apiKey || '',
         api_url: initialConfig.api_url || '',
+        model: initialConfig.model || '',
         respondInAudio: initialConfig.respondInAudio || 'when_client_asks',
         voice: initialConfig.voice || '',
         stability: initialConfig.stability ?? 80,
@@ -154,15 +157,22 @@ const TTSConfigDialog = ({
             <Label>Provedor TTS</Label>
             <Select
               value={config.provider}
-              onValueChange={(value: 'elevenlabs' | 'fish' | 'cartesia' | 'kokoro' | 'voxtral') =>
-                setConfig({ ...config, provider: value, voice: '' })
-              }
+              onValueChange={(value: 'elevenlabs' | 'fish' | 'cartesia' | 'kokoro' | 'voxtral' | 'openrouter') => {
+                const isOpenRouter = value === 'openrouter';
+                setConfig({ 
+                  ...config, 
+                  provider: value, 
+                  voice: '',
+                  api_url: isOpenRouter ? 'https://openrouter.ai/api/v1/audio/speech' : config.api_url
+                });
+              }}
             >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="elevenlabs">ElevenLabs</SelectItem>
+                <SelectItem value="openrouter">OpenRouter</SelectItem>
                 <SelectItem value="fish">Fish Audio</SelectItem>
                 <SelectItem value="cartesia">Cartesia</SelectItem>
                 <SelectItem value="kokoro">Kokoro</SelectItem>
@@ -183,30 +193,45 @@ const TTSConfigDialog = ({
             />
           </div>
 
-          {/* URL da API — somente para Kokoro e Voxtral */}
-          {(config.provider === 'kokoro' || config.provider === 'voxtral') && (
+          {/* URL da API — somente para Kokoro, Voxtral e OpenRouter */}
+          {(config.provider === 'kokoro' || config.provider === 'voxtral' || config.provider === 'openrouter') && (
             <div className="space-y-2">
               <Label htmlFor="api_url">URL da API</Label>
               <Input
                 id="api_url"
                 type="text"
                 placeholder={
-                  config.provider === 'kokoro'
-                    ? 'https://openrouter.ai/api/v1/audio/speech  (OpenRouter) ou deixe vazio para Kokoro direto'
-                    : 'https://api.voxtral.ai/v1/tts  (ou endpoint customizado)'
+                  config.provider === 'openrouter'
+                    ? 'https://openrouter.ai/api/v1/audio/speech'
+                    : config.provider === 'kokoro'
+                      ? 'https://api.kokoro.io/v1/audio/speech'
+                      : 'https://api.voxtral.ai/v1/tts'
                 }
                 value={config.api_url || ''}
                 onChange={(e) => setConfig({ ...config, api_url: e.target.value })}
               />
               {config.provider === 'kokoro' && (
                 <p className="text-xs text-muted-foreground">
-                  Para usar via OpenRouter coloque:{' '}
-                  <code className="bg-muted px-1 rounded">https://openrouter.ai/api/v1/audio/speech</code>
-                  <br />
-                  Voz feminina: <code className="bg-muted px-1 rounded">pf_dora</code> · Voz masculina:{' '}
-                  <code className="bg-muted px-1 rounded">pm_alex</code>
+                  Dica: Para usar via OpenRouter, altere o "Provedor TTS" acima para "OpenRouter".
                 </p>
               )}
+            </div>
+          )}
+
+          {/* Model Entry (For OpenRouter) */}
+          {config.provider === 'openrouter' && (
+            <div className="space-y-2">
+              <Label htmlFor="model">Modelo TTS</Label>
+              <Input
+                id="model"
+                type="text"
+                placeholder="Ex: google/gemini-3.1-flash-tts-preview"
+                value={config.model || ''}
+                onChange={(e) => setConfig({ ...config, model: e.target.value })}
+              />
+              <p className="text-xs text-muted-foreground">
+                Informe o nome exato do modelo conforme listado no OpenRouter.
+              </p>
             </div>
           )}
 
@@ -262,7 +287,7 @@ const TTSConfigDialog = ({
             </div>
           )}
 
-          {/* Manual Voice ID Entry (For Fish, Cartesia, Kokoro, Voxtral) */}
+          {/* Manual Voice ID Entry (For Fish, Cartesia, Kokoro, Voxtral, OpenRouter) */}
           {config.apiKey && config.provider !== 'elevenlabs' && (
             <div className="space-y-2">
               <Label htmlFor="voiceId">ID da Voz (Model Reference ID)</Label>
