@@ -1553,7 +1553,6 @@ export default function PipelineKanban() {
             </div>
           </div>
         </div>
-      </div>
 
       {/* Edit Pipeline Modal */}
       {pipeline && (
