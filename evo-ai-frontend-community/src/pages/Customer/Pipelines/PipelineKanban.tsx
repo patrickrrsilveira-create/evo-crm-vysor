@@ -655,7 +655,7 @@ export default function PipelineKanban() {
 
   return (
     <div className="flex w-full h-full min-w-0 overflow-hidden">
-      <div className="flex-1 h-full flex flex-col bg-muted/30 min-w-0">
+      <div className="flex-1 min-h-0 flex flex-col bg-muted/30 min-w-0">
         {/* Header */}
         <div className="flex-shrink-0 bg-background border-b border-border shadow-sm">
           <div className="px-4 sm:px-6 lg:px-8">
