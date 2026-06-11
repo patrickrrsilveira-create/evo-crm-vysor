@@ -1084,6 +1084,44 @@ async def handle_message_send(
         structured = extract_structured_from_message_history(result.get("message_history"))
         artifacts = build_a2a_artifacts(final_response, structured)
 
+        # Automatically attach any generated audio from this turn
+        message_history = result.get("message_history", [])
+        if message_history:
+            for event in reversed(message_history):
+                # Stop if we reach the user's message
+                if event.get("role") == "user":
+                    break
+                
+                content = event.get("content", {})
+                parts = content.get("parts", []) if isinstance(content, dict) else []
+                for part in parts:
+                    if isinstance(part, dict) and "functionResponse" in part:
+                        fr = part["functionResponse"]
+                        if fr.get("name") == "text_to_speech":
+                            resp = fr.get("response", {})
+                            filename = resp.get("filename")
+                            if filename:
+                                try:
+                                    art = await artifacts_service.load_artifact(
+                                        app_name=str(agent_id),
+                                        user_id=str(user_id),
+                                        filename=filename,
+                                        session_id=session_id
+                                    )
+                                    if art and hasattr(art, "text") and art.text and "Artifact URL:" in art.text:
+                                        url = art.text.split("Artifact URL:")[1].strip()
+                                        artifacts.append({
+                                            "artifactId": str(uuid.uuid4()),
+                                            "parts": [{
+                                                "type": "audio",
+                                                "url": url,
+                                                "mimeType": "audio/mpeg"
+                                            }]
+                                        })
+                                        logger.info(f"🎧 Attached audio artifact to response: {url[:30]}...")
+                                except Exception as e:
+                                    logger.error(f"Error loading audio artifact: {e}")
+
         # Create A2A compliant response with history
         task_response = create_task_response(
             task_id,
