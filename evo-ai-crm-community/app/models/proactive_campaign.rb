@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class ProactiveCampaign < ApplicationRecord
   belongs_to :account
   # belongs_to :agent, class_name: 'AgentBot', optional: true
