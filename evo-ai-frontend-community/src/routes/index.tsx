@@ -647,7 +647,7 @@ const AppRouter = () => {
               <PrivateRoute>
                 <CustomerRoute>
                   <MainLayout>
-                    <PermissionRoute resource="campaigns" action="read">
+                    <PermissionRoute resource="automation_rules" action="read">
                       <ProactiveList />
                     </PermissionRoute>
                   </MainLayout>
@@ -662,7 +662,7 @@ const AppRouter = () => {
               <PrivateRoute>
                 <CustomerRoute>
                   <MainLayout>
-                    <PermissionRoute resource="campaigns" action="create">
+                    <PermissionRoute resource="automation_rules" action="create">
                       <ProactiveForm />
                     </PermissionRoute>
                   </MainLayout>
@@ -677,7 +677,7 @@ const AppRouter = () => {
               <PrivateRoute>
                 <CustomerRoute>
                   <MainLayout>
-                    <PermissionRoute resource="campaigns" action="update">
+                    <PermissionRoute resource="automation_rules" action="update">
                       <ProactiveForm />
                     </PermissionRoute>
                   </MainLayout>

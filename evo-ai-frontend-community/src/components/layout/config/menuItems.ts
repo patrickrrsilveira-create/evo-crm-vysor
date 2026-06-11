@@ -138,7 +138,7 @@ export const getCustomerMenuItems = (t: (key: string) => string): MenuItem[] => 
     name: 'Marketing Ativo',
     href: '/marketing',
     icon: Megaphone,
-    resource: 'campaigns', // Reuse campaigns permission
+    resource: 'automation_rules',
     action: 'read',
   },
   {
