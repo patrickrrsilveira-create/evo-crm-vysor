@@ -8,9 +8,9 @@ logger = logging.getLogger(__name__)
 class OpenRouterProvider(TTSProvider):
     async def generate_speech(self, text: str, config: Dict[str, Any]) -> bytes:
         token = config.get("apiKey")
-        voice_id = config.get("voice_id") or config.get("voice") or "alloy"
+        voice_id = config.get("voice_id") or config.get("voice") or "af_heart"
         api_url = config.get("api_url") or "https://openrouter.ai/api/v1/audio/speech"
-        model_name = config.get("model") or "openai/gpt-4o-mini-tts-2025-12-15"
+        model_name = config.get("model") or "hexgrad/kokoro-82m"
 
         api_url = api_url.strip() if api_url else ""
         token = token.strip() if token else ""
