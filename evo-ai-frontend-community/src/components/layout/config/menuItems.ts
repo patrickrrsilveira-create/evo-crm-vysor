@@ -23,7 +23,7 @@ import {
   Shield,
   Package,
   // Filter,
-  // Megaphone,
+  Megaphone,
   // Route,
   BookOpen,
   ShieldCheck,
@@ -132,6 +132,13 @@ export const getCustomerMenuItems = (t: (key: string) => string): MenuItem[] => 
     href: '/campaigns',
     icon: Megaphone,
     resource: 'campaigns',
+    action: 'read',
+  },
+  {
+    name: 'Marketing Ativo',
+    href: '/marketing',
+    icon: Megaphone,
+    resource: 'campaigns', // Reuse campaigns permission
     action: 'read',
   },
   {

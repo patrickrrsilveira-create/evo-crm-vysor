@@ -59,6 +59,8 @@ import Journey from '@/pages/Customer/Journey/Journey';
 import JourneyFlowEditor from '@/pages/Customer/Journey/JourneyFlowEditor';
 import Campaigns from '@/pages/Customer/Campaigns/Campaigns';
 import NewCampaign from '@/pages/Customer/Campaigns/NewCampaign/NewCampaign';
+import ProactiveList from '@/pages/Customer/ProactiveCampaigns/ProactiveList';
+import ProactiveForm from '@/pages/Customer/ProactiveCampaigns/ProactiveForm';
 import CannedResponses from '@/pages/Customer/Settings/CannedResponses';
 import { Macros } from '@/pages/Customer/Settings/Macros';
 import Products from '@/pages/Customer/Settings/Products';
@@ -631,6 +633,52 @@ const AppRouter = () => {
                   <MainLayout>
                     <PermissionRoute resource="campaigns" action="update">
                       <NewCampaign />
+                    </PermissionRoute>
+                  </MainLayout>
+                </CustomerRoute>
+              </PrivateRoute>
+            }
+          />
+
+          {/* Marketing Ativo */}
+          <Route
+            path="/marketing"
+            element={
+              <PrivateRoute>
+                <CustomerRoute>
+                  <MainLayout>
+                    <PermissionRoute resource="campaigns" action="read">
+                      <ProactiveList />
+                    </PermissionRoute>
+                  </MainLayout>
+                </CustomerRoute>
+              </PrivateRoute>
+            }
+          />
+
+          <Route
+            path="/marketing/new"
+            element={
+              <PrivateRoute>
+                <CustomerRoute>
+                  <MainLayout>
+                    <PermissionRoute resource="campaigns" action="create">
+                      <ProactiveForm />
+                    </PermissionRoute>
+                  </MainLayout>
+                </CustomerRoute>
+              </PrivateRoute>
+            }
+          />
+
+          <Route
+            path="/marketing/:id/edit"
+            element={
+              <PrivateRoute>
+                <CustomerRoute>
+                  <MainLayout>
+                    <PermissionRoute resource="campaigns" action="update">
+                      <ProactiveForm />
                     </PermissionRoute>
                   </MainLayout>
                 </CustomerRoute>
