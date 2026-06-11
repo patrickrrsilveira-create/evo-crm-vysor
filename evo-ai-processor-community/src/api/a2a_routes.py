@@ -1108,14 +1108,24 @@ async def handle_message_send(
                                         filename=filename,
                                         session_id=session_id
                                     )
-                                    if art and hasattr(art, "text") and art.text and "Artifact URL:" in art.text:
-                                        url = art.text.split("Artifact URL:")[1].strip()
+                                    url = None
+                                    mime_type = "audio/mpeg"
+                                    if art:
+                                        if hasattr(art, "text") and art.text and "Artifact URL:" in art.text:
+                                            url = art.text.split("Artifact URL:")[1].strip()
+                                        elif hasattr(art, "inline_data") and art.inline_data and art.inline_data.data:
+                                            import base64
+                                            b64 = base64.b64encode(art.inline_data.data).decode("utf-8")
+                                            mime_type = art.inline_data.mime_type or mime_type
+                                            url = f"data:{mime_type};base64,{b64}"
+                                            
+                                    if url:
                                         artifacts.append({
                                             "artifactId": str(uuid.uuid4()),
                                             "parts": [{
                                                 "type": "audio",
                                                 "url": url,
-                                                "mimeType": "audio/mpeg"
+                                                "mimeType": mime_type
                                             }]
                                         })
                                         logger.info(f"🎧 Attached audio artifact to response: {url[:30]}...")
@@ -1165,14 +1175,24 @@ async def handle_message_send(
                         filename=filename,
                         session_id=session_id
                     )
-                    if art and hasattr(art, "text") and art.text and "Artifact URL:" in art.text:
-                        url = art.text.split("Artifact URL:")[1].strip()
+                    url = None
+                    mime_type = "audio/mpeg"
+                    if art:
+                        if hasattr(art, "text") and art.text and "Artifact URL:" in art.text:
+                            url = art.text.split("Artifact URL:")[1].strip()
+                        elif hasattr(art, "inline_data") and art.inline_data and art.inline_data.data:
+                            import base64
+                            b64 = base64.b64encode(art.inline_data.data).decode("utf-8")
+                            mime_type = art.inline_data.mime_type or mime_type
+                            url = f"data:{mime_type};base64,{b64}"
+                            
+                    if url:
                         artifacts.append({
                             "artifactId": str(uuid.uuid4()),
                             "parts": [{
                                 "type": "audio",
                                 "url": url,
-                                "mimeType": "audio/mpeg"
+                                "mimeType": mime_type
                             }]
                         })
                         logger.info(f"🎧 Attached fallback audio: {url[:30]}...")
