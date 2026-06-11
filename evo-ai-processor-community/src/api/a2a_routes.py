@@ -1122,6 +1122,63 @@ async def handle_message_send(
                                 except Exception as e:
                                     logger.error(f"Error loading audio artifact: {e}")
 
+        # Fallback: if the LLM ignored the tool but audio was requested, generate manually
+        has_audio_artifact = any(
+            part.get("type") == "audio" 
+            for art in artifacts 
+            for part in art.get("parts", [])
+        )
+        
+        tts_config = (agent.config or {}).get("integrations", {}).get("tts") or (agent.config or {}).get("integrations", {}).get("elevenlabs")
+        if not has_audio_artifact and tts_config and tts_config.get("apiKey"):
+            respond_in_audio = tts_config.get("respondInAudio", "when_client_asks")
+            metadata = params.get("metadata", {})
+            has_audio = metadata.get("has_audio", False)
+            should_generate = respond_in_audio == "always" or (respond_in_audio == "when_client_asks" and has_audio)
+            
+            if should_generate and final_response and final_response.strip():
+                try:
+                    logger.info("🎧 LLM ignored TTS tool. Generating fallback audio manually...")
+                    from src.services.adk.tts.factory import get_tts_provider
+                    from google.genai import types
+                    
+                    provider_name = tts_config.get("provider", "elevenlabs")
+                    provider = get_tts_provider(provider_name)
+                    audio_bytes = await provider.generate_speech(final_response, tts_config)
+                    
+                    filename = f"speech_fallback_{uuid.uuid4().hex[:8]}.mp3"
+                    audio_blob = types.Blob(mime_type="audio/mpeg", data=audio_bytes)
+                    audio_part = types.Part(inline_data=audio_blob)
+                    
+                    # Save to ADK artifacts
+                    await artifacts_service.save_artifact(
+                        app_name=str(agent_id),
+                        user_id=str(user_id),
+                        filename=filename,
+                        artifact=audio_part,
+                        session_id=session_id
+                    )
+                    
+                    art = await artifacts_service.load_artifact(
+                        app_name=str(agent_id),
+                        user_id=str(user_id),
+                        filename=filename,
+                        session_id=session_id
+                    )
+                    if art and hasattr(art, "text") and art.text and "Artifact URL:" in art.text:
+                        url = art.text.split("Artifact URL:")[1].strip()
+                        artifacts.append({
+                            "artifactId": str(uuid.uuid4()),
+                            "parts": [{
+                                "type": "audio",
+                                "url": url,
+                                "mimeType": "audio/mpeg"
+                            }]
+                        })
+                        logger.info(f"🎧 Attached fallback audio: {url[:30]}...")
+                except Exception as e:
+                    logger.error(f"Error generating fallback audio: {e}")
+
         # Create A2A compliant response with history
         task_response = create_task_response(
             task_id,
