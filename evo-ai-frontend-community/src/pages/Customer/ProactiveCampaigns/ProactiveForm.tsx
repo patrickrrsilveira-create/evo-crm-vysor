@@ -40,7 +40,7 @@ export default function ProactiveForm() {
         labelsService.getLabels({ per_page: 100 })
       ]);
       setAgents(agentsData);
-      setLabels(labelsRes.payload || []);
+      setLabels(labelsRes.data || []);
     } catch (e) {
       console.error('Failed to fetch options', e);
     }
