@@ -3,11 +3,17 @@ import { Button, Input, Label, Textarea, Select, SelectContent, SelectItem, Sele
 import { Save, ArrowLeft, UploadCloud, MessageSquare, Clock, Target, Bot } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { proactiveService, ProactiveCampaign } from '@/services/proactive/proactiveService';
-
+import { labelsService } from '@/services/contacts/labelsService';
+import AgentsService from '@/services/channels/agentsService';
+import { AgentChannel } from '@/types/channels/inbox';
+import { Label } from '@/types/settings';
 export default function ProactiveForm() {
   const navigate = useNavigate();
   const { id } = useParams();
   const isEditing = !!id;
+
+  const [agents, setAgents] = useState<AgentChannel[]>([]);
+  const [labels, setLabels] = useState<Label[]>([]);
 
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<Partial<ProactiveCampaign>>({
@@ -24,7 +30,21 @@ export default function ProactiveForm() {
     if (isEditing) {
       fetchCampaign();
     }
+    fetchOptions();
   }, [id]);
+
+  const fetchOptions = async () => {
+    try {
+      const [agentsData, labelsRes] = await Promise.all([
+        AgentsService.getAll(),
+        labelsService.getLabels({ per_page: 100 })
+      ]);
+      setAgents(agentsData);
+      setLabels(labelsRes.payload || []);
+    } catch (e) {
+      console.error('Failed to fetch options', e);
+    }
+  };
 
   const fetchCampaign = async () => {
     try {
@@ -106,17 +126,48 @@ export default function ProactiveForm() {
                 <SelectItem value="LABEL_ADDED">Quando receber Etiqueta</SelectItem>
                 <SelectItem value="PIPELINE_STAGE_ENTERED">Quando entrar no Funil</SelectItem>
                 <SelectItem value="SCHEDULED_DATE">Data Agendada (Transmissão)</SelectItem>
+                <SelectItem value="CONTACT_CREATED">Novo Contato Criado</SelectItem>
+                <SelectItem value="CONVERSATION_OPENED">Nova Conversa Aberta</SelectItem>
+                <SelectItem value="CONVERSATION_RESOLVED">Conversa Resolvida</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <div className="space-y-2">
-            <Label>Alvo (Nome da Etiqueta ou Etapa)</Label>
-            <Input 
-              placeholder="Ex: ganader_morno" 
-              value={formData.trigger_target}
-              onChange={e => setFormData({...formData, trigger_target: e.target.value})}
-            />
+            <Label>Alvo (Configuração do Gatilho)</Label>
+            {formData.trigger_type === 'SCHEDULED_DATE' ? (
+              <Input 
+                type="datetime-local"
+                value={formData.trigger_target}
+                onChange={e => setFormData({...formData, trigger_target: e.target.value})}
+              />
+            ) : formData.trigger_type === 'LABEL_ADDED' ? (
+              <Select 
+                value={formData.trigger_target} 
+                onValueChange={(val: string) => setFormData({...formData, trigger_target: val})}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione a etiqueta" />
+                </SelectTrigger>
+                <SelectContent>
+                  {labels.map(label => (
+                    <SelectItem key={label.id} value={label.title}>{label.title}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : formData.trigger_type === 'CONTACT_CREATED' || formData.trigger_type === 'CONVERSATION_OPENED' || formData.trigger_type === 'CONVERSATION_RESOLVED' ? (
+               <Input 
+                placeholder="Não exige alvo (Opcional)" 
+                disabled
+                value=""
+              />
+            ) : (
+              <Input 
+                placeholder="Ex: ganader_morno" 
+                value={formData.trigger_target}
+                onChange={e => setFormData({...formData, trigger_target: e.target.value})}
+              />
+            )}
           </div>
 
           <div className="space-y-2">
@@ -144,12 +195,19 @@ export default function ProactiveForm() {
             <Label className="flex items-center gap-2">
               <Bot className="w-4 h-4" /> Agente Remetente
             </Label>
-            <Input 
-              type="number"
-              placeholder="ID do Agente (Ex: 1 para Marcela)" 
-              value={formData.agent_id || ''}
-              onChange={e => setFormData({...formData, agent_id: parseInt(e.target.value) || undefined})}
-            />
+            <Select 
+              value={formData.agent_id ? formData.agent_id.toString() : ''} 
+              onValueChange={(val: string) => setFormData({...formData, agent_id: parseInt(val)})}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione o agente" />
+              </SelectTrigger>
+              <SelectContent>
+                {agents.map(agent => (
+                  <SelectItem key={agent.id} value={agent.id.toString()}>{agent.name || `Agente ${agent.id}`}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-2">

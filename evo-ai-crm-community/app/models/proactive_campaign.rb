@@ -5,7 +5,14 @@ class ProactiveCampaign < ApplicationRecord
   # belongs_to :agent, class_name: 'AgentBot', optional: true
 
   enum status: { DRAFT: 'DRAFT', ACTIVE: 'ACTIVE', PAUSED: 'PAUSED' }
-  enum trigger_type: { LABEL_ADDED: 'LABEL_ADDED', PIPELINE_STAGE_ENTERED: 'PIPELINE_STAGE_ENTERED', SCHEDULED_DATE: 'SCHEDULED_DATE' }
+  enum trigger_type: { 
+    LABEL_ADDED: 'LABEL_ADDED', 
+    PIPELINE_STAGE_ENTERED: 'PIPELINE_STAGE_ENTERED', 
+    SCHEDULED_DATE: 'SCHEDULED_DATE',
+    CONTACT_CREATED: 'CONTACT_CREATED',
+    CONVERSATION_OPENED: 'CONVERSATION_OPENED',
+    CONVERSATION_RESOLVED: 'CONVERSATION_RESOLVED'
+  }
 
   validates :name, presence: true
   validates :trigger_type, presence: true
