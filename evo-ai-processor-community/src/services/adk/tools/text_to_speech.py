@@ -3,7 +3,7 @@ from google.adk.tools import ToolContext
 from google.genai import types
 from google.adk.tools import FunctionTool
 import logging
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
 from src.services.adk.tts.factory import get_tts_provider
 
@@ -20,7 +20,7 @@ def create_text_to_speech_tool(config: Dict[str, Any]) -> FunctionTool:
 
     async def text_to_speech(
         text: str,
-        tool_context: "ToolContext",
+        tool_context: Optional["ToolContext"] = None,
     ):
         """Generates speech from text using the configured TTS provider and stores it in artifacts."""
         try:
@@ -76,12 +76,10 @@ def create_text_to_speech_tool(config: Dict[str, Any]) -> FunctionTool:
                 "error": f"Text-to-speech error ({provider_name}): {str(e)}",
             }
 
-    text_to_speech.__name__ = "text_to_speech"
     text_to_speech.__doc__ = f"""Generate speech from text using {provider_name}.
     
     Args:
         text: The text to generate speech from
-        tool_context: The tool context containing session information
     """
 
     return FunctionTool(func=text_to_speech)
