@@ -6,14 +6,14 @@ import { proactiveService, ProactiveCampaign } from '@/services/proactive/proact
 import { labelsService } from '@/services/contacts/labelsService';
 import AgentsService from '@/services/channels/agentsService';
 import { AgentChannel } from '@/types/channels/inbox';
-import { Label } from '@/types/settings';
+import { Label as ContactLabel } from '@/types/settings';
 export default function ProactiveForm() {
   const navigate = useNavigate();
   const { id } = useParams();
   const isEditing = !!id;
 
   const [agents, setAgents] = useState<AgentChannel[]>([]);
-  const [labels, setLabels] = useState<Label[]>([]);
+  const [labels, setLabels] = useState<ContactLabel[]>([]);
 
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<Partial<ProactiveCampaign>>({
