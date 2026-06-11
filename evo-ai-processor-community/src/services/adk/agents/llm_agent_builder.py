@@ -922,7 +922,7 @@ class LlmAgentBuilder:
 
         # Check if TTS integration is enabled and add instructions
         tts_config = integrations.get("tts") or integrations.get("elevenlabs")
-        if tts_config and tts_config.get("apiKey") and (tts_config.get("voice") or tts_config.get("voice_id")):
+        if tts_config and tts_config.get("apiKey"):
             respond_in_audio = tts_config.get("respondInAudio", "when_client_asks")
             if respond_in_audio == "always":
                 crm_tools_instructions.append(

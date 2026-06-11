@@ -372,20 +372,19 @@ class ToolBuilder:
                 provider = tts_config.get("provider", "elevenlabs")
                 voice_id = tts_config.get("voice") or tts_config.get("voice_id")
                 
-                if not voice_id:
-                    logger.warning(f"No voice_id specified in TTS config ({provider}), skipping text_to_speech tool creation")
-                else:
-                    config = {
-                        "provider": provider,
-                        "apiKey": tts_config.get("apiKey"),
-                        "voice_id": voice_id,
-                        # ElevenLabs specific
-                        "stability": tts_config.get("stability", 80),
-                        "similarity_boost": tts_config.get("similarity", 50),
-                    }
-                    
-                    self.tools.append(create_text_to_speech_tool(config))
-                    logger.info(f"Added text_to_speech tool from TTS integration ({provider}, voice_id: {voice_id})")
+                config = {
+                    "provider": provider,
+                    "apiKey": tts_config.get("apiKey"),
+                    "voice_id": voice_id,
+                    "api_url": tts_config.get("api_url"),
+                    "model": tts_config.get("model"),
+                    # ElevenLabs specific
+                    "stability": tts_config.get("stability", 80),
+                    "similarity_boost": tts_config.get("similarity", 50),
+                }
+                
+                self.tools.append(create_text_to_speech_tool(config))
+                logger.info(f"Added text_to_speech tool from TTS integration ({provider}, voice_id: {voice_id})")
             except Exception as e:
                 logger.error(f"Error creating text_to_speech tool from ElevenLabs integration: {e}")
 

@@ -986,7 +986,7 @@ async def handle_message_send(
     integrations = agent_config.get("integrations", {})
     tts_config = integrations.get("tts") or integrations.get("elevenlabs")
     
-    if tts_config and tts_config.get("apiKey") and (tts_config.get("voice") or tts_config.get("voice_id")):
+    if tts_config and tts_config.get("apiKey"):
         respond_in_audio = tts_config.get("respondInAudio", "when_client_asks")
         
         # Check if the user sent an audio message
