@@ -926,7 +926,7 @@ class LlmAgentBuilder:
             respond_in_audio = tts_config.get("respondInAudio", "when_client_asks")
             if respond_in_audio == "always":
                 crm_tools_instructions.append(
-                    "Text-to-Speech Tool: Available. You MUST use the text_to_speech tool to generate an audio version of your response for EVERY message you send. Return the generated audio URL."
+                    "You MUST use the `text_to_speech` tool. Pass the EXACT text of your response to the tool to generate the audio version. DO NOT answer only with text."
                 )
             elif respond_in_audio == "when_client_asks":
                 crm_tools_instructions.append(

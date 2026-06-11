@@ -994,7 +994,7 @@ async def handle_message_send(
         has_audio = metadata.get("has_audio", False)
         
         if respond_in_audio == "always" or (respond_in_audio == "when_client_asks" and has_audio):
-            text += "\n\nCRITICAL SYSTEM INSTRUCTION: You MUST use the text_to_speech tool to generate an audio version of your response. Return the generated audio URL."
+            text += "\n\n[SYSTEM DIRECTIVE]: You must call the `text_to_speech` tool using the exact text of your response to generate the audio. Do not just reply with text, you MUST execute the tool call."
 
     logger.info(f"📝 Extracted text: {text}")
     logger.info(f"📎 Extracted files: {len(files)}")
