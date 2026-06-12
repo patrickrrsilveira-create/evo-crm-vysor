@@ -1088,10 +1088,13 @@ async def handle_message_send(
         message_history = result.get("message_history", [])
         if message_history:
             for event in reversed(message_history):
-                # Stop if we reach the user's message
-                if event.get("role") == "user":
-                    break
+                # Stop if we reach the user's actual message (not a tool response)
+                content = event.get("content", {})
+                parts = content.get("parts", []) if isinstance(content, dict) else []
+                is_tool_response = any(isinstance(p, dict) and "functionResponse" in p for p in parts)
                 
+                if event.get("role") == "user" and not is_tool_response:
+                    break
                 content = event.get("content", {})
                 parts = content.get("parts", []) if isinstance(content, dict) else []
                 for part in parts:
