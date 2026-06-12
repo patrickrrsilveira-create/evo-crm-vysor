@@ -13,26 +13,62 @@ from src.services.adk.tts.factory import get_tts_provider
 logger = logging.getLogger(__name__)
 
 
-def _convert_to_ogg_opus(audio_bytes: bytes) -> bytes:
-    """Convert audio bytes (MP3/WAV/PCM) to OGG/Opus using ffmpeg.
+def _detect_audio_format(data: bytes) -> str:
+    """Detect audio format from magic bytes."""
+    if len(data) < 4:
+        return "unknown"
+    # OGG/Opus
+    if data[:4] == b'OggS':
+        return "ogg"
+    # MP3 frame sync or ID3 tag
+    if data[:3] == b'ID3' or (data[0] == 0xFF and (data[1] & 0xE0) == 0xE0):
+        return "mp3"
+    # WAV/RIFF
+    if data[:4] == b'RIFF':
+        return "wav"
+    # FLAC
+    if data[:4] == b'fLaC':
+        return "flac"
+    # AAC/M4A
+    if len(data) >= 8 and data[4:8] == b'ftyp':
+        return "m4a"
+    return "unknown"
 
-    Returns the converted bytes, or the original bytes if ffmpeg is unavailable.
+
+def _convert_to_ogg_opus(audio_bytes: bytes) -> bytes:
+    """Convert audio bytes to OGG/Opus using ffmpeg.
+
+    Returns the converted bytes, or the original bytes if conversion fails.
     """
+    # Detect input format
+    detected = _detect_audio_format(audio_bytes)
+    logger.info(f"[TTS] Input audio: {len(audio_bytes)} bytes, detected format: {detected}")
+
+    # If already OGG, no conversion needed
+    if detected == "ogg":
+        logger.info("[TTS] Audio is already OGG, skipping conversion")
+        return audio_bytes
+
+    # Determine file extension for temp file
+    ext_map = {"mp3": ".mp3", "wav": ".wav", "flac": ".flac", "m4a": ".m4a"}
+    ext = ext_map.get(detected, ".bin")
+
     tmp_in_path = ""
     tmp_out_path = ""
     try:
-        with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as tmp_in:
+        with tempfile.NamedTemporaryFile(suffix=ext, delete=False) as tmp_in:
             tmp_in.write(audio_bytes)
             tmp_in_path = tmp_in.name
 
-        tmp_out_path = tmp_in_path.replace(".mp3", ".ogg")
+        tmp_out_path = tmp_in_path.rsplit(".", 1)[0] + ".ogg"
 
+        # Try conversion with auto-detect first
         result = subprocess.run(
             [
                 "ffmpeg", "-y",
-                "-f", "mp3",
                 "-i", tmp_in_path,
                 "-c:a", "libopus",
+                "-b:a", "64k",
                 "-vn",
                 tmp_out_path,
             ],
@@ -43,30 +79,32 @@ def _convert_to_ogg_opus(audio_bytes: bytes) -> bytes:
         if result.returncode == 0 and os.path.exists(tmp_out_path):
             with open(tmp_out_path, "rb") as f:
                 converted = f.read()
-            logger.info(
-                f"[TTS] Converted {len(audio_bytes)} bytes MP3 -> "
-                f"{len(converted)} bytes OGG/Opus"
-            )
-            return converted
-        else:
-            # Log the FULL stderr to actually see the error
-            stderr_full = result.stderr.decode("utf-8", errors="replace") if result.stderr else "(no stderr)"
-            stdout_full = result.stdout.decode("utf-8", errors="replace") if result.stdout else "(no stdout)"
-            logger.warning(
-                f"[TTS] ffmpeg conversion failed (rc={result.returncode}). "
-                f"STDERR: {stderr_full[-500:]}"
-            )
-            logger.warning(f"[TTS] ffmpeg STDOUT: {stdout_full[-200:]}")
-            return audio_bytes
+            if len(converted) > 100:  # Sanity check
+                logger.info(
+                    f"[TTS] Converted {len(audio_bytes)} bytes {detected} -> "
+                    f"{len(converted)} bytes OGG/Opus"
+                )
+                return converted
+
+        # Log full error
+        stderr_full = result.stderr.decode("utf-8", errors="replace") if result.stderr else "(no stderr)"
+        logger.warning(
+            f"[TTS] ffmpeg conversion failed (rc={result.returncode}). "
+            f"STDERR (last 600): {stderr_full[-600:]}"
+        )
+
+        # If detected format is unknown, the file might not be valid audio
+        # Return as-is and let the system handle it
+        logger.warning(f"[TTS] Returning raw {detected} audio bytes as fallback")
+        return audio_bytes
 
     except FileNotFoundError:
-        logger.warning("[TTS] ffmpeg not found, returning raw audio bytes (MP3)")
+        logger.warning("[TTS] ffmpeg not found, returning raw audio bytes")
         return audio_bytes
     except Exception as e:
         logger.warning(f"[TTS] Conversion error: {e}, returning raw audio bytes")
         return audio_bytes
     finally:
-        # Cleanup temp files
         for path in [tmp_in_path, tmp_out_path]:
             try:
                 if path and os.path.exists(path):
@@ -112,11 +150,19 @@ def create_text_to_speech_tool(config: Dict[str, Any]) -> FunctionTool:
             # Convert to OGG/Opus for WhatsApp native voice message compatibility
             audio_bytes = _convert_to_ogg_opus(audio_bytes)
 
-            # Generate unique filename
-            filename = f"speech_{uuid.uuid4().hex[:8]}.ogg"
+            # Detect final format for correct MIME type
+            final_format = _detect_audio_format(audio_bytes)
+            if final_format == "ogg":
+                mime_type = "audio/ogg"
+                filename = f"speech_{uuid.uuid4().hex[:8]}.ogg"
+            else:
+                mime_type = "audio/mpeg"
+                filename = f"speech_{uuid.uuid4().hex[:8]}.mp3"
+
+            logger.info(f"[TTS] Saving artifact: {filename} ({mime_type}, {len(audio_bytes)} bytes)")
 
             # Create Part and save to artifacts
-            audio_blob = types.Blob(mime_type="audio/ogg", data=audio_bytes)
+            audio_blob = types.Blob(mime_type=mime_type, data=audio_bytes)
             audio_part = types.Part(inline_data=audio_blob)
             version = await tool_context.save_artifact(filename, audio_part)
 

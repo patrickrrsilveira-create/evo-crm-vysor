@@ -42,4 +42,12 @@ class OpenRouterProvider(TTSProvider):
                 error_detail = response.text
                 raise Exception(f"OpenRouter API error: {response.status_code} - {error_detail}")
 
-            return response.content
+            content_type = response.headers.get("content-type", "unknown")
+            data = response.content
+            header_hex = data[:16].hex() if len(data) >= 16 else data.hex()
+            logger.info(
+                f"[OpenRouter TTS] Response: content-type={content_type}, "
+                f"size={len(data)} bytes, header={header_hex}"
+            )
+
+            return data
