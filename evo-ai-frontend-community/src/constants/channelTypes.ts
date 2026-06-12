@@ -106,12 +106,12 @@ export const getChannelTypes = (): ChannelType[] => [
         description: i18n.t('channels:newChannel.providers.outlook.description'),
         popular: true,
       },
-      // {
-      //   id: 'other_provider',
-      //   name: i18n.t('channels:newChannel.providers.otherEmail.name'),
-      //   description: i18n.t('channels:newChannel.providers.otherEmail.description'),
-      //   popular: false,
-      // },
+      {
+        id: 'other_provider',
+        name: i18n.t('channels:newChannel.providers.otherEmail.name'),
+        description: i18n.t('channels:newChannel.providers.otherEmail.description'),
+        popular: false,
+      },
     ],
   },
   {

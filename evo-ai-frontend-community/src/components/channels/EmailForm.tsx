@@ -239,7 +239,7 @@ const EmailForm: React.FC<EmailFormProps> = ({ provider, onSuccess, onBack }) =>
                 <Input
                   value={formData.name}
                   onChange={e => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                  placeholder={t('channelNamePlaceholder')}
+                  placeholder={t('channelNamePlaceholder', 'Ex: Suporte')}
                 />
               </div>
 
@@ -249,14 +249,52 @@ const EmailForm: React.FC<EmailFormProps> = ({ provider, onSuccess, onBack }) =>
                   type="email"
                   value={formData.email}
                   onChange={e => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                  placeholder={t('emailAddressPlaceholder')}
+                  placeholder={t('emailAddressPlaceholder', 'contato@suaempresa.com')}
                 />
-                <p className="text-xs text-muted-foreground mt-1">{t('forwardDescription')}</p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">Servidor IMAP *</label>
+                  <Input
+                    value={formData.imap_address}
+                    onChange={e => setFormData(prev => ({ ...prev, imap_address: e.target.value }))}
+                    placeholder="ex: imap.hostinger.com"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Porta IMAP</label>
+                  <Input
+                    type="number"
+                    value={formData.imap_port}
+                    onChange={e => setFormData(prev => ({ ...prev, imap_port: parseInt(e.target.value) || 993 }))}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">Login IMAP *</label>
+                  <Input
+                    value={formData.imap_login}
+                    onChange={e => setFormData(prev => ({ ...prev, imap_login: e.target.value }))}
+                    placeholder="contato@suaempresa.com"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Senha IMAP *</label>
+                  <Input
+                    type="password"
+                    value={formData.imap_password}
+                    onChange={e => setFormData(prev => ({ ...prev, imap_password: e.target.value }))}
+                    placeholder="Sua senha de email"
+                  />
+                </div>
               </div>
             </div>
 
             {/* Submit */}
-            <div className="flex justify-end">
+            <div className="flex justify-end mt-6">
               <Button onClick={handleCreateChannel} disabled={isLoading} size="lg">
                 {isLoading ? (
                   <>
