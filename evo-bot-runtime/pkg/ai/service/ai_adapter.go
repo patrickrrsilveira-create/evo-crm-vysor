@@ -106,11 +106,10 @@ func (a *aiAdapter) Call(ctx context.Context, req *model.A2ARequest) (*model.Nor
 
 	content := extractResponseText(&a2aResp)
 
-	// Injected Kokoro TTS logic
-	audioPayload, err := generateAudioIfRequested(ctx, a.client, a.timeoutSecs, req, content)
+	// Download audio payload from artifacts if available
+	audioPayload, err := downloadAudioFromArtifacts(ctx, a.client, a.timeoutSecs, &a2aResp)
 	if err != nil {
-		slog.Error("pipeline.ai.tts.failed", "error", err)
-		// Fallback to text
+		slog.Error("pipeline.ai.download_audio.failed", "error", err)
 	}
 
 	slog.Info("pipeline.ai.http.completed",
@@ -161,72 +160,56 @@ func nonNilMetadata(m map[string]any) map[string]any {
 	return m
 }
 
-// generateAudioIfRequested checks if the incoming message was audio, and if so,
-// uses OpenRouter Kokoro TTS to generate audio for the AI's response.
-func generateAudioIfRequested(ctx context.Context, client *http.Client, timeoutSecs int, req *model.A2ARequest, content string) ([]byte, error) {
-	if content == "" {
+// downloadAudioFromArtifacts checks the response for an audio URL in artifacts
+// and downloads the audio payload.
+func downloadAudioFromArtifacts(ctx context.Context, client *http.Client, timeoutSecs int, resp *model.A2AResponse) ([]byte, error) {
+	if resp.Result == nil {
 		return nil, nil
 	}
 
-	// Determine if the incoming message was marked as having audio
-	isAudio := false
-	if req.Metadata != nil {
-		if hasAudio, ok := req.Metadata["has_audio"].(bool); ok && hasAudio {
-			isAudio = true
-		} else if hasAudioStr, ok := req.Metadata["has_audio"].(string); ok && (hasAudioStr == "true" || hasAudioStr == "1") {
-			isAudio = true
+	var audioURL string
+	// Find the first audio artifact URL
+	for _, artifact := range resp.Result.Artifacts {
+		for _, part := range artifact.Parts {
+			if part.Type == "file" && part.URL != "" && (part.MimeType == "audio/ogg" || part.MimeType == "audio/mpeg" || part.MimeType == "audio/opus") {
+				audioURL = part.URL
+				break
+			}
+		}
+		if audioURL != "" {
+			break
 		}
 	}
 
-	// Alternatively, we could check for a specific keyword or flag.
-	// For now, if it's not detected as audio, return nil.
-	if !isAudio {
+	if audioURL == "" {
 		return nil, nil
 	}
 
-	slog.Info("pipeline.ai.tts.started", "contact_id", req.ContactID, "conversation_id", req.ConversationID)
-
-	// Hardcoded OpenRouter credentials for now based on user's n8n workflow
-	openRouterKey := "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"
-	voice := "alloy"
-
-	ttsReqBody := map[string]any{
-		"model":           "hexgrad/kokoro-82m",
-		"input":           content,
-		"voice":           voice,
-		"response_format": "opus",
-	}
-
-	bodyBytes, err := json.Marshal(ttsReqBody)
-	if err != nil {
-		return nil, fmt.Errorf("marshal tts req: %w", err)
-	}
+	slog.Info("pipeline.ai.download_audio.started", "url", audioURL)
 
 	timeoutCtx, cancel := context.WithTimeout(ctx, time.Duration(timeoutSecs)*time.Second)
 	defer cancel()
 
-	httpReq, err := http.NewRequestWithContext(timeoutCtx, http.MethodPost, "https://openrouter.ai/api/v1/audio/speech", bytes.NewReader(bodyBytes))
+	httpReq, err := http.NewRequestWithContext(timeoutCtx, http.MethodGet, audioURL, nil)
 	if err != nil {
-		return nil, fmt.Errorf("new tts req: %w", err)
+		return nil, fmt.Errorf("new audio req: %w", err)
 	}
 
-	httpReq.Header.Set("Content-Type", "application/json")
-	httpReq.Header.Set("Authorization", "Bearer "+openRouterKey)
-
-	resp, err := client.Do(httpReq)
+	downloadResp, err := client.Do(httpReq)
 	if err != nil {
-		return nil, fmt.Errorf("do tts req: %w", err)
+		return nil, fmt.Errorf("do audio req: %w", err)
 	}
-	defer resp.Body.Close()
+	defer downloadResp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("tts bad status: %d", resp.StatusCode)
+	if downloadResp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("audio download bad status: %d", downloadResp.StatusCode)
 	}
 
-	audioData, err := io.ReadAll(resp.Body)
+	audioData, err := io.ReadAll(downloadResp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("read tts resp: %w", err)
+		return nil, fmt.Errorf("read audio resp: %w", err)
 	}
 
+	slog.Info("pipeline.ai.download_audio.completed", "bytes", len(audioData))
 	return audioData, nil
 }

@@ -55,8 +55,10 @@ type A2AMessage struct {
 }
 
 type A2APart struct {
-	Type string `json:"type"`
-	Text string `json:"text"`
+	Type     string `json:"type"`
+	Text     string `json:"text,omitempty"`
+	URL      string `json:"url,omitempty"`
+	MimeType string `json:"mimeType,omitempty"`
 }
 
 // NormalizedResponse is the internal format after parsing A2AResponse.
