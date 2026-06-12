@@ -1088,52 +1088,74 @@ async def handle_message_send(
         message_history = result.get("message_history", [])
         if message_history:
             for event in reversed(message_history):
-                # Stop if we reach the user's actual message (not a tool response)
-                content = event.get("content", {})
-                parts = content.get("parts", []) if isinstance(content, dict) else []
-                is_tool_response = any(isinstance(p, dict) and "functionResponse" in p for p in parts)
+                role = event.get("role")
+                content = event.get("content")
                 
-                if event.get("role") == "user" and not is_tool_response:
+                # Extract parts if available (Gemini format)
+                parts = event.get("parts", [])
+                if not parts and isinstance(content, dict):
+                    parts = content.get("parts", [])
+                elif not parts and isinstance(content, list):
+                    parts = content
+                
+                is_tool_response = False
+                filename = None
+                
+                # Check Gemini format
+                if any(isinstance(p, dict) and "functionResponse" in p for p in parts):
+                    is_tool_response = True
+                    for part in parts:
+                        if isinstance(part, dict) and "functionResponse" in part:
+                            fr = part["functionResponse"]
+                            if fr.get("name") == "text_to_speech":
+                                filename = fr.get("response", {}).get("filename")
+                
+                # Check OpenAI format
+                elif role == "tool":
+                    is_tool_response = True
+                    if event.get("name") == "text_to_speech":
+                        try:
+                            import json
+                            resp = json.loads(content) if isinstance(content, str) else content
+                            if isinstance(resp, dict):
+                                filename = resp.get("filename")
+                        except Exception:
+                            pass
+                            
+                if role == "user" and not is_tool_response:
                     break
-                content = event.get("content", {})
-                parts = content.get("parts", []) if isinstance(content, dict) else []
-                for part in parts:
-                    if isinstance(part, dict) and "functionResponse" in part:
-                        fr = part["functionResponse"]
-                        if fr.get("name") == "text_to_speech":
-                            resp = fr.get("response", {})
-                            filename = resp.get("filename")
-                            if filename:
-                                try:
-                                    art = await artifacts_service.load_artifact(
-                                        app_name=str(agent_id),
-                                        user_id=str(user_id),
-                                        filename=filename,
-                                        session_id=session_id
-                                    )
-                                    url = None
-                                    mime_type = "audio/ogg"
-                                    if art:
-                                        if hasattr(art, "text") and art.text and "Artifact URL:" in art.text:
-                                            url = art.text.split("Artifact URL:")[1].strip()
-                                        elif hasattr(art, "inline_data") and art.inline_data and art.inline_data.data:
-                                            import base64
-                                            b64 = base64.b64encode(art.inline_data.data).decode("utf-8")
-                                            mime_type = art.inline_data.mime_type or mime_type
-                                            url = f"data:{mime_type};base64,{b64}"
-                                            
-                                    if url:
-                                        artifacts.append({
-                                            "artifactId": str(uuid.uuid4()),
-                                            "parts": [{
-                                                "type": "file",
-                                                "url": url,
-                                                "mimeType": mime_type
-                                            }]
-                                        })
-                                        logger.info(f"🎧 Attached audio artifact to response: {url[:30]}...")
-                                except Exception as e:
-                                    logger.error(f"Error loading audio artifact: {e}")
+                    
+                if filename:
+                    try:
+                        art = await artifacts_service.load_artifact(
+                            app_name=str(agent_id),
+                            user_id=str(user_id),
+                            filename=filename,
+                            session_id=session_id
+                        )
+                        url = None
+                        mime_type = "audio/ogg"
+                        if art:
+                            if hasattr(art, "text") and art.text and "Artifact URL:" in art.text:
+                                url = art.text.split("Artifact URL:")[1].strip()
+                            elif hasattr(art, "inline_data") and art.inline_data and art.inline_data.data:
+                                import base64
+                                b64 = base64.b64encode(art.inline_data.data).decode("utf-8")
+                                mime_type = art.inline_data.mime_type or mime_type
+                                url = f"data:{mime_type};base64,{b64}"
+                                
+                        if url:
+                            artifacts.append({
+                                "artifactId": str(uuid.uuid4()),
+                                "parts": [{
+                                    "type": "file",
+                                    "url": url,
+                                    "mimeType": mime_type
+                                }]
+                            })
+                            logger.info(f"🎧 Attached audio artifact to response: {url[:30]}...")
+                    except Exception as e:
+                        logger.error(f"Error loading audio artifact: {e}")
 
         # Fallback: if the LLM ignored the tool but audio was requested, generate manually
         has_audio_artifact = any(
