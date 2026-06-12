@@ -1134,7 +1134,7 @@ async def handle_message_send(
 
         # Fallback: if the LLM ignored the tool but audio was requested, generate manually
         has_audio_artifact = any(
-            part.get("type") == "audio" 
+            part.get("type") == "file" and "audio" in str(part.get("mimeType", ""))
             for art in artifacts 
             for part in art.get("parts", [])
         )
