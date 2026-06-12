@@ -60,19 +60,47 @@ class OpenRouterProvider(TTSProvider):
                     
                     # Sometimes OpenRouter returns base64 inside "audio" or "data"
                     if "audio" in json_data:
-                        return base64.b64decode(json_data["audio"])
+                        data = base64.b64decode(json_data["audio"])
                     elif "data" in json_data and isinstance(json_data["data"], str):
-                        return base64.b64decode(json_data["data"])
+                        data = base64.b64decode(json_data["data"])
                     elif "data" in json_data and isinstance(json_data["data"], list) and len(json_data["data"]) > 0:
                         # OpenAI style JSON wrapper (rare for speech, but possible)
                         first_item = json_data["data"][0]
                         if isinstance(first_item, dict) and "b64_json" in first_item:
-                            return base64.b64decode(first_item["b64_json"])
-                    
-                    # If we can't find base64, raise an error so we don't pass JSON to ffmpeg
-                    raise Exception(f"OpenRouter returned JSON but no recognized audio payload. Keys: {list(json_data.keys())}")
+                            data = base64.b64decode(first_item["b64_json"])
+                    else:
+                        raise Exception(f"OpenRouter returned JSON but no recognized audio payload. Keys: {list(json_data.keys())}")
                 except Exception as e:
                     print(f"[OpenRouter TTS] JSON Parse Error: {e}")
                     raise Exception(f"Failed to parse OpenRouter JSON: {e}")
             
+            # If the response is raw PCM, wrap it in a WAV header
+            # OpenRouter Kokoro returns: audio/pcm;rate=24000;channels=1
+            if "audio/pcm" in content_type.lower():
+                import wave
+                import io
+                import re
+                
+                # Extract rate and channels from content_type, or use defaults
+                rate = 24000
+                channels = 1
+                
+                rate_match = re.search(r"rate=(\d+)", content_type.lower())
+                if rate_match:
+                    rate = int(rate_match.group(1))
+                    
+                ch_match = re.search(r"channels=(\d+)", content_type.lower())
+                if ch_match:
+                    channels = int(ch_match.group(1))
+                
+                print(f"[OpenRouter TTS] Wrapping raw PCM into WAV (rate={rate}, channels={channels})")
+                wav_io = io.BytesIO()
+                with wave.open(wav_io, "wb") as wav_file:
+                    wav_file.setnchannels(channels)
+                    wav_file.setsampwidth(2) # Assume 16-bit PCM
+                    wav_file.setframerate(rate)
+                    wav_file.writeframes(data)
+                
+                data = wav_io.getvalue()
+
             return data
