@@ -7,7 +7,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  # GitHub automatically sets this to github.repository (e.g., vysortech/evo-crm-vysor)
+  # Use a script to lowercase the repository name later in the job, so we avoid uppercase errors in docker tags
   IMAGE_PREFIX: ghcr.io/${{ github.repository }}
 
 jobs:
@@ -60,11 +60,14 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Lowercase the repo name
+        run: echo "REPO=${GITHUB_REPOSITORY,,}" >> ${GITHUB_ENV}
+
       - name: Extract metadata (tags, labels) for Docker
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.IMAGE_PREFIX }}-${{ matrix.image }}
+          images: ghcr.io/${{ env.REPO }}-${{ matrix.image }}
           tags: |
             type=raw,value=latest
             type=sha
