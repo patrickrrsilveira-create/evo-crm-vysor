@@ -1,4 +1,7 @@
 import uuid
+import subprocess
+import tempfile
+import os
 from google.adk.tools import ToolContext
 from google.genai import types
 from google.adk.tools import FunctionTool
@@ -8,6 +11,68 @@ from typing import Dict, Any, Optional
 from src.services.adk.tts.factory import get_tts_provider
 
 logger = logging.getLogger(__name__)
+
+
+def _convert_to_ogg_opus(audio_bytes: bytes) -> bytes:
+    """Convert audio bytes (MP3/WAV/PCM) to OGG/Opus using ffmpeg.
+
+    Returns the converted bytes, or the original bytes if ffmpeg is unavailable.
+    """
+    tmp_in_path = ""
+    tmp_out_path = ""
+    try:
+        with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as tmp_in:
+            tmp_in.write(audio_bytes)
+            tmp_in_path = tmp_in.name
+
+        tmp_out_path = tmp_in_path.replace(".mp3", ".ogg")
+
+        result = subprocess.run(
+            [
+                "ffmpeg", "-y",
+                "-i", tmp_in_path,
+                "-c:a", "libopus",
+                "-b:a", "32k",
+                "-ar", "48000",
+                "-ac", "1",
+                "-application", "voip",
+                tmp_out_path,
+            ],
+            capture_output=True,
+            timeout=30,
+        )
+
+        if result.returncode == 0 and os.path.exists(tmp_out_path):
+            with open(tmp_out_path, "rb") as f:
+                converted = f.read()
+            logger.info(
+                f"[TTS] Converted {len(audio_bytes)} bytes MP3 -> "
+                f"{len(converted)} bytes OGG/Opus"
+            )
+            return converted
+        else:
+            stderr_snippet = result.stderr[:200] if result.stderr else b"(no stderr)"
+            logger.warning(
+                f"[TTS] ffmpeg conversion failed (rc={result.returncode}): "
+                f"{stderr_snippet}"
+            )
+            return audio_bytes
+
+    except FileNotFoundError:
+        logger.warning("[TTS] ffmpeg not found, returning raw audio bytes (MP3)")
+        return audio_bytes
+    except Exception as e:
+        logger.warning(f"[TTS] Conversion error: {e}, returning raw audio bytes")
+        return audio_bytes
+    finally:
+        # Cleanup temp files
+        for path in [tmp_in_path, tmp_out_path]:
+            try:
+                if path and os.path.exists(path):
+                    os.unlink(path)
+            except OSError:
+                pass
+
 
 def create_text_to_speech_tool(config: Dict[str, Any]) -> FunctionTool:
     """Create the text_to_speech tool for LoopAgent.
@@ -42,6 +107,9 @@ def create_text_to_speech_tool(config: Dict[str, Any]) -> FunctionTool:
 
             audio_bytes = await provider.generate_speech(text, config)
             logger.info(f"Received audio response: {len(audio_bytes)} bytes")
+
+            # Convert to OGG/Opus for WhatsApp native voice message compatibility
+            audio_bytes = _convert_to_ogg_opus(audio_bytes)
 
             # Generate unique filename
             filename = f"speech_{uuid.uuid4().hex[:8]}.ogg"

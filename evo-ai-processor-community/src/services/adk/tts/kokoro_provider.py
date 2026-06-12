@@ -40,7 +40,6 @@ class KokoroProvider(TTSProvider):
                 "input": text,
                 "voice": voice_id,
                 "model": model_name,
-                "response_format": "opus"
             }
 
             response = await client.post(

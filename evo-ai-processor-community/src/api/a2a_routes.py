@@ -1139,7 +1139,7 @@ async def handle_message_send(
             for part in art.get("parts", [])
         )
         
-        tts_config = (actual_agent.config or {}).get("integrations", {}).get("tts") or (actual_agent.config or {}).get("integrations", {}).get("elevenlabs")
+        tts_config = (agent.config or {}).get("integrations", {}).get("tts") or (agent.config or {}).get("integrations", {}).get("elevenlabs")
         if not has_audio_artifact and tts_config and tts_config.get("apiKey"):
             respond_in_audio = tts_config.get("respondInAudio", "when_client_asks")
             metadata = params.get("metadata", {})
@@ -1150,11 +1150,13 @@ async def handle_message_send(
                 try:
                     logger.info("🎧 LLM ignored TTS tool. Generating fallback audio manually...")
                     from src.services.adk.tts.factory import get_tts_provider
+                    from src.services.adk.tools.text_to_speech import _convert_to_ogg_opus
                     from google.genai import types
                     
                     provider_name = tts_config.get("provider", "elevenlabs")
                     provider = get_tts_provider(provider_name)
                     audio_bytes = await provider.generate_speech(final_response, tts_config)
+                    audio_bytes = _convert_to_ogg_opus(audio_bytes)
                     
                     filename = f"speech_fallback_{uuid.uuid4().hex[:8]}.ogg"
                     audio_blob = types.Blob(mime_type="audio/ogg", data=audio_bytes)
