@@ -34,7 +34,8 @@ class Webhooks::BotRuntimeController < ActionController::API
     message = AgentBots::MessageCreator.new(agent_bot).create_bot_reply(
       content, conversation,
       content_type: content_type,
-      content_attributes: content_attributes
+      content_attributes: content_attributes,
+      attachments: params[:attachments]
     )
 
     if message

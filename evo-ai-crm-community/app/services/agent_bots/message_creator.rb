@@ -1,9 +1,11 @@
 class AgentBots::MessageCreator
+  include ::FileTypeHelper
+
   def initialize(agent_bot)
     @agent_bot = agent_bot
   end
 
-  def create_bot_reply(content, conversation, force: false, content_type: 'text', content_attributes: nil)
+  def create_bot_reply(content, conversation, force: false, content_type: 'text', content_attributes: nil, attachments: nil)
     return if content.blank?
 
     # If force is true, skip eligibility check (e.g., for final response after transfer)
@@ -18,7 +20,7 @@ class AgentBots::MessageCreator
     end
 
     Rails.logger.info "[AgentBot HTTP] Creating bot reply in conversation #{conversation.id}"
-    create_message_with_fallback(content, conversation, content_type: content_type, content_attributes: content_attributes)
+    create_message_with_fallback(content, conversation, content_type: content_type, content_attributes: content_attributes, attachments: attachments)
   end
 
   private
@@ -53,14 +55,14 @@ class AgentBots::MessageCreator
     eligible
   end
 
-  def create_message_with_fallback(content, conversation, content_type:, content_attributes:)
-    create_direct_message(content, conversation, content_type: content_type, content_attributes: content_attributes)
+  def create_message_with_fallback(content, conversation, content_type:, content_attributes:, attachments:)
+    create_direct_message(content, conversation, content_type: content_type, content_attributes: content_attributes, attachments: attachments)
   rescue StandardError => e
     log_creation_error(e)
-    create_message_with_builder(content, conversation, content_type: content_type, content_attributes: content_attributes)
+    create_message_with_builder(content, conversation, content_type: content_type, content_attributes: content_attributes, attachments: attachments)
   end
 
-  def create_direct_message(content, conversation, content_type:, content_attributes:)
+  def create_direct_message(content, conversation, content_type:, content_attributes:, attachments:)
     message_attributes = {
       inbox: conversation.inbox,
       conversation: conversation,
@@ -85,7 +87,18 @@ class AgentBots::MessageCreator
 
     message_attributes[:content_attributes] = merged_content_attributes if merged_content_attributes.present?
 
-    message = Message.create!(message_attributes)
+    message = Message.new(message_attributes)
+
+    if attachments.present?
+      attachments.each do |uploaded_attachment|
+        attachment = message.attachments.build(file: uploaded_attachment)
+        if uploaded_attachment.is_a?(ActionDispatch::Http::UploadedFile)
+          attachment.file_type = file_type(uploaded_attachment.content_type) rescue 'file'
+        end
+      end
+    end
+
+    message.save!
 
     Rails.logger.info "[AgentBot HTTP] Successfully created message #{message.id}"
     Rails.logger.info "[AgentBot HTTP] Reply attributes: #{message.content_attributes.slice(:in_reply_to, :in_reply_to_external_id).inspect}" if conversation.post_conversation? || send_as_reply
@@ -99,8 +112,8 @@ class AgentBots::MessageCreator
     Rails.logger.info '[AgentBot HTTP] Trying with MessageBuilder as fallback'
   end
 
-  def create_message_with_builder(content, conversation, content_type:, content_attributes:)
-    message_params = { content: content, message_type: 'outgoing', content_type: content_type }
+  def create_message_with_builder(content, conversation, content_type:, content_attributes:, attachments:)
+    message_params = { content: content, message_type: 'outgoing', content_type: content_type, attachments: attachments }
 
     merged_content_attributes = {}
     merged_content_attributes.merge!(content_attributes) if content_attributes.present?
