@@ -191,9 +191,10 @@ func generateAudioIfRequested(ctx context.Context, client *http.Client, timeoutS
 	voice := "alloy"
 
 	ttsReqBody := map[string]any{
-		"model": "hexgrad/kokoro-82m",
-		"input": content,
-		"voice": voice,
+		"model":           "hexgrad/kokoro-82m",
+		"input":           content,
+		"voice":           voice,
+		"response_format": "opus",
 	}
 
 	bodyBytes, err := json.Marshal(ttsReqBody)
