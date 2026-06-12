@@ -25,9 +25,9 @@ class CartesiaProvider(TTSProvider):
                     "id": voice_id
                 },
                 "output_format": {
-                    "container": "wav",
+                    "container": "raw",
                     "encoding": "pcm_s16le",
-                    "sample_rate": 8000
+                    "sample_rate": 24000
                 }
             }
                 

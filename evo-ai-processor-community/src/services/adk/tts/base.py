@@ -14,6 +14,6 @@ class TTSProvider(ABC):
             config: A dictionary containing provider-specific configuration.
             
         Returns:
-            The raw audio bytes (usually mp3 or wav).
+            The raw audio bytes (ogg/opus format for WhatsApp compatibility).
         """
         pass

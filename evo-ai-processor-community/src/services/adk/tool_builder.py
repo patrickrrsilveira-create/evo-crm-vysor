@@ -597,7 +597,7 @@ class ToolBuilder:
             for tool in agent_config["tools"]:
                 if tool["name"] == "text_to_speech":
                     # Only add if not already added from integrations
-                    if not elevenlabs_config or not elevenlabs_config.get("apiKey"):
+                    if not tts_config or not tts_config.get("apiKey"):
                         tool_config = tool.get("config", {})
                         configured_values = tool_config.get("configured_values", {})
                         self.tools.append(

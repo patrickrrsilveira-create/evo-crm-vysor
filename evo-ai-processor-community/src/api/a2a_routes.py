@@ -1109,7 +1109,7 @@ async def handle_message_send(
                                         session_id=session_id
                                     )
                                     url = None
-                                    mime_type = "audio/mpeg"
+                                    mime_type = "audio/ogg"
                                     if art:
                                         if hasattr(art, "text") and art.text and "Artifact URL:" in art.text:
                                             url = art.text.split("Artifact URL:")[1].strip()
@@ -1156,8 +1156,8 @@ async def handle_message_send(
                     provider = get_tts_provider(provider_name)
                     audio_bytes = await provider.generate_speech(final_response, tts_config)
                     
-                    filename = f"speech_fallback_{uuid.uuid4().hex[:8]}.mp3"
-                    audio_blob = types.Blob(mime_type="audio/mpeg", data=audio_bytes)
+                    filename = f"speech_fallback_{uuid.uuid4().hex[:8]}.ogg"
+                    audio_blob = types.Blob(mime_type="audio/ogg", data=audio_bytes)
                     audio_part = types.Part(inline_data=audio_blob)
                     
                     # Save to ADK artifacts
@@ -1176,7 +1176,7 @@ async def handle_message_send(
                         session_id=session_id
                     )
                     url = None
-                    mime_type = "audio/mpeg"
+                    mime_type = "audio/ogg"
                     if art:
                         if hasattr(art, "text") and art.text and "Artifact URL:" in art.text:
                             url = art.text.split("Artifact URL:")[1].strip()
