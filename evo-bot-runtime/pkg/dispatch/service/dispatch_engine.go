@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"mime/multipart"
 	"net/http"
+	"net/textproto"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -68,7 +69,7 @@ func (d *dispatchEngineImpl) Dispatch(
 ) error {
 	// If audio is provided, bypass segmentation and send a single audio part
 	if len(audio) > 0 {
-		return d.sendAudioPart(ctx, postbackURL, audio, content)
+		return d.sendAudioPart(ctx, postbackURL, audio)
 	}
 
 	parts := segmentContent(content, cfg)
@@ -156,24 +157,23 @@ func (d *dispatchEngineImpl) sendPart(ctx context.Context, postbackURL, content 
 }
 
 // sendAudioPart sends an audio payload as multipart/form-data.
-func (d *dispatchEngineImpl) sendAudioPart(ctx context.Context, postbackURL string, audio []byte, content string) error {
+func (d *dispatchEngineImpl) sendAudioPart(ctx context.Context, postbackURL string, audio []byte) error {
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
 
-	// Add the file part
-	part, err := writer.CreateFormFile("attachments[]", "audio.ogg")
+	// Add the file part with correct MIME type so Chatwoot recognizes it as audio
+	h := make(textproto.MIMEHeader)
+	h.Set("Content-Disposition", fmt.Sprintf(`form-data; name="%s"; filename="%s"`, "attachments[]", "audio.ogg"))
+	h.Set("Content-Type", "audio/ogg")
+	part, err := writer.CreatePart(h)
 	if err != nil {
-		return fmt.Errorf("create form file: %w", err)
+		return fmt.Errorf("create form part: %w", err)
 	}
 	_, err = io.Copy(part, bytes.NewReader(audio))
 	if err != nil {
 		return fmt.Errorf("copy audio to multipart: %w", err)
 	}
 
-	// Chatwoot requires message_type and content_type?
-	// It's usually fine just to send attachments[] if it's an AgentBot postback,
-	// but let's add content just in case.
-	_ = writer.WriteField("content", content)
 	_ = writer.WriteField("message_type", "outgoing")
 
 	if err := writer.Close(); err != nil {
