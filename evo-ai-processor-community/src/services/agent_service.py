@@ -383,6 +383,13 @@ async def get_agent(db: Session, agent_id: Union[uuid.UUID, str]) -> Optional[Ag
         # Reconstruct custom configurations from saved IDs
         await _reconstruct_custom_configurations(db, agent)
 
+        # Fetch and attach integrations so llm_agent_builder can merge them
+        try:
+            integrations = await get_agent_integrations(db, agent.id)
+            setattr(agent, "_integrations", integrations)
+        except Exception as e:
+            logger.warning(f"Failed to fetch integrations for agent {agent.id}: {e}")
+
         # Sanitize agent name if it contains spaces or special characters
         if agent.name and any(c for c in agent.name if not (c.isalnum() or c == "_")):
             agent.name = "".join(
