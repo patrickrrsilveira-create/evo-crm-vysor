@@ -23,7 +23,14 @@ agentProcessorApi.interceptors.request.use(config => {
 
 // Interceptador para tratar respostas e erros
 agentProcessorApi.interceptors.response.use(
-  response => response,
+  response => {
+    // Automatically unwrap standard SuccessResponse
+    if (response.data && response.data.status === 'success' && response.data.data !== undefined) {
+      // Return the inner data
+      response.data = response.data.data;
+    }
+    return response;
+  },
   error => {
     const detail =
       error?.response?.data?.error?.message ||
