@@ -355,7 +355,7 @@ async def extract_files_from_message_async(message: Dict[str, Any]) -> List[File
                 try:
                     url = file_data["url"]
                     logger.info(f"📎 Downloading file from URL: {url[:50]}...")
-                    async with httpx.AsyncClient(timeout=30.0) as client:
+                    async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as client:
                         response = await client.get(url)
                         response.raise_for_status()
                         file_bytes = response.content
