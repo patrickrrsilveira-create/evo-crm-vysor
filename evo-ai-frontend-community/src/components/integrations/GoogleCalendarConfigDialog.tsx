@@ -212,8 +212,8 @@ const GoogleCalendarConfigDialog = ({
       );
 
       if (response.url) {
-        // Redirect to Google OAuth
-        window.location.href = response.url;
+        // Open Google OAuth in a new tab
+        window.open(response.url, '_blank');
       }
     } catch (error) {
       console.error('Error connecting to Google Calendar:', error);
