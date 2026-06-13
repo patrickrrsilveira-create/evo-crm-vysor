@@ -13,12 +13,15 @@ const GoogleSheetsService = {
    */
   async generateAuthorization(agentId: string, email?: string): Promise<GoogleSheetsOAuthResponse> {
     try {
+      const clientId = localStorage.getItem('GLOBAL_GOOGLE_SHEETS_CLIENT_ID') || GOOGLE_OAUTH_GLOBAL_CONFIG.clientId || undefined;
+      const clientSecret = localStorage.getItem('GLOBAL_GOOGLE_SHEETS_CLIENT_SECRET') || GOOGLE_OAUTH_GLOBAL_CONFIG.clientSecret || undefined;
+
       const { data } = await api.post(
         `/agents/${agentId}/integrations/google-sheets/authorization`,
         { 
           email, 
-          client_id: GOOGLE_OAUTH_GLOBAL_CONFIG.clientId || undefined,
-          client_secret: GOOGLE_OAUTH_GLOBAL_CONFIG.clientSecret || undefined
+          client_id: clientId,
+          client_secret: clientSecret
         }
       );
       return data;

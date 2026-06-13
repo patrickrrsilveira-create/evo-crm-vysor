@@ -7,14 +7,22 @@ import BrandIcon from '@/components/BrandIcon';
 
 export default function GoogleCalendarGlobalPage() {
   const navigate = useNavigate();
-  const [clientId, setClientId] = useState('');
-  const [clientSecret, setClientSecret] = useState('');
+  const [clientId, setClientId] = useState(() => localStorage.getItem('GLOBAL_GOOGLE_CALENDAR_CLIENT_ID') || '');
+  const [clientSecret, setClientSecret] = useState(() => localStorage.getItem('GLOBAL_GOOGLE_CALENDAR_CLIENT_SECRET') || '');
 
   const handleSave = () => {
-    // Backend doesn't support DB-level global Google config yet,
-    // so we simulate success for the UI request.
-    toast.success('Configurações globais salvas com sucesso!');
+    localStorage.setItem('GLOBAL_GOOGLE_CALENDAR_CLIENT_ID', clientId);
+    localStorage.setItem('GLOBAL_GOOGLE_CALENDAR_CLIENT_SECRET', clientSecret);
+    toast.success('Configurações globais salvas localmente no navegador!');
     navigate('/settings/integrations');
+  };
+
+  const handleDisconnect = () => {
+    localStorage.removeItem('GLOBAL_GOOGLE_CALENDAR_CLIENT_ID');
+    localStorage.removeItem('GLOBAL_GOOGLE_CALENDAR_CLIENT_SECRET');
+    setClientId('');
+    setClientSecret('');
+    toast.success('Credenciais globais removidas com sucesso!');
   };
 
   return (
@@ -79,13 +87,18 @@ export default function GoogleCalendarGlobalPage() {
               </div>
             </div>
 
-            <div className="flex justify-end gap-3 pt-4 border-t">
-              <Button variant="outline" onClick={() => navigate('/settings/integrations')}>
-                Cancelar
+            <div className="flex justify-between items-center pt-4 border-t">
+              <Button variant="destructive" onClick={handleDisconnect} disabled={!clientId && !clientSecret}>
+                Desconectar / Limpar
               </Button>
-              <Button onClick={handleSave}>
-                Salvar Configurações
-              </Button>
+              <div className="flex gap-3">
+                <Button variant="outline" onClick={() => navigate('/settings/integrations')}>
+                  Cancelar
+                </Button>
+                <Button onClick={handleSave}>
+                  Salvar Configurações
+                </Button>
+              </div>
             </div>
           </div>
         </Card>
