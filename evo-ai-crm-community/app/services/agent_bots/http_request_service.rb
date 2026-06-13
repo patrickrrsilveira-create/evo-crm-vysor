@@ -350,8 +350,11 @@ class AgentBots::HttpRequestService
 
     conversation = find_conversation_from_payload
 
-    if conversation&.id
-      Rails.logger.info "[AgentBot HTTP] Using conversation UUID as contextId: #{conversation.id}"
+    if conversation&.uuid
+      Rails.logger.info "[AgentBot HTTP] Using conversation UUID as contextId: #{conversation.uuid}"
+      return conversation.uuid.to_s
+    elsif conversation&.id
+      Rails.logger.info "[AgentBot HTTP] Using conversation ID (fallback) as contextId: #{conversation.id}"
       return conversation.id.to_s
     end
 
@@ -368,9 +371,9 @@ class AgentBots::HttpRequestService
 
     if conversation_id
       # Try finding by UUID first
-      conversation = Conversation.find_by(id: conversation_id)
+      conversation = Conversation.find_by(uuid: conversation_id)
       if conversation
-        Rails.logger.info "[AgentBot HTTP] Found conversation by UUID: #{conversation.id}"
+        Rails.logger.info "[AgentBot HTTP] Found conversation by UUID: #{conversation.uuid}"
         return conversation
       end
 
