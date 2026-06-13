@@ -214,11 +214,17 @@ const GoogleCalendarConfigDialog = ({
         config.email
       );
 
-      if (response.url && authWindow) {
-        // Set the URL of the tab we just opened
-        authWindow.location.href = response.url;
-      } else if (authWindow) {
-        authWindow.close();
+      // Extract URL robustly from any response shape
+      const anyResp = response as any;
+      const authUrl = anyResp?.url || anyResp?.data?.url || (typeof response === 'string' ? response : null);
+      console.log('[GoogleCalendar] OAuth response:', JSON.stringify(response), '=> authUrl:', authUrl);
+
+      if (authUrl && authWindow) {
+        authWindow.location.href = authUrl;
+      } else {
+        if (authWindow) authWindow.close();
+        console.error('[GoogleCalendar] No URL found in response:', response);
+        toast.error('Erro: URL de autorização não recebida do servidor');
       }
     } catch (error) {
       if (authWindow) authWindow.close();
