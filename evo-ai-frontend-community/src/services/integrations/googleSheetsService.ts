@@ -1,4 +1,4 @@
-import api from '@/services/core/api';
+import api from '@/services/core/agentProcessorApi';
 import type {
   GoogleSheetsConfig,
   GoogleSheetsItem,
