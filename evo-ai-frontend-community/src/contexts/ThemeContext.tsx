@@ -11,13 +11,13 @@ export const DarkModeContext = createContext<DarkModeContextType | undefined>(un
 
 export function DarkModeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = useState<Theme>(() => {
-    if (typeof window === 'undefined') return 'light';
+    if (typeof window === 'undefined') return 'dark';
 
     const saved = localStorage.getItem('theme');
     if (saved === 'light' || saved === 'dark') return saved;
 
-    if (window.matchMedia?.('(prefers-color-scheme: dark)').matches) return 'dark';
-    return 'light';
+    // Default to dark when cache is cleared
+    return 'dark';
   });
 
   useLayoutEffect(() => {
