@@ -178,8 +178,8 @@ const Chat = () => {
     // Vamos apenas escutar quando a URL muda.
     
     const savedFilters = loadConversationFilters() || getDefaultFilter();
-    const activeFilterArray = filters.state.activeFilters.length > 0 
-      ? filters.state.activeFilters.map(f => ({
+    const activeFilterArray = chatContext.filters.state.activeFilters.length > 0 
+      ? chatContext.filters.state.activeFilters.map((f: any) => ({
           attributeKey: f.attribute_key,
           filterOperator: f.filter_operator,
           values: Array.isArray(f.values) ? f.values.join(',') : String(f.values[0] || ''),
@@ -188,11 +188,11 @@ const Chat = () => {
         }))
       : savedFilters;
 
-    const currentInboxFilter = activeFilterArray.find(f => f.attributeKey === 'inbox_id');
+    const currentInboxFilter = activeFilterArray.find((f: any) => f.attributeKey === 'inbox_id');
     const currentInboxId = currentInboxFilter ? String(currentInboxFilter.values) : null;
 
-    if (urlInboxId !== currentInboxId && !filters.state.isApplyingFilters) {
-      const newFilters = activeFilterArray.filter(f => f.attributeKey !== 'inbox_id');
+    if (urlInboxId !== currentInboxId && !chatContext.filters.state.isApplyingFilters) {
+      const newFilters = activeFilterArray.filter((f: any) => f.attributeKey !== 'inbox_id');
       if (urlInboxId) {
         newFilters.push({
           attributeKey: 'inbox_id',

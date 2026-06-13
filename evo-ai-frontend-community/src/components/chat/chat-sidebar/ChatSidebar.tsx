@@ -58,6 +58,7 @@ import ConversationsFilter from '../conversation/ConversationsFilter';
 import GlobalSearchPanel from '../search/GlobalSearchPanel';
 import { BaseFilter } from '@/types/core';
 import { useLanguage } from '@/hooks/useLanguage';
+import { useDebounce } from '@/hooks/useDebounce';
 import chatService from '@/services/chat/chatService';
 import { pipelinesService } from '@/services/pipelines/pipelinesService';
 import { toast } from 'sonner';
