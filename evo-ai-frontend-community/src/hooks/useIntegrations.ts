@@ -141,20 +141,16 @@ export function useIntegrations(agentId: string): UseIntegrationsReturn {
           : null
       );
       const calendarConfig = (configsByProvider['google-calendar'] || {}) as Record<string, unknown>;
-      const hasCalendarCreds = !!configsByProvider['google-calendar-credentials'];
-      calendarConfig.connected = hasCalendarCreds; // FORCE connected state based on credentials
 
       setGoogleCalendarConfig(
-        (Object.keys(calendarConfig).length > 0 || hasCalendarCreds)
+        (Object.keys(calendarConfig).length > 0 || calendarConfig.connected)
           ? (sanitizeConfig(calendarConfig) as unknown as GoogleCalendarConfig)
           : null
       );
       const sheetsConfig = (configsByProvider['google-sheets'] || {}) as Record<string, unknown>;
-      const hasSheetsCreds = !!configsByProvider['google-sheets-credentials'];
-      sheetsConfig.connected = hasSheetsCreds; // FORCE connected state based on credentials
 
       setGoogleSheetsConfig(
-        (Object.keys(sheetsConfig).length > 0 || hasSheetsCreds)
+        (Object.keys(sheetsConfig).length > 0 || sheetsConfig.connected)
           ? (sanitizeConfig(sheetsConfig) as unknown as GoogleSheetsConfig)
           : null
       );
