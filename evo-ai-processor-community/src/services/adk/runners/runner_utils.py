@@ -285,7 +285,12 @@ class RunnerUtils:
                         f"Processing file: {file_data.filename} (type: {file_data.content_type}, is_audio: {is_audio})"
                     )
 
-                    file_bytes = base64.b64decode(file_data.data)
+                    # Strip 'data:image/jpeg;base64,' prefix if present
+                    b64_data = file_data.data
+                    if "," in b64_data and b64_data.startswith("data:"):
+                        b64_data = b64_data.split(",", 1)[1]
+                        
+                    file_bytes = base64.b64decode(b64_data)
                     file_part = Part(
                         inline_data=Blob(
                             mime_type=file_data.content_type,
