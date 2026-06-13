@@ -184,7 +184,7 @@ class AgentBots::HttpRequestService
     if attachments.is_a?(Array) && attachments.any?
       attachments.each do |att|
         data_url = att[:data_url] || att['data_url']
-        next unless data_url.present?
+        att_id = att[:id] || att['id']
         
         file_part = {
           type: 'file',
@@ -194,18 +194,38 @@ class AgentBots::HttpRequestService
           }
         }
         
-        # Pass either base64 bytes or url depending on what we have
-        if data_url.start_with?('data:')
-          begin
-            mime_match = data_url.match(/data:([a-zA-Z0-9\/+-]+);base64,/)
-            file_part[:file][:mimeType] = mime_match[1] if mime_match
-            file_part[:file][:bytes] = data_url.split('base64,').last
-          rescue StandardError => e
-            Rails.logger.error "[AgentBot HTTP] Failed to parse base64 data_url: #{e.message}"
-            next
+        # Always try to send as base64 bytes by loading the attachment directly from DB
+        bytes_added = false
+        begin
+          if att_id.present?
+            attachment_record = Attachment.find_by(id: att_id)
+            if attachment_record&.file&.attached?
+              file_part[:file][:mimeType] = attachment_record.file.content_type
+              file_bytes = attachment_record.file.download
+              file_part[:file][:bytes] = Base64.strict_encode64(file_bytes)
+              bytes_added = true
+            end
           end
-        else
-          file_part[:file][:url] = data_url
+        rescue StandardError => e
+          Rails.logger.error "[AgentBot HTTP] Error loading attachment file bytes: #{e.message}"
+        end
+        
+        unless bytes_added
+          next unless data_url.present?
+          
+          # Pass either base64 bytes or url depending on what we have as fallback
+          if data_url.start_with?('data:')
+            begin
+              mime_match = data_url.match(/data:([a-zA-Z0-9\/+-]+);base64,/)
+              file_part[:file][:mimeType] = mime_match[1] if mime_match
+              file_part[:file][:bytes] = data_url.split('base64,').last
+            rescue StandardError => e
+              Rails.logger.error "[AgentBot HTTP] Failed to parse base64 data_url: #{e.message}"
+              next
+            end
+          else
+            file_part[:file][:url] = data_url
+          end
         end
         
         message[:parts] << file_part
