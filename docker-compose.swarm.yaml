@@ -227,6 +227,11 @@ services:
       - JWT_SECRET_KEY=         # Mesmo valor de JWT_SECRET_KEY usado nos demais serviços
       - EVOAI_CRM_API_TOKEN=    # Mesmo valor de EVOAI_CRM_API_TOKEN usado nos demais serviços
 
+    ## 📱 Webhooks (Meta / Facebook / Instagram)
+      - FB_VERIFY_TOKEN=        # Ex: evolution
+      - IG_VERIFY_TOKEN=        # Ex: evolution
+      - INSTAGRAM_VERIFY_TOKEN= # Ex: evolution
+
     ## 🗄️ PostgreSQL
       - POSTGRES_HOST=pgvector
       - POSTGRES_PORT=5432
