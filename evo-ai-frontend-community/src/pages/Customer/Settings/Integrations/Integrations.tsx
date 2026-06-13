@@ -80,7 +80,19 @@ export default function Integrations() {
     setLoading(true);
     try {
       const response = await integrationsService.getIntegrations();
-      setIntegrations(response.data);
+      const fetched = [...response.data];
+      
+      // Forçar exibição do card de Aplicativos OAuth se o backend não retornar
+      if (!fetched.some(i => i.id === 'oauth_applications')) {
+        fetched.push({
+          id: 'oauth_applications',
+          name: t('oauthApps.title') || 'Aplicativos OAuth',
+          description: t('oauthApps.description') || 'Configure OAuth connections for Google Calendar, Sheets, etc.',
+          enabled: true,
+        });
+      }
+      
+      setIntegrations(fetched);
     } catch (error) {
       console.error('Error loading integrations:', error);
       toast.error(t('messages.loadError'));
