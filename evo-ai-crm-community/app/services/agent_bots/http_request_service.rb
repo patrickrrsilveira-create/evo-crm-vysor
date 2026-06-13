@@ -152,11 +152,46 @@ class AgentBots::HttpRequestService
   end
 
   def build_message
-    {
+    message = {
       role: 'user',
       parts: [{ type: 'text', text: extract_message_content }],
       messageId: extract_message_id
     }
+
+    # Add file attachments if present
+    attachments = @payload[:attachments] || []
+    if attachments.is_a?(Array) && attachments.any?
+      attachments.each do |att|
+        data_url = att[:data_url] || att['data_url']
+        next unless data_url.present?
+        
+        file_part = {
+          type: 'file',
+          file: {
+            name: att[:fallback_title] || att['fallback_title'] || 'attachment',
+            mimeType: 'application/octet-stream' # Will be inferred by processor if needed
+          }
+        }
+        
+        # Pass either base64 bytes or url depending on what we have
+        if data_url.start_with?('data:')
+          begin
+            mime_match = data_url.match(/data:([a-zA-Z0-9\/+-]+);base64,/)
+            file_part[:file][:mimeType] = mime_match[1] if mime_match
+            file_part[:file][:bytes] = data_url.split('base64,').last
+          rescue StandardError => e
+            Rails.logger.error "[AgentBot HTTP] Failed to parse base64 data_url: #{e.message}"
+            next
+          end
+        else
+          file_part[:file][:url] = data_url
+        end
+        
+        message[:parts] << file_part
+      end
+    end
+    
+    message
   end
 
   def build_metadata

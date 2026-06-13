@@ -319,8 +319,9 @@ def extract_text_from_message(message: Dict[str, Any]) -> str:
     return ""
 
 
-def extract_files_from_message(message: Dict[str, Any]) -> List[FileData]:
+async def extract_files_from_message_async(message: Dict[str, Any]) -> List[FileData]:
     """Extract files from message parts according to A2A spec."""
+    import httpx
     files = []
     if not message or "parts" not in message:
         return files
@@ -350,9 +351,30 @@ def extract_files_from_message(message: Dict[str, Any]) -> List[FileData]:
                 except Exception as e:
                     logger.error(f"❌ Invalid base64 in file: {e}")
                     continue
+            elif "url" in file_data and file_data["url"]:
+                try:
+                    url = file_data["url"]
+                    logger.info(f"📎 Downloading file from URL: {url[:50]}...")
+                    async with httpx.AsyncClient(timeout=30.0) as client:
+                        response = await client.get(url)
+                        response.raise_for_status()
+                        file_bytes = response.content
+                        mime_type = response.headers.get("content-type", file_data.get("mimeType", "application/octet-stream"))
+                        base64_data = base64.b64encode(file_bytes).decode("utf-8")
+                        
+                        file_obj = FileData(
+                            filename=file_data.get("name", "file_from_url"),
+                            content_type=mime_type,
+                            data=base64_data,
+                        )
+                        files.append(file_obj)
+                        logger.info(f"📎 Successfully downloaded file ({mime_type})")
+                except Exception as e:
+                    logger.error(f"❌ Failed to download file from URL: {e}")
+                    continue
             else:
                 logger.warning(
-                    f"⚠️ File part missing bytes data: {file_data.get('name', 'unnamed')}"
+                    f"⚠️ File part missing bytes or url data: {file_data.get('name', 'unnamed')}"
                 )
 
     logger.info(f"📎 Total files extracted: {len(files)}")
@@ -973,7 +995,7 @@ async def handle_message_send(
 
     # Extract text and files from message
     text = extract_text_from_message(message)
-    files = extract_files_from_message(message)
+    files = await extract_files_from_message_async(message)
 
     # Use default text if only files provided or if message is completely empty
     if not text and files:
@@ -1313,7 +1335,7 @@ async def handle_message_stream(
 
     # Extract text and files from message
     text = extract_text_from_message(message)
-    files = extract_files_from_message(message)
+    files = await extract_files_from_message_async(message)
     context_id = params.get("contextId", str(uuid.uuid4()))
 
     # Use default text if only files provided or if message is completely empty
