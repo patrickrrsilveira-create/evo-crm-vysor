@@ -284,119 +284,127 @@ const IntegrationsSection = ({
       </div>
 
       {/* Dialog de configuração TTS */}
-      <TTSConfigDialog
-        open={showTTSConfig}
-        onOpenChange={setShowTTSConfig}
-        initialConfig={
-          (integrations.tts || integrations.elevenlabs) as any
-        }
-        onSave={async config => {
-          await persistIntegration('tts', config as unknown as Record<string, unknown>);
-        }}
-        onDeactivate={
-          (integrations.tts || integrations.elevenlabs)
-            ? async () => {
-                await removeIntegration('tts');
-                // Força remoção do antigo
-                if (integrations.elevenlabs) {
-                  await removeIntegration('elevenlabs');
+      {showTTSConfig && (
+        <TTSConfigDialog
+          open={showTTSConfig}
+          onOpenChange={setShowTTSConfig}
+          initialConfig={
+            (integrations.tts || integrations.elevenlabs) as any
+          }
+          onSave={async config => {
+            await persistIntegration('tts', config as unknown as Record<string, unknown>);
+          }}
+          onDeactivate={
+            (integrations.tts || integrations.elevenlabs)
+              ? async () => {
+                  await removeIntegration('tts');
+                  // Força remoção do antigo
+                  if (integrations.elevenlabs) {
+                    await removeIntegration('elevenlabs');
+                  }
                 }
-              }
-            : undefined
-        }
-      />
+              : undefined
+          }
+        />
+      )}
 
       {/* Dialog de configuração Google Calendar */}
-      <GoogleCalendarConfigDialog
-        open={showGoogleCalendarConfig}
-        onOpenChange={setShowGoogleCalendarConfig}
-        agentId={agentId}
-        initialConfig={
-          integrations['google-calendar'] as Parameters<
-            typeof GoogleCalendarConfigDialog
-          >[0]['initialConfig']
-        }
-        onSave={config => {
-          if (onIntegrationsChange) {
-            onIntegrationsChange({
-              ...integrations,
-              'google-calendar': config,
-            });
+      {showGoogleCalendarConfig && (
+        <GoogleCalendarConfigDialog
+          open={showGoogleCalendarConfig}
+          onOpenChange={setShowGoogleCalendarConfig}
+          agentId={agentId}
+          initialConfig={
+            integrations['google-calendar'] as Parameters<
+              typeof GoogleCalendarConfigDialog
+            >[0]['initialConfig']
           }
-          // Reload configs to update status
-          reloadConfigs();
-        }}
-        onDisconnect={
-          integrations['google-calendar']
-            ? () => {
-                if (onIntegrationsChange) {
-                  const newIntegrations = { ...integrations };
-                  delete newIntegrations['google-calendar'];
-                  onIntegrationsChange(newIntegrations);
+          onSave={config => {
+            if (onIntegrationsChange) {
+              onIntegrationsChange({
+                ...integrations,
+                'google-calendar': config,
+              });
+            }
+            // Reload configs to update status
+            reloadConfigs();
+          }}
+          onDisconnect={
+            integrations['google-calendar']
+              ? () => {
+                  if (onIntegrationsChange) {
+                    const newIntegrations = { ...integrations };
+                    delete newIntegrations['google-calendar'];
+                    onIntegrationsChange(newIntegrations);
+                  }
+                  // Reload configs to update status
+                  reloadConfigs();
                 }
-                // Reload configs to update status
-                reloadConfigs();
-              }
-            : undefined
-        }
-      />
+              : undefined
+          }
+        />
+      )}
 
       {/* Dialog de configuração Google Sheets */}
-      <GoogleSheetsConfigDialog
-        open={showGoogleSheetsConfig}
-        onOpenChange={setShowGoogleSheetsConfig}
-        agentId={agentId}
-        initialConfig={
-          integrations['google-sheets'] as Parameters<
-            typeof GoogleSheetsConfigDialog
-          >[0]['initialConfig']
-        }
-        onSave={config => {
-          if (onIntegrationsChange) {
-            onIntegrationsChange({
-              ...integrations,
-              'google-sheets': config,
-            });
+      {showGoogleSheetsConfig && (
+        <GoogleSheetsConfigDialog
+          open={showGoogleSheetsConfig}
+          onOpenChange={setShowGoogleSheetsConfig}
+          agentId={agentId}
+          initialConfig={
+            integrations['google-sheets'] as Parameters<
+              typeof GoogleSheetsConfigDialog
+            >[0]['initialConfig']
           }
-          // Reload configs to update status
-          reloadConfigs();
-        }}
-        onDisconnect={
-          integrations['google-sheets']
-            ? () => {
-                if (onIntegrationsChange) {
-                  const newIntegrations = { ...integrations };
-                  delete newIntegrations['google-sheets'];
-                  onIntegrationsChange(newIntegrations);
+          onSave={config => {
+            if (onIntegrationsChange) {
+              onIntegrationsChange({
+                ...integrations,
+                'google-sheets': config,
+              });
+            }
+            // Reload configs to update status
+            reloadConfigs();
+          }}
+          onDisconnect={
+            integrations['google-sheets']
+              ? () => {
+                  if (onIntegrationsChange) {
+                    const newIntegrations = { ...integrations };
+                    delete newIntegrations['google-sheets'];
+                    onIntegrationsChange(newIntegrations);
+                  }
+                  // Reload configs to update status
+                  reloadConfigs();
                 }
-                // Reload configs to update status
-                reloadConfigs();
-              }
-            : undefined
-        }
-      />
+              : undefined
+          }
+        />
+      )}
 
       {/* Dialog de configuração Knowledge Nexus */}
-      <KnowledgeNexusConfigDialog
-        open={showKnowledgeNexusConfig}
-        onOpenChange={setShowKnowledgeNexusConfig}
-        initialConfig={
-          integrations['knowledge-nexus'] as Partial<KnowledgeNexusConfig> | undefined
-        }
-        onSave={async config => {
-          await persistIntegration(
-            'knowledge-nexus',
-            config as unknown as Record<string, unknown>
-          );
-        }}
-        onDeactivate={
-          integrations['knowledge-nexus']
-            ? async () => {
-                await removeIntegration('knowledge-nexus');
-              }
-            : undefined
-        }
-      />
+      {showKnowledgeNexusConfig && (
+        <KnowledgeNexusConfigDialog
+          open={showKnowledgeNexusConfig}
+          onOpenChange={setShowKnowledgeNexusConfig}
+          initialConfig={
+            integrations['knowledge-nexus'] as Partial<KnowledgeNexusConfig> | undefined
+          }
+          onSave={async config => {
+            await persistIntegration(
+              'knowledge-nexus',
+              config as unknown as Record<string, unknown>
+            );
+          }}
+          onDeactivate={
+            integrations['knowledge-nexus']
+              ? async () => {
+                  await removeIntegration('knowledge-nexus');
+                }
+              : undefined
+          }
+        />
+      )}
     </div>
   );
 };
