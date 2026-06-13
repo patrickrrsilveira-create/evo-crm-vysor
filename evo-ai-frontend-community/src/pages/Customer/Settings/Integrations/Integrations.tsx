@@ -238,7 +238,7 @@ export default function Integrations() {
 
   // Check if integration is config-only
   const isConfigOnlyIntegration = (integrationId: string) => {
-    return ['webhook', 'dashboard_apps', 'oauth_applications'].includes(integrationId);
+    return ['webhook', 'dashboard_apps', 'oauth_applications', 'google_calendar_global', 'google_sheets_global'].includes(integrationId);
   };
 
   if (loading) {
@@ -287,7 +287,7 @@ export default function Integrations() {
       </div>
 
       {/* Category Tabs */}
-      <div data-tour="settings-integrations-categories">
+      <div data-tour="settings-integrations-categories" className="flex-1 flex flex-col min-h-0 mt-4">
       <Tabs
         value={selectedCategory}
         onValueChange={setSelectedCategory}
@@ -305,7 +305,7 @@ export default function Integrations() {
           ))}
         </TabsList>
 
-        <TabsContent value={selectedCategory} className="flex-1 mt-0">
+        <TabsContent value={selectedCategory} className="flex-1 mt-0 overflow-y-auto pr-2 pb-6">
           {filteredIntegrations.length === 0 ? (
             <EmptyState
               icon={Puzzle}
