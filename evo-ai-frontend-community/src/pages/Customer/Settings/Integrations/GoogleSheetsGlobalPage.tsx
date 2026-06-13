@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Card, Button, Input, Label } from '@evoapi/design-system';
 import BaseHeader from '@/components/base/BaseHeader';
-import { BrandIcon } from '@/components/base/BrandIcon';
+import BrandIcon from '@/components/BrandIcon';
 
 export default function GoogleSheetsGlobalPage() {
   const navigate = useNavigate();
@@ -20,7 +20,13 @@ export default function GoogleSheetsGlobalPage() {
       <BaseHeader
         title="Google Sheets (Global)"
         subtitle="Configuração global de credenciais OAuth do Google Sheets para todos os agentes."
-        backTo="/settings/integrations"
+        secondaryActions={[
+          {
+            label: 'Voltar',
+            onClick: () => navigate('/settings/integrations'),
+            variant: 'outline'
+          }
+        ]}
       />
 
       <div className="mt-6 flex-1 overflow-auto">
