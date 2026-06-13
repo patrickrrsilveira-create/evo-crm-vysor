@@ -10,11 +10,11 @@ const GoogleCalendarService = {
   /**
    * Generate Google Calendar OAuth authorization URL
    */
-  async generateAuthorization(agentId: string, email?: string): Promise<GoogleCalendarOAuthResponse> {
+  async generateAuthorization(agentId: string, email?: string, clientId?: string, clientSecret?: string): Promise<GoogleCalendarOAuthResponse> {
     try {
       const { data } = await api.post(
         `/agents/${agentId}/integrations/google-calendar/authorization`,
-        { email }
+        { email, client_id: clientId, client_secret: clientSecret }
       );
       return data;
     } catch (error) {

@@ -52,6 +52,8 @@ const GoogleSheetsConfigDialog = ({
   const [config, setConfig] = useState<GoogleSheetsConfig>({
     provider: 'google_sheets',
     email: initialConfig?.email || '',
+    client_id: initialConfig?.client_id || '',
+    client_secret: initialConfig?.client_secret || '',
     connected: initialConfig?.connected || false,
     spreadsheets: initialConfig?.spreadsheets || [],
     settings: {
@@ -69,6 +71,8 @@ const GoogleSheetsConfigDialog = ({
       setConfig({
         provider: 'google_sheets',
         email: initialConfig?.email || '',
+        client_id: initialConfig?.client_id || '',
+        client_secret: initialConfig?.client_secret || '',
         connected: initialConfig?.connected || false,
         spreadsheets: initialConfig?.spreadsheets || [],
         settings: {
@@ -111,7 +115,12 @@ const GoogleSheetsConfigDialog = ({
 
     setIsConnecting(true);
     try {
-      const response = await GoogleSheetsService.generateAuthorization(agentId, config.email);
+      const response = await GoogleSheetsService.generateAuthorization(
+        agentId,
+        config.email,
+        config.client_id,
+        config.client_secret
+      );
 
       if (response.url) {
         // Redirect to Google OAuth
@@ -204,6 +213,33 @@ const GoogleSheetsConfigDialog = ({
                   placeholder="seuemail@gmail.com"
                   value={config.email}
                   onChange={e => setConfig({ ...config, email: e.target.value })}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="client_id">
+                  {t('edit.integrations.googleSheets.clientId') || 'Client ID (Opcional)'}
+                </Label>
+                <Input
+                  id="client_id"
+                  type="text"
+                  placeholder="Seu Client ID do Google Cloud"
+                  value={config.client_id || ''}
+                  onChange={(e) => setConfig({ ...config, client_id: e.target.value })}
+                />
+                <p className="text-xs text-muted-foreground mt-1">Deixe em branco para usar as credenciais globais do sistema</p>
+              </div>
+
+              <div>
+                <Label htmlFor="client_secret">
+                  {t('edit.integrations.googleSheets.clientSecret') || 'Client Secret (Opcional)'}
+                </Label>
+                <Input
+                  id="client_secret"
+                  type="password"
+                  placeholder="Seu Client Secret do Google Cloud"
+                  value={config.client_secret || ''}
+                  onChange={(e) => setConfig({ ...config, client_secret: e.target.value })}
                 />
               </div>
 

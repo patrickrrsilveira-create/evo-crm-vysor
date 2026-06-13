@@ -6,6 +6,8 @@
 export interface GoogleSheetsConfig {
   provider: 'google_sheets';
   email?: string;
+  client_id?: string;
+  client_secret?: string;
   connected?: boolean;
   spreadsheets?: GoogleSheetsItem[];
   settings?: SheetsSettings;
