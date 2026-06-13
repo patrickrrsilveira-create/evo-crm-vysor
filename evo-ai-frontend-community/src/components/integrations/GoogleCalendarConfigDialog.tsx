@@ -222,12 +222,16 @@ const GoogleCalendarConfigDialog = ({
       if (authUrl && authWindow) {
         authWindow.location.href = authUrl;
       } else {
-        if (authWindow) authWindow.close();
+        if (authWindow) {
+          authWindow.document.body.innerHTML = `<h2>Erro: URL não recebida do servidor</h2><pre>${JSON.stringify(response, null, 2)}</pre>`;
+        }
         console.error('[GoogleCalendar] No URL found in response:', response);
         toast.error('Erro: URL de autorização não recebida do servidor');
       }
-    } catch (error) {
-      if (authWindow) authWindow.close();
+    } catch (error: any) {
+      if (authWindow) {
+        authWindow.document.body.innerHTML = `<h2>Erro na requisição:</h2><pre>${error?.message || error}</pre>`;
+      }
       console.error('Error connecting to Google Calendar:', error);
       toast.error('Erro ao conectar com Google Calendar');
     } finally {
