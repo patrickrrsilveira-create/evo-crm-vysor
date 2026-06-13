@@ -69,7 +69,7 @@ class Integrations::App
       GlobalConfigService.load('SHOPIFY_CLIENT_ID', nil).present?
     when 'leadsquared', 'bms'
       true
-    when 'webhook', 'dashboard_apps', 'openai'
+    when 'webhook', 'dashboard_apps', 'openai', 'microsoft_teams'
       true
     when 'oauth_applications'
       false
@@ -109,6 +109,8 @@ class Integrations::App
       DashboardApp.exists?
     when 'oauth_applications'
       OauthApplication.exists?
+    when 'microsoft_teams'
+      Integrations::Hook.where(app_id: 'microsoft_teams').exists?
     else
       Integrations::Hook.exists?(app_id: id)
     end

@@ -94,7 +94,7 @@ export function useIntegrations(options: UseIntegrationsOptions = {}): UseIntegr
         dialogflow: 'ai',
         webhook: 'custom',
         dashboard_apps: 'custom',
-        oauth_applications: 'custom',
+        microsoft_teams: 'custom',
       };
 
       return integrations.filter(integration => {
