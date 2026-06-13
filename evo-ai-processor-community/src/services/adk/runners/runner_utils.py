@@ -310,8 +310,9 @@ class RunnerUtils:
                     )
                     
                     is_image = self._is_image_file(file_data.content_type, file_data.filename)
-                    if is_audio or is_image:
-                        # Audio or Image file - add to content parts for LLM processing
+                    is_video = self._is_video_file(file_data.content_type, file_data.filename)
+                    if is_audio or is_image or is_video:
+                        # Audio, Image, or Video file - add to content parts for LLM processing
                         file_parts.append(file_part)
                         logger.info(
                             f"Added file {file_data.filename} to content parts for LLM processing"
@@ -393,6 +394,25 @@ class RunnerUtils:
             ]
             filename_lower = filename.lower()
             for ext in audio_extensions:
+                if filename_lower.endswith(ext):
+                    return True
+
+        return False
+
+    def _is_video_file(self, content_type: str, filename: str) -> bool:
+        """Check if file is a video file based on content type and extension."""
+        if not content_type and not filename:
+            return False
+
+        if content_type:
+            main_mime_type = content_type.split(";")[0].strip().lower()
+            if main_mime_type.startswith("video/"):
+                return True
+
+        if filename:
+            video_extensions = [".mp4", ".mpeg", ".mov", ".avi", ".x-flv", ".mpg", ".webm", ".wmv", ".3gpp"]
+            filename_lower = filename.lower()
+            for ext in video_extensions:
                 if filename_lower.endswith(ext):
                     return True
 
