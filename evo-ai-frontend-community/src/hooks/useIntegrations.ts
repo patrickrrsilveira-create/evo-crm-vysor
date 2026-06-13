@@ -140,18 +140,22 @@ export function useIntegrations(agentId: string): UseIntegrationsReturn {
           ? (sanitizeConfig(configsByProvider.tts || configsByProvider.elevenlabs) as unknown as ElevenLabsConfig)
           : null
       );
+      const calendarConfig = (configsByProvider['google-calendar'] || {}) as Record<string, unknown>;
+      const hasCalendarCreds = !!configsByProvider['google-calendar-credentials'];
+      if (hasCalendarCreds) calendarConfig.connected = true;
+
       setGoogleCalendarConfig(
-        configsByProvider['google-calendar']
-          ? (sanitizeConfig(
-              configsByProvider['google-calendar']
-            ) as unknown as GoogleCalendarConfig)
+        (Object.keys(calendarConfig).length > 0 || hasCalendarCreds)
+          ? (sanitizeConfig(calendarConfig) as unknown as GoogleCalendarConfig)
           : null
       );
+      const sheetsConfig = (configsByProvider['google-sheets'] || {}) as Record<string, unknown>;
+      const hasSheetsCreds = !!configsByProvider['google-sheets-credentials'];
+      if (hasSheetsCreds) sheetsConfig.connected = true;
+
       setGoogleSheetsConfig(
-        configsByProvider['google-sheets']
-          ? (sanitizeConfig(
-              configsByProvider['google-sheets']
-            ) as unknown as GoogleSheetsConfig)
+        (Object.keys(sheetsConfig).length > 0 || hasSheetsCreds)
+          ? (sanitizeConfig(sheetsConfig) as unknown as GoogleSheetsConfig)
           : null
       );
       setKnowledgeNexusConfig(
