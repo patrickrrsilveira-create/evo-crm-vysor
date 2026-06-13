@@ -25,6 +25,7 @@ class AgentBots::HttpRequestService
     Rails.logger.info "[AgentBot HTTP] API Key length: #{@agent_bot.api_key&.length || 0}"
 
     begin
+      trigger_typing_on
       response = make_http_request
       Rails.logger.info "[AgentBot HTTP] ✅ Request successful: #{response.code} #{response.message}"
       handle_response(response)
@@ -32,10 +33,30 @@ class AgentBots::HttpRequestService
       Rails.logger.error "[AgentBot HTTP] ❌ Error: #{e.message}"
       Rails.logger.error "[AgentBot HTTP] Error class: #{e.class}"
       Rails.logger.error "[AgentBot HTTP] Backtrace: #{e.backtrace.first(10).join("\n")}"
+    ensure
+      trigger_typing_off
     end
   end
 
   private
+
+  def trigger_typing_on
+    conversation = find_conversation_from_payload
+    return unless conversation
+
+    Rails.configuration.dispatcher.dispatch(Events::Types::CONVERSATION_TYPING_ON, Time.zone.now, conversation: conversation, user: nil, is_private: false)
+  rescue StandardError => e
+    Rails.logger.error "[AgentBot HTTP] Error triggering typing on: #{e.message}"
+  end
+
+  def trigger_typing_off
+    conversation = find_conversation_from_payload
+    return unless conversation
+
+    Rails.configuration.dispatcher.dispatch(Events::Types::CONVERSATION_TYPING_OFF, Time.zone.now, conversation: conversation, user: nil, is_private: false)
+  rescue StandardError => e
+    Rails.logger.error "[AgentBot HTTP] Error triggering typing off: #{e.message}"
+  end
 
   def should_process_message?
     event_valid = %w[message_created message_updated inactivity_action].include?(@payload[:event])
