@@ -61,6 +61,7 @@ import { useLanguage } from '@/hooks/useLanguage';
 import { useDebounce } from '@/hooks/useDebounce';
 import chatService from '@/services/chat/chatService';
 import { pipelinesService } from '@/services/pipelines/pipelinesService';
+import { useAppDataStore } from '@/store/appDataStore';
 import { toast } from 'sonner';
 import type {
   SearchConversationResult,
@@ -151,6 +152,7 @@ const ChatSidebar = ({
     loadConversations: (params?: unknown) => Promise<void>;
     loadMoreConversations: () => Promise<void>;
   };
+  const inboxes = useAppDataStore(state => state.inboxes);
   const filters = chatContext.filters;
   const [conversationFilters, setConversationFilters] = useState<BaseFilter[]>([]);
   const [filterModalOpen, setFilterModalOpen] = useState(false);
@@ -159,6 +161,30 @@ const ChatSidebar = ({
   const sidebarScrollRef = useRef<HTMLDivElement | null>(null);
   const loadingMoreRef = useRef(false);
   const lastScrollTimeRef = useRef<number>(0);
+
+  // Derive selected inbox from active filters
+  const selectedInboxId = useMemo(() => {
+    const inboxFilter = filters.state.activeFilters.find((f: ConversationFilter) => f.attribute_key === 'inbox_id');
+    if (inboxFilter && inboxFilter.values && inboxFilter.values.length > 0) {
+      return String(inboxFilter.values[0]);
+    }
+    return null;
+  }, [filters.state.activeFilters]);
+
+  const handleSelectInbox = (inboxId: string | null) => {
+    // Filter out existing inbox filter
+    const newFilters = conversationFilters.filter(f => f.attributeKey !== 'inbox_id');
+    if (inboxId) {
+      newFilters.push({
+        attributeKey: 'inbox_id',
+        filterOperator: 'equal_to',
+        values: inboxId,
+        queryOperator: 'and',
+        attributeModel: 'standard'
+      });
+    }
+    handleApplyFilters(newFilters);
+  };
 
   useEffect(() => {
     onClearSelection();
@@ -1012,6 +1038,34 @@ const ChatSidebar = ({
         </div>
         {showArchived && (
           <p className="text-xs text-muted-foreground">{t('chatSidebar.archivedNotice')}</p>
+        )}
+
+        {/* Inbox Selector (Chatwoot style separation) */}
+        {inboxes && inboxes.length > 0 && (
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-thin scrollbar-thumb-muted-foreground/20 scrollbar-track-transparent">
+            <Button
+              type="button"
+              variant={selectedInboxId === null ? 'secondary' : 'ghost'}
+              size="sm"
+              className={`h-7 px-3 flex-shrink-0 text-xs rounded-full ${selectedInboxId === null ? 'bg-primary/10 text-primary hover:bg-primary/20' : ''}`}
+              onClick={() => handleSelectInbox(null)}
+            >
+              {t('chatSidebar.allInboxes', 'Todas as Caixas')}
+            </Button>
+            {inboxes.map(inbox => (
+              <Button
+                key={inbox.id}
+                type="button"
+                variant={selectedInboxId === String(inbox.id) ? 'secondary' : 'ghost'}
+                size="sm"
+                className={`h-7 px-3 flex-shrink-0 text-xs rounded-full ${selectedInboxId === String(inbox.id) ? 'bg-primary/10 text-primary hover:bg-primary/20' : ''}`}
+                onClick={() => handleSelectInbox(String(inbox.id))}
+                title={inbox.name}
+              >
+                {inbox.name}
+              </Button>
+            ))}
+          </div>
         )}
       </div>
 
