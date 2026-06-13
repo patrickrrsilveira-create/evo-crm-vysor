@@ -5,7 +5,6 @@ import type {
   GoogleSheetsOAuthResponse,
   GoogleSheetsConnectionResponse,
 } from '@/types/integrations/googleSheets';
-import { GOOGLE_OAUTH_GLOBAL_CONFIG } from '@/config/googleOAuth';
 
 const GoogleSheetsService = {
   /**

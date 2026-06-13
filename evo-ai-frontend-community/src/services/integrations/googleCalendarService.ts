@@ -5,7 +5,6 @@ import type {
   GoogleCalendarOAuthResponse,
   GoogleCalendarConnectionResponse
 } from '@/types/integrations';
-import { GOOGLE_OAUTH_GLOBAL_CONFIG } from '@/config/googleOAuth';
 
 const GoogleCalendarService = {
   /**
