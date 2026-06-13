@@ -591,6 +591,55 @@ class ToolBuilder:
         elif google_sheets_config and google_sheets_config.get("connected"):
             logger.warning("Google Sheets integration connected but credentials not available")
 
+        # Process Microsoft Teams integration
+        logger.debug(f"Checking Microsoft Teams integration. Integrations keys: {list(integrations.keys()) if integrations else 'None'}")
+        microsoft_teams_config = integrations.get("microsoft-teams") or integrations.get("microsoft_teams")
+        microsoft_teams_credentials = integrations.get("microsoft-teams-credentials") or integrations.get("microsoft_teams_credentials")
+        logger.debug(f"Microsoft Teams config: {microsoft_teams_config}")
+        logger.debug(f"Microsoft Teams credentials available: {bool(microsoft_teams_credentials)}")
+
+        if microsoft_teams_config and microsoft_teams_config.get("connected") and microsoft_teams_credentials:
+            try:
+                from src.services.adk.tools.microsoft_teams import (
+                    create_check_teams_availability_tool,
+                    create_create_teams_meeting_tool,
+                )
+
+                # Use agent_id from parameter if available, otherwise try to get from config
+                effective_agent_id = agent_id or agent_config.get("id") or agent_config.get("agent_id")
+
+                if not effective_agent_id:
+                    logger.warning("Cannot create Microsoft Teams tools: agent_id not available")
+                else:
+                    # Add check_availability tool
+                    self.tools.append(
+                        create_check_teams_availability_tool(
+                            agent_id=effective_agent_id,
+                            teams_config=microsoft_teams_config,
+                            credentials_config=microsoft_teams_credentials,
+                            db=db
+                        )
+                    )
+
+                    # Add create_meeting tool
+                    self.tools.append(
+                        create_create_teams_meeting_tool(
+                            agent_id=effective_agent_id,
+                            teams_config=microsoft_teams_config,
+                            credentials_config=microsoft_teams_credentials,
+                            db=db
+                        )
+                    )
+
+                    logger.info(
+                        f"Added Microsoft Teams tools (check_availability, create_meeting) "
+                        f"for agent {effective_agent_id}"
+                    )
+            except Exception as e:
+                logger.error(f"Error creating Microsoft Teams tools: {e}")
+        elif microsoft_teams_config and microsoft_teams_config.get("connected"):
+            logger.warning("Microsoft Teams integration connected but credentials not available")
+
         # Process native tools (text_to_speech)
         # Legacy support for old format
         if agent_config.get("tools"):

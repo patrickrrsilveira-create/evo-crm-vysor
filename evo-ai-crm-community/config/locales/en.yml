@@ -222,6 +222,9 @@ en:
     dashboard_apps:
       name: 'Dashboard Apps'
       description: 'Dashboard Apps allow you to create and embed applications that display user information, orders, or payment history, providing more context to your customer support agents.'
+    microsoft_teams:
+      name: 'Microsoft Teams'
+      description: 'Connect Microsoft Teams to schedule meetings, receive notifications, and manage team communications directly in the CRM. Access the Graph API for deep integration with Microsoft.'
     oauth_applications:
       name: 'OAuth Applications'
       description: 'OAuth Applications allow external applications to securely access your Evolution account data through OAuth 2.0 authentication. Create applications to enable third-party integrations with proper authorization controls.'

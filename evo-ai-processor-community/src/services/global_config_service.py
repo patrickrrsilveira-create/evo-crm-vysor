@@ -212,6 +212,65 @@ class GlobalConfigService:
             "redirect_uri": redirect_uri
         }
 
+    async def get_microsoft_teams_credentials(self) -> Dict[str, Optional[str]]:
+        """
+        Fetch Microsoft Teams OAuth credentials from CRM's service-authenticated endpoint.
+        Falls back to environment variables if the CRM endpoint fails or returns empty.
+
+        Returns:
+            Dictionary with tenant_id, client_id, and client_secret
+        """
+        tenant_id = None
+        client_id = None
+        client_secret = None
+
+        try:
+            url = f"{self.crm_base_url}/api/v1/integrations/microsoft_teams/credentials"
+
+            headers = {
+                "X-Service-Token": self.api_token,
+                "Content-Type": "application/json"
+            }
+
+            async with httpx.AsyncClient(timeout=10.0) as client_http:
+                response = await client_http.get(url, headers=headers)
+
+                if response.status_code == 200:
+                    response_data = response.json()
+                    data = response_data.get("data", response_data)
+                    tenant_id = data.get("microsoft_teams_tenant_id")
+                    client_id = data.get("microsoft_teams_client_id")
+                    client_secret = data.get("microsoft_teams_client_secret")
+                    
+                    # Normalize empty strings to None and strip spaces
+                    tenant_id = tenant_id.strip() if tenant_id and isinstance(tenant_id, str) else tenant_id
+                    client_id = client_id.strip() if client_id and isinstance(client_id, str) else client_id
+                    client_secret = client_secret.strip() if client_secret and isinstance(client_secret, str) else client_secret
+                else:
+                    logger.warning(
+                        f"CRM returned {response.status_code} for Microsoft Teams credentials, falling back to env vars"
+                    )
+
+        except Exception as e:
+            logger.warning(f"Error fetching Microsoft Teams credentials from CRM: {e}, falling back to env vars")
+
+        # Fallback to environment variables
+        if not tenant_id:
+            tenant_id = os.getenv("MICROSOFT_TEAMS_TENANT_ID")
+        if not client_id:
+            client_id = os.getenv("MICROSOFT_TEAMS_CLIENT_ID")
+        if not client_secret:
+            client_secret = os.getenv("MICROSOFT_TEAMS_CLIENT_SECRET")
+
+        if not tenant_id or not client_id or not client_secret:
+            logger.error("Microsoft Teams credentials not available from CRM or environment variables")
+
+        return {
+            "tenant_id": tenant_id,
+            "client_id": client_id,
+            "client_secret": client_secret
+        }
+
     async def get_github_credentials(self) -> Dict[str, Optional[str]]:
         """
         Fetch GitHub OAuth credentials from CRM's service-authenticated endpoint.

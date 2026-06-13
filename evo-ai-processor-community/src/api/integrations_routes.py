@@ -137,6 +137,9 @@ async def check_credentials_configured(provider: str, config_service) -> bool:
         elif provider == "google_sheets":
             creds = await config_service.get_google_sheets_credentials()
             return bool(creds.get("client_id") and creds.get("client_secret") and creds.get("redirect_uri"))
+        elif provider == "microsoft_teams":
+            creds = await config_service.get_microsoft_teams_credentials()
+            return bool(creds.get("tenant_id") and creds.get("client_id") and creds.get("client_secret"))
         return False
     except Exception as e:
         logger.warning(f"Error checking credentials for {provider}: {e}")
@@ -225,11 +228,20 @@ async def get_all_configurations(
                     "connected": credentials_providers["google_calendar_credentials"]
                 }
 
+        if "microsoft_teams_credentials" in credentials_providers:
+            if "microsoft_teams" in configs:
+                configs["microsoft_teams"]["connected"] = credentials_providers["microsoft_teams_credentials"]
+            else:
+                configs["microsoft_teams"] = {
+                    "provider": "microsoft_teams",
+                    "connected": credentials_providers["microsoft_teams_credentials"]
+                }
+
         # Check credentials status for all providers
         config_service = get_global_config_service()
         credentials_configured: Dict[str, bool] = {}
 
-        providers = ["github", "notion", "stripe", "linear", "monday", "atlassian", "asana", "hubspot", "paypal", "canva", "supabase", "google_calendar", "google_sheets"]
+        providers = ["github", "notion", "stripe", "linear", "monday", "atlassian", "asana", "hubspot", "paypal", "canva", "supabase", "google_calendar", "google_sheets", "microsoft_teams"]
         for provider in providers:
             credentials_configured[provider] = await check_credentials_configured(provider, config_service)
 

@@ -80,19 +80,10 @@ export default function Integrations() {
     setLoading(true);
     try {
       const response = await integrationsService.getIntegrations();
-      const fetched = [...response.data];
+      // Filter out the raw 'microsoft_teams' from backend so it doesn't duplicate with 'microsoft_teams_global'
+      const fetched = [...response.data].filter(i => i.id !== 'microsoft_teams');
       
-      // Forçar exibição do card de Aplicativos OAuth se o backend não retornar
-      if (!fetched.some(i => i.id === 'oauth_applications')) {
-        fetched.push({
-          id: 'oauth_applications',
-          name: 'Aplicações OAuth (Evo CRM)',
-          description: 'Crie provedores OAuth locais para integrações de terceiros como n8n.',
-          enabled: true,
-          logo: '',
-        });
-      }
-
+      // Forçar exibição do card do Google Calendar, Sheets e MS Teams se o backend não retornar
       if (!fetched.some(i => i.id === 'google_calendar_global')) {
         fetched.push({
           id: 'google_calendar_global',
@@ -108,6 +99,16 @@ export default function Integrations() {
           id: 'google_sheets_global',
           name: 'Google Sheets (Global)',
           description: 'Configure as credenciais globais do Google Sheets para todos os agentes.',
+          enabled: true,
+          logo: '',
+        });
+      }
+
+      if (!fetched.some(i => i.id === 'microsoft_teams_global')) {
+        fetched.push({
+          id: 'microsoft_teams_global',
+          name: 'Microsoft Teams (Global)',
+          description: 'Configure as credenciais globais do Microsoft Teams para todos os agentes.',
           enabled: true,
           logo: '',
         });
@@ -190,12 +191,12 @@ export default function Integrations() {
       navigate(`/settings/integrations/webhooks`);
     } else if (integration.id === 'dashboard_apps') {
       navigate(`/settings/integrations/dashboard-apps`);
-    } else if (integration.id === 'oauth_applications') {
-      navigate(`/settings/integrations/oauth-apps`);
     } else if (integration.id === 'google_calendar_global') {
       navigate(`/settings/integrations/google_calendar_global`);
     } else if (integration.id === 'google_sheets_global') {
       navigate(`/settings/integrations/google_sheets_global`);
+    } else if (integration.id === 'microsoft_teams_global') {
+      navigate(`/settings/integrations/microsoft_teams_global`);
     } else {
       // Generic integration configuration page
       navigate(`/settings/integrations/${integration.id}`);
@@ -238,7 +239,7 @@ export default function Integrations() {
 
   // Check if integration is config-only
   const isConfigOnlyIntegration = (integrationId: string) => {
-    return ['webhook', 'dashboard_apps', 'oauth_applications', 'google_calendar_global', 'google_sheets_global'].includes(integrationId);
+    return ['webhook', 'dashboard_apps', 'google_calendar_global', 'google_sheets_global', 'microsoft_teams_global'].includes(integrationId);
   };
 
   if (loading) {

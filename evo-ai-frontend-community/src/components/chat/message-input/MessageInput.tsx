@@ -19,6 +19,7 @@ import {
   Reply,
   PenLine,
   MessageSquareText,
+  Video,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -344,6 +345,33 @@ const MessageInput: React.FC<MessageInputProps> = ({
     },
     [onSendMessage, t],
   );
+
+  const handleGenerateTeamsMeeting = useCallback(async () => {
+    if (!conversationId) return;
+    try {
+      setIsSending(true);
+      const token = localStorage.getItem('access_token');
+      const response = await fetch(`/api/v1/conversations/${conversationId}/microsoft_teams_meeting`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'access-token': token || '',
+        },
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || 'Erro ao gerar reunião');
+      }
+
+      toast.success('Link de reunião gerado e enviado com sucesso!');
+    } catch (error: any) {
+      console.error('Error generating Teams meeting:', error);
+      toast.error(error.message || 'Erro ao gerar link de reunião do Microsoft Teams');
+    } finally {
+      setIsSending(false);
+    }
+  }, [conversationId]);
 
   // 🎯 CANNED RESPONSES: Abrir/fechar dropdown via botão
   const handleCannedResponsesClick = useCallback(() => {
@@ -755,6 +783,18 @@ const MessageInput: React.FC<MessageInputProps> = ({
                 title={t('messageTemplates.button.title')}
               >
                 <FileText className="h-4 w-4" />
+              </Button>
+
+              {/* Microsoft Teams Meeting Button */}
+              <Button
+                variant="ghost"
+                size="icon"
+                disabled={isSending || isPendingConversation}
+                className="h-9 w-9 flex-shrink-0 hover:bg-blue-100 hover:text-blue-700 disabled:opacity-50"
+                onClick={handleGenerateTeamsMeeting}
+                title="Gerar Link do Microsoft Teams"
+              >
+                <Video className="h-4 w-4" />
               </Button>
             </div>
 

@@ -74,6 +74,9 @@ Rails.application.routes.draw do
         namespace :supabase do
           get 'credentials', to: 'credentials#show'
         end
+        namespace :microsoft_teams do
+          get 'credentials', to: 'credentials#show'
+        end
       end
 
       namespace :oauth do
@@ -135,6 +138,7 @@ Rails.application.routes.draw do
           post :unarchive
           get :attachments
           get :inbox_assistant
+          post :microsoft_teams_meeting
         end
       end
 

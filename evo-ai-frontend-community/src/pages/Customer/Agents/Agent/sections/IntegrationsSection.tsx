@@ -15,6 +15,7 @@ import GoogleSheetsConfigDialog from '@/components/integrations/GoogleSheetsConf
 import KnowledgeNexusConfigDialog, {
   type KnowledgeNexusConfig,
 } from '@/components/integrations/KnowledgeNexusConfigDialog';
+import MicrosoftTeamsConfigDialog from '@/components/integrations/MicrosoftTeamsConfigDialog';
 import { useIntegrations } from '@/hooks/useIntegrations';
 import { agentIntegrationsService } from '@/services/agents/agentIntegrationsService';
 import { toast } from 'sonner';
@@ -42,6 +43,7 @@ const IntegrationsSection = ({
   const [showGoogleCalendarConfig, setShowGoogleCalendarConfig] = useState(false);
   const [showGoogleSheetsConfig, setShowGoogleSheetsConfig] = useState(false);
   const [showKnowledgeNexusConfig, setShowKnowledgeNexusConfig] = useState(false);
+  const [showMicrosoftTeamsConfig, setShowMicrosoftTeamsConfig] = useState(false);
 
   // Use custom hook for integrations status
   const { credentialsConfigured, isCheckingIntegrations, isConnected, reloadConfigs } =
@@ -102,7 +104,7 @@ const IntegrationsSection = ({
   // pelo administrador. Google Calendar / Sheets usam OAuth global e portanto
   // só ficam disponíveis quando `credentialsConfigured` indica que o admin
   // configurou as chaves correspondentes.
-  const ALWAYS_AVAILABLE_INTEGRATIONS = ['tts', 'knowledge-nexus', 'google-calendar', 'google-sheets'];
+  const ALWAYS_AVAILABLE_INTEGRATIONS = ['tts', 'knowledge-nexus', 'google-calendar', 'google-sheets', 'microsoft-teams'];
 
   const availableIntegrations: Integration[] = [
     {
@@ -123,6 +125,11 @@ const IntegrationsSection = ({
       description:
         t('edit.integrations.googleSheets.description') ||
         'Permite criar, ler, atualizar e gerenciar planilhas do Google Sheets.',
+    },
+    {
+      id: 'microsoft-teams',
+      name: 'Microsoft Teams',
+      description: 'Permite que o agente gerencie agendamentos e reuniões online via Microsoft Teams.',
     },
     {
       id: 'knowledge-nexus',
@@ -231,6 +238,8 @@ const IntegrationsSection = ({
                                 setShowTTSConfig(true);
                               } else if (integration.id === 'google-calendar') {
                                 setShowGoogleCalendarConfig(true);
+                              } else if (integration.id === 'microsoft-teams') {
+                                setShowMicrosoftTeamsConfig(true);
                               } else if (integration.id === 'google-sheets') {
                                 setShowGoogleSheetsConfig(true);
                               } else if (integration.id === 'knowledge-nexus') {
@@ -385,22 +394,34 @@ const IntegrationsSection = ({
         <KnowledgeNexusConfigDialog
           open={showKnowledgeNexusConfig}
           onOpenChange={setShowKnowledgeNexusConfig}
-          initialConfig={
-            integrations['knowledge-nexus'] as Partial<KnowledgeNexusConfig> | undefined
-          }
           onSave={async config => {
-            await persistIntegration(
-              'knowledge-nexus',
-              config as unknown as Record<string, unknown>
-            );
+            await persistIntegration('knowledge-nexus', config as unknown as Record<string, unknown>);
+            setShowKnowledgeNexusConfig(false);
           }}
-          onDeactivate={
-            integrations['knowledge-nexus']
-              ? async () => {
-                  await removeIntegration('knowledge-nexus');
-                }
-              : undefined
-          }
+          onDisconnect={async () => {
+            await removeIntegration('knowledge-nexus');
+            setShowKnowledgeNexusConfig(false);
+          }}
+          initialConfig={(integrations['knowledge-nexus'] || {}) as KnowledgeNexusConfig}
+          agentId={agentId}
+        />
+      )}
+
+      {/* Dialog de configuração Microsoft Teams */}
+      {showMicrosoftTeamsConfig && (
+        <MicrosoftTeamsConfigDialog
+          open={showMicrosoftTeamsConfig}
+          onOpenChange={setShowMicrosoftTeamsConfig}
+          onSave={async config => {
+            await persistIntegration('microsoft-teams', config as unknown as Record<string, unknown>);
+            setShowMicrosoftTeamsConfig(false);
+          }}
+          onDisconnect={async () => {
+            await removeIntegration('microsoft-teams');
+            setShowMicrosoftTeamsConfig(false);
+          }}
+          initialConfig={(integrations['microsoft-teams'] || {}) as any}
+          agentId={agentId}
         />
       )}
     </div>
