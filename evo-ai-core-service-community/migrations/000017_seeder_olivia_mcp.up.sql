@@ -25,7 +25,7 @@ BEGIN
             );
         END IF;
 
-        RAISE NOTICE 'Olivia MCP Server inserted into evo_core_mcp_servers table.', 8;
+        RAISE NOTICE 'Olivia MCP Server inserted into evo_core_mcp_servers table.';
         
     ELSE
         RAISE NOTICE 'Table evo_core_mcp_servers not found. Seeder not executed.';
