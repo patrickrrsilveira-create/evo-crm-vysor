@@ -1,9 +1,13 @@
+import agentProcessorApi from '@/services/core/agentProcessorApi';
 import evoaiApi from '@/services/core/apiEvoAI';
 import { extractData } from '@/utils/apiHelpers';
 
 /**
  * Agent Integrations Service
- * Centraliza todas as chamadas de API relacionadas às integrações dos agentes
+ * Centraliza todas as chamadas de API relacionadas às integrações dos agentes.
+ *
+ * GET/POST/DELETE de integrações usam o agentProcessorApi (Python processor)
+ * onde os endpoints estão definidos em integrations_routes.py.
  */
 
 export interface AgentIntegrationItem {
@@ -29,7 +33,7 @@ class AgentIntegrationsService {
    * @returns Lista de integrações persistidas no backend
    */
   async getAgentIntegrations(agentId: string): Promise<AgentIntegrationItem[]> {
-    const response = await evoaiApi.get(`/agents/${agentId}/integrations`);
+    const response = await agentProcessorApi.get(`/agents/${agentId}/integrations`);
     const data = extractData<AgentIntegrationItem[] | null>(response);
     return Array.isArray(data) ? data : [];
   }
@@ -44,7 +48,7 @@ class AgentIntegrationsService {
     config: Record<string, unknown>
   ): Promise<AgentIntegrationItem> {
     const normalizedProvider = provider.replace(/-/g, '_');
-    const response = await evoaiApi.post(`/agents/${agentId}/integrations`, {
+    const response = await agentProcessorApi.post(`/agents/${agentId}/integrations`, {
       provider: normalizedProvider,
       config,
     });
@@ -57,7 +61,7 @@ class AgentIntegrationsService {
    */
   async deleteIntegration(agentId: string, provider: string): Promise<void> {
     const normalizedProvider = provider.replace(/-/g, '_');
-    await evoaiApi.delete(`/agents/${agentId}/integrations/${normalizedProvider}`);
+    await agentProcessorApi.delete(`/agents/${agentId}/integrations/${normalizedProvider}`);
   }
 
   /**
@@ -80,3 +84,4 @@ class AgentIntegrationsService {
 
 export const agentIntegrationsService = new AgentIntegrationsService();
 export default agentIntegrationsService;
+

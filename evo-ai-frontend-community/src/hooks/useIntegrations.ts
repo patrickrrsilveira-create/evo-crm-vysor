@@ -99,6 +99,7 @@ export function useIntegrations(agentId: string): UseIntegrationsReturn {
   const [isCheckingIntegrations, setIsCheckingIntegrations] = useState(true);
   const [credentialsConfigured, setCredentialsConfigured] = useState<Record<string, boolean>>({
     elevenlabs: false,
+    tts: false,
     'google-calendar': false,
     'google-sheets': false,
     'knowledge-nexus': false,
@@ -133,9 +134,10 @@ export function useIntegrations(agentId: string): UseIntegrationsReturn {
       setCredentialsConfigured(credentialsConfiguredNext);
 
       // Sanitize configs before storing (defense-in-depth security measure)
+      // TTS can be stored under either 'tts' or 'elevenlabs' provider
       setElevenLabsConfig(
-        configsByProvider.elevenlabs
-          ? (sanitizeConfig(configsByProvider.elevenlabs) as unknown as ElevenLabsConfig)
+        (configsByProvider.tts || configsByProvider.elevenlabs)
+          ? (sanitizeConfig(configsByProvider.tts || configsByProvider.elevenlabs) as unknown as ElevenLabsConfig)
           : null
       );
       setGoogleCalendarConfig(
@@ -169,6 +171,7 @@ export function useIntegrations(agentId: string): UseIntegrationsReturn {
       setKnowledgeNexusConfig(null);
       setCredentialsConfigured({
         elevenlabs: false,
+        tts: false,
         'google-calendar': false,
         'google-sheets': false,
         'knowledge-nexus': false,
@@ -189,6 +192,7 @@ export function useIntegrations(agentId: string): UseIntegrationsReturn {
         ElevenLabsConfig | GoogleCalendarConfig | GoogleSheetsConfig | KnowledgeNexusConfig | null
       > = {
         elevenlabs: elevenLabsConfig,
+        tts: elevenLabsConfig,
         'google-calendar': googleCalendarConfig,
         'google-sheets': googleSheetsConfig,
         'knowledge-nexus': knowledgeNexusConfig,

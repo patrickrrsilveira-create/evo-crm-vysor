@@ -4,11 +4,14 @@ Integrations API routes - Bulk operations.
 Provides endpoints for:
 - Getting all integration configurations at once
 - Checking credentials status for all integrations
+- Upserting (create/update) integration configurations
+- Deleting integration configurations
 """
 
 import logging
 from typing import Dict, Any
 from fastapi import APIRouter, HTTPException, Depends, status, Request
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from src.config.database import get_db
@@ -23,6 +26,11 @@ router = APIRouter(
     prefix="/agents/{agent_id}/integrations",
     tags=["integrations"],
 )
+
+
+class UpsertIntegrationRequest(BaseModel):
+    provider: str
+    config: Dict[str, Any] = {}
 
 
 def sanitize_config(config: Dict[str, Any]) -> Dict[str, Any]:
@@ -246,6 +254,137 @@ async def get_all_configurations(
             request=request,
             code=map_status_to_error_code(status.HTTP_500_INTERNAL_SERVER_ERROR),
             message=f"Failed to get configurations: {str(e)}",
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+
+@router.post(
+    "",
+    responses={
+        200: {"description": "Integration upserted successfully"},
+        401: {"model": ErrorResponse, "description": "Authentication token required"},
+        500: {"model": ErrorResponse, "description": "Internal server error"}
+    }
+)
+async def upsert_integration(
+    agent_id: str,
+    body: UpsertIntegrationRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    """
+    Create or update an integration for an agent.
+    
+    This endpoint persists the integration config directly in the
+    evo_core_agent_integrations table, used by TTS, Knowledge Nexus,
+    and other integrations that don't require OAuth.
+    """
+    try:
+        from src.services.agent_service import upsert_agent_integration
+
+        # Validate auth
+        auth_header = request.headers.get("Authorization", "")
+        user_token = auth_header.replace("Bearer ", "") if auth_header.startswith("Bearer ") else ""
+        if not user_token:
+            return error_response(
+                request=request,
+                code=map_status_to_error_code(status.HTTP_401_UNAUTHORIZED),
+                message="Authentication token required",
+                status_code=status.HTTP_401_UNAUTHORIZED
+            )
+
+        # Normalize provider (frontend uses dashes, backend uses underscores)
+        provider = body.provider.replace("-", "_")
+        config = body.config
+
+        logger.info(f"Upserting integration '{provider}' for agent {agent_id}")
+
+        success = await upsert_agent_integration(db, agent_id, provider, config)
+
+        if not success:
+            return error_response(
+                request=request,
+                code=map_status_to_error_code(status.HTTP_500_INTERNAL_SERVER_ERROR),
+                message=f"Failed to upsert integration {provider}",
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+        return success_response(
+            data={
+                "provider": provider,
+                "config": sanitize_config(config),
+                "connected": True,
+            },
+            message=f"Integration {provider} saved successfully"
+        )
+    except Exception as e:
+        logger.error(f"Error upserting integration: {e}")
+        return error_response(
+            request=request,
+            code=map_status_to_error_code(status.HTTP_500_INTERNAL_SERVER_ERROR),
+            message=f"Failed to upsert integration: {str(e)}",
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+
+@router.delete(
+    "/{provider}",
+    responses={
+        200: {"description": "Integration deleted successfully"},
+        401: {"model": ErrorResponse, "description": "Authentication token required"},
+        500: {"model": ErrorResponse, "description": "Internal server error"}
+    }
+)
+async def delete_integration(
+    agent_id: str,
+    provider: str,
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    """
+    Delete an integration for an agent by provider name.
+    """
+    try:
+        from sqlalchemy import text
+
+        # Validate auth
+        auth_header = request.headers.get("Authorization", "")
+        user_token = auth_header.replace("Bearer ", "") if auth_header.startswith("Bearer ") else ""
+        if not user_token:
+            return error_response(
+                request=request,
+                code=map_status_to_error_code(status.HTTP_401_UNAUTHORIZED),
+                message="Authentication token required",
+                status_code=status.HTTP_401_UNAUTHORIZED
+            )
+
+        # Normalize provider
+        normalized_provider = provider.replace("-", "_")
+
+        logger.info(f"Deleting integration '{normalized_provider}' for agent {agent_id}")
+
+        query = text("""
+            DELETE FROM evo_core_agent_integrations
+            WHERE agent_id = :agent_id AND provider = :provider
+        """)
+
+        result = db.execute(query, {
+            "agent_id": agent_id,
+            "provider": normalized_provider,
+        })
+        db.commit()
+
+        return success_response(
+            data={"provider": normalized_provider, "deleted": True},
+            message=f"Integration {normalized_provider} deleted successfully"
+        )
+    except Exception as e:
+        logger.error(f"Error deleting integration: {e}")
+        db.rollback()
+        return error_response(
+            request=request,
+            code=map_status_to_error_code(status.HTTP_500_INTERNAL_SERVER_ERROR),
+            message=f"Failed to delete integration: {str(e)}",
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
