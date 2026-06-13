@@ -126,6 +126,11 @@ class GlobalConfigService:
                     client_id = data.get("google_calendar_client_id")
                     client_secret = data.get("google_calendar_client_secret")
                     redirect_uri = data.get("google_calendar_redirect_uri")
+                    
+                    # Normalize empty strings to None and strip spaces
+                    client_id = client_id.strip() if client_id and isinstance(client_id, str) else client_id
+                    client_secret = client_secret.strip() if client_secret and isinstance(client_secret, str) else client_secret
+                    redirect_uri = redirect_uri.strip() if redirect_uri and isinstance(redirect_uri, str) else redirect_uri
                 else:
                     logger.warning(
                         f"CRM returned {response.status_code} for Google Calendar credentials, falling back to env vars"
