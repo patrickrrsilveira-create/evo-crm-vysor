@@ -16,7 +16,7 @@ const GoogleCalendarService = {
         `/agents/${agentId}/integrations/google-calendar/authorization`,
         { email }
       );
-      return data.data;
+      return data;
     } catch (error) {
       console.error('GoogleCalendarService.generateAuthorization error:', error);
       throw error;
@@ -39,7 +39,7 @@ const GoogleCalendarService = {
           state,
         }
       );
-      return data.data;
+      return data;
     } catch (error) {
       console.error('GoogleCalendarService.completeAuthorization error:', error);
       throw error;
@@ -54,7 +54,7 @@ const GoogleCalendarService = {
       const { data } = await api.get(
         `/agents/${agentId}/integrations/google-calendar/calendars`
       );
-      return Array.isArray(data.data) ? data.data : (data.data?.calendars || []);
+      return Array.isArray(data.data) ? data.data : (data?.data?.calendars || []);
     } catch (error) {
       console.error('GoogleCalendarService.getCalendars error:', error);
       throw error;
@@ -73,7 +73,7 @@ const GoogleCalendarService = {
         `/agents/${agentId}/integrations/google-calendar`,
         config
       );
-      return data.data;
+      return data;
     } catch (error) {
       console.error('GoogleCalendarService.saveConfiguration error:', error);
       throw error;
@@ -88,7 +88,7 @@ const GoogleCalendarService = {
       const { data } = await api.delete(
         `/agents/${agentId}/integrations/google-calendar`
       );
-      return data.data;
+      return data;
     } catch (error) {
       console.error('GoogleCalendarService.disconnect error:', error);
       throw error;
@@ -111,7 +111,7 @@ const GoogleCalendarService = {
         `/agents/${agentId}/integrations/google-calendar/availability`,
         params
       );
-      return data.data;
+      return data;
     } catch (error) {
       console.error('GoogleCalendarService.checkAvailability error:', error);
       throw error;
@@ -138,7 +138,7 @@ const GoogleCalendarService = {
         `/agents/${agentId}/integrations/google-calendar/events`,
         event
       );
-      return data.data;
+      return data;
     } catch (error) {
       console.error('GoogleCalendarService.createEvent error:', error);
       throw error;
