@@ -601,15 +601,14 @@ class ToolBuilder:
                         tool_config = tool.get("config", {})
                         configured_values = tool_config.get("configured_values", {})
                         self.tools.append(
-                            create_text_to_speech_tool(
-                                configured_values["eleven_labs_token"],
-                                configured_values["voice_id"],
-                                configured_values["model_id"],
-                                configured_values["stability"],
-                                configured_values["similarity_boost"],
-                                configured_values["style"],
-                                configured_values["use_speaker_boost"],
-                            )
+                            create_text_to_speech_tool({
+                                "provider": "elevenlabs",
+                                "apiKey": configured_values.get("eleven_labs_token"),
+                                "voice_id": configured_values.get("voice_id"),
+                                "model": configured_values.get("model_id"),
+                                "stability": configured_values.get("stability", 80),
+                                "similarity_boost": configured_values.get("similarity_boost", 50)
+                            })
                         )
 
         logger.info(f"Built {len(self.tools)} tools total (native + custom)")
