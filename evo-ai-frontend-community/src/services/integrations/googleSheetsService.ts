@@ -13,18 +13,23 @@ const GoogleSheetsService = {
    */
   async generateAuthorization(agentId: string, email?: string): Promise<GoogleSheetsOAuthResponse> {
     try {
-      const clientId = localStorage.getItem('GLOBAL_GOOGLE_SHEETS_CLIENT_ID') || GOOGLE_OAUTH_GLOBAL_CONFIG.clientId || undefined;
-      const clientSecret = localStorage.getItem('GLOBAL_GOOGLE_SHEETS_CLIENT_SECRET') || GOOGLE_OAUTH_GLOBAL_CONFIG.clientSecret || undefined;
+      const clientId = localStorage.getItem('GLOBAL_GOOGLE_SHEETS_CLIENT_ID') || GOOGLE_OAUTH_GLOBAL_CONFIG.clientId;
 
-      const { data } = await api.post(
-        `/agents/${agentId}/integrations/google-sheets/authorization`,
-        { 
-          email, 
-          client_id: clientId,
-          client_secret: clientSecret
-        }
-      );
-      return data;
+      if (!clientId) {
+        throw new Error('Client ID não configurado nas Configurações Globais.');
+      }
+
+      const redirectUri = `${window.location.origin}/google-sheets/callback`;
+      const scope = encodeURIComponent('https://www.googleapis.com/auth/spreadsheets');
+      const state = encodeURIComponent(agentId);
+      
+      let url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(clientId)}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${scope}&access_type=offline&prompt=consent&state=${state}`;
+      
+      if (email) {
+        url += `&login_hint=${encodeURIComponent(email)}`;
+      }
+
+      return { url };
     } catch (error) {
       console.error('GoogleSheetsService.generateAuthorization error:', error);
       throw error;

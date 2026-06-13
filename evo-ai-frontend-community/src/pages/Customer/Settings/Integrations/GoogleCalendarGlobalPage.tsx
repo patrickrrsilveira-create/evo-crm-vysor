@@ -57,7 +57,7 @@ export default function GoogleCalendarGlobalPage() {
             <div className="bg-slate-100 dark:bg-slate-800 p-3 rounded-md text-sm border border-slate-200 dark:border-slate-700">
               <p className="font-medium mb-1">URL de Redirecionamento Autorizado:</p>
               <code className="text-xs break-all block text-muted-foreground select-all">
-                {window.location.origin}/oauth/google-calendar/callback
+                {window.location.origin}/google-calendar/callback
               </code>
               <p className="text-xs mt-1 text-muted-foreground">Copie esta URL e cole no painel de credenciais do Google Cloud Console.</p>
             </div>
