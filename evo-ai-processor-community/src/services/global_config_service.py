@@ -100,10 +100,15 @@ class GlobalConfigService:
     async def get_google_calendar_credentials(self) -> Dict[str, Optional[str]]:
         """
         Fetch Google Calendar OAuth credentials from CRM's service-authenticated endpoint.
+        Falls back to environment variables if the CRM endpoint fails or returns empty.
 
         Returns:
             Dictionary with client_id, client_secret, and redirect_uri
         """
+        client_id = None
+        client_secret = None
+        redirect_uri = None
+
         try:
             url = f"{self.crm_base_url}/api/v1/integrations/google_calendar/credentials"
 
@@ -112,8 +117,8 @@ class GlobalConfigService:
                 "Content-Type": "application/json"
             }
 
-            async with httpx.AsyncClient(timeout=10.0) as client:
-                response = await client.get(url, headers=headers)
+            async with httpx.AsyncClient(timeout=10.0) as client_http:
+                response = await client_http.get(url, headers=headers)
 
                 if response.status_code == 200:
                     response_data = response.json()
@@ -121,58 +126,44 @@ class GlobalConfigService:
                     client_id = data.get("google_calendar_client_id")
                     client_secret = data.get("google_calendar_client_secret")
                     redirect_uri = data.get("google_calendar_redirect_uri")
-
-                    if not client_id or not client_secret or not redirect_uri:
-                        missing = []
-                        if not client_id:
-                            missing.append("google_calendar_client_id")
-                        if not client_secret:
-                            missing.append("google_calendar_client_secret")
-                        if not redirect_uri:
-                            missing.append("google_calendar_redirect_uri")
-
-                        logger.warning(
-                            f"Missing Google Calendar credentials in global config: {', '.join(missing)}"
-                        )
-
-                    return {
-                        "client_id": client_id,
-                        "client_secret": client_secret,
-                        "redirect_uri": redirect_uri
-                    }
                 else:
-                    logger.error(
-                        f"Error fetching Google Calendar credentials: "
-                        f"status={response.status_code}, body={response.text}"
+                    logger.warning(
+                        f"CRM returned {response.status_code} for Google Calendar credentials, falling back to env vars"
                     )
-                    return {
-                        "client_id": None,
-                        "client_secret": None,
-                        "redirect_uri": None
-                    }
 
-        except httpx.TimeoutException:
-            logger.error("Timeout fetching Google Calendar credentials from CRM")
-            return {
-                "client_id": None,
-                "client_secret": None,
-                "redirect_uri": None
-            }
         except Exception as e:
-            logger.error(f"Error fetching Google Calendar credentials: {e}")
-            return {
-                "client_id": None,
-                "client_secret": None,
-                "redirect_uri": None
-            }
+            logger.warning(f"Error fetching Google Calendar credentials from CRM: {e}, falling back to env vars")
+
+        # Fallback to environment variables
+        if not client_id:
+            client_id = os.getenv("GOOGLE_CALENDAR_CLIENT_ID") or os.getenv("GOOGLE_OAUTH_CLIENT_ID")
+        if not client_secret:
+            client_secret = os.getenv("GOOGLE_CALENDAR_CLIENT_SECRET") or os.getenv("GOOGLE_OAUTH_CLIENT_SECRET")
+        if not redirect_uri:
+            frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173").rstrip("/")
+            redirect_uri = f"{frontend_url}/google-calendar/callback"
+
+        if not client_id or not client_secret:
+            logger.error("Google Calendar credentials not available from CRM or environment variables")
+
+        return {
+            "client_id": client_id,
+            "client_secret": client_secret,
+            "redirect_uri": redirect_uri
+        }
 
     async def get_google_sheets_credentials(self) -> Dict[str, Optional[str]]:
         """
         Fetch Google Sheets OAuth credentials from CRM's service-authenticated endpoint.
+        Falls back to environment variables if the CRM endpoint fails or returns empty.
 
         Returns:
             Dictionary with client_id, client_secret, and redirect_uri
         """
+        client_id = None
+        client_secret = None
+        redirect_uri = None
+
         try:
             url = f"{self.crm_base_url}/api/v1/integrations/google_sheets/credentials"
 
@@ -181,8 +172,8 @@ class GlobalConfigService:
                 "Content-Type": "application/json"
             }
 
-            async with httpx.AsyncClient(timeout=10.0) as client:
-                response = await client.get(url, headers=headers)
+            async with httpx.AsyncClient(timeout=10.0) as client_http:
+                response = await client_http.get(url, headers=headers)
 
                 if response.status_code == 200:
                     response_data = response.json()
@@ -190,50 +181,31 @@ class GlobalConfigService:
                     client_id = data.get("google_sheets_client_id")
                     client_secret = data.get("google_sheets_client_secret")
                     redirect_uri = data.get("google_sheets_redirect_uri")
-
-                    if not client_id or not client_secret or not redirect_uri:
-                        missing = []
-                        if not client_id:
-                            missing.append("google_sheets_client_id")
-                        if not client_secret:
-                            missing.append("google_sheets_client_secret")
-                        if not redirect_uri:
-                            missing.append("google_sheets_redirect_uri")
-
-                        logger.warning(
-                            f"Missing Google Sheets credentials in global config: {', '.join(missing)}"
-                        )
-
-                    return {
-                        "client_id": client_id,
-                        "client_secret": client_secret,
-                        "redirect_uri": redirect_uri
-                    }
                 else:
-                    logger.error(
-                        f"Error fetching Google Sheets credentials: "
-                        f"status={response.status_code}, body={response.text}"
+                    logger.warning(
+                        f"CRM returned {response.status_code} for Google Sheets credentials, falling back to env vars"
                     )
-                    return {
-                        "client_id": None,
-                        "client_secret": None,
-                        "redirect_uri": None
-                    }
 
-        except httpx.TimeoutException:
-            logger.error("Timeout fetching Google Sheets credentials from CRM")
-            return {
-                "client_id": None,
-                "client_secret": None,
-                "redirect_uri": None
-            }
         except Exception as e:
-            logger.error(f"Error fetching Google Sheets credentials: {e}")
-            return {
-                "client_id": None,
-                "client_secret": None,
-                "redirect_uri": None
-            }
+            logger.warning(f"Error fetching Google Sheets credentials from CRM: {e}, falling back to env vars")
+
+        # Fallback to environment variables
+        if not client_id:
+            client_id = os.getenv("GOOGLE_SHEETS_CLIENT_ID") or os.getenv("GOOGLE_OAUTH_CLIENT_ID")
+        if not client_secret:
+            client_secret = os.getenv("GOOGLE_SHEETS_CLIENT_SECRET") or os.getenv("GOOGLE_OAUTH_CLIENT_SECRET")
+        if not redirect_uri:
+            frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173").rstrip("/")
+            redirect_uri = f"{frontend_url}/google-sheets/callback"
+
+        if not client_id or not client_secret:
+            logger.error("Google Sheets credentials not available from CRM or environment variables")
+
+        return {
+            "client_id": client_id,
+            "client_secret": client_secret,
+            "redirect_uri": redirect_uri
+        }
 
     async def get_github_credentials(self) -> Dict[str, Optional[str]]:
         """
