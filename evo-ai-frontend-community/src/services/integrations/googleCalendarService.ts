@@ -13,23 +13,11 @@ const GoogleCalendarService = {
    */
   async generateAuthorization(agentId: string, email?: string): Promise<GoogleCalendarOAuthResponse> {
     try {
-      const clientId = localStorage.getItem('GLOBAL_GOOGLE_CALENDAR_CLIENT_ID') || GOOGLE_OAUTH_GLOBAL_CONFIG.clientId;
-
-      if (!clientId) {
-        throw new Error('Client ID não configurado nas Configurações Globais.');
-      }
-
-      const redirectUri = `${window.location.origin}/google-calendar/callback`;
-      const scope = encodeURIComponent('https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/calendar.events');
-      const state = encodeURIComponent(agentId);
-      
-      let url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(clientId)}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${scope}&access_type=offline&prompt=consent&state=${state}`;
-      
-      if (email) {
-        url += `&login_hint=${encodeURIComponent(email)}`;
-      }
-
-      return { url };
+      const { data } = await api.post(
+        `/agents/${agentId}/integrations/google-calendar/authorization`,
+        { email }
+      );
+      return data;
     } catch (error) {
       console.error('GoogleCalendarService.generateAuthorization error:', error);
       throw error;
