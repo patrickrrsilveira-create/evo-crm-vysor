@@ -1035,6 +1035,13 @@ async def handle_message_send(
     # Extract text and files from message
     text = extract_text_from_message(message)
     files = await extract_files_from_message_async(message)
+    
+    # Filter out audio files if using OpenRouter to prevent API connection errors
+    # (OpenRouter models generally don't support audio_url parts, and UI already transcribes speech)
+    agent_config = agent.config or {}
+    llm_config = agent_config.get("llm", {})
+    if llm_config.get("provider") == "openrouter":
+        files = [f for f in files if not f.content_type.startswith("audio/")]
     # Use default text if only files provided or if message is completely empty
     if (not text or text.strip() == "No content") and files:
         text = "Analyze the provided files"
@@ -1374,6 +1381,15 @@ async def handle_message_stream(
     # Extract text and files from message
     text = extract_text_from_message(message)
     files = await extract_files_from_message_async(message)
+    
+    # Filter out audio files if using OpenRouter to prevent API connection errors
+    # (OpenRouter models generally don't support audio_url parts, and UI already transcribes speech)
+    agent = await get_agent(db, agent_id)
+    if agent:
+        agent_config = agent.config or {}
+        llm_config = agent_config.get("llm", {})
+        if llm_config.get("provider") == "openrouter":
+            files = [f for f in files if not f.content_type.startswith("audio/")]
     context_id = params.get("contextId", str(uuid.uuid4()))
 
     # Use default text if only files provided or if message is completely empty
