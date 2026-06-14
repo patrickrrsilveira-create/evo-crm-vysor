@@ -68,7 +68,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/vysortech10-boop/evo-crm-vysor-${{ matrix.image }}
+          images: ghcr.io/patrickrsilveira/evo-crm-vysor-${{ matrix.image }}
           tags: |
             type=raw,value=latest
             type=sha
