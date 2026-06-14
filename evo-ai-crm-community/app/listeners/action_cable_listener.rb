@@ -88,18 +88,18 @@ class ActionCableListener < BaseListener
     user = event.data[:user]
     tokens = typing_event_listener_tokens(account, conversation, user)
 
-    user_data = user&.push_event_data
-    # Spoof type as 'user' so the frontend correctly displays the typing indicator for bots
-    user_data[:type] = 'user' if user_data.is_a?(Hash) && user_data[:type] == 'agent_bot'
-
     broadcast(
       account,
       tokens,
       CONVERSATION_TYPING_ON,
       conversation: conversation.push_event_data,
-      user: user_data,
+      user: user&.push_event_data,
       is_private: event.data[:is_private] || false
     )
+  end
+
+  def conversation_recording(event)
+    conversation_typing_on(event)
   end
 
   def conversation_typing_off(event)

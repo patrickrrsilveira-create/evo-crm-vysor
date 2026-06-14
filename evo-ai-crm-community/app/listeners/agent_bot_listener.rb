@@ -528,6 +528,26 @@ class AgentBotListener < BaseListener
       has_attachments = payload[:attachments].any?
     end
 
+    if incoming_message_event?(payload)
+      conversation = find_conversation_from_payload(payload)
+      if conversation
+        # Mark conversation as read to trigger blue ticks (listen confirmation)
+        conversation.update(agent_last_seen_at: Time.current)
+        Rails.configuration.dispatcher.dispatch(Events::Types::MESSAGES_READ, Time.zone.now, conversation: conversation)
+        
+        # Determine if it's audio to show recording or typing
+        has_audio = false
+        if payload[:message].present? && payload[:message].attachments.present?
+          has_audio = payload[:message].attachments.any? { |a| a.file_type == 'audio' }
+        elsif payload[:attachments].present?
+          has_audio = payload[:attachments].any? { |a| a[:file_type] == 'audio' || a['file_type'] == 'audio' }
+        end
+        
+        typing_event = has_audio ? Events::Types::CONVERSATION_RECORDING : Events::Types::CONVERSATION_TYPING_ON
+        Rails.configuration.dispatcher.dispatch(typing_event, Time.zone.now, conversation: conversation, user: agent_bot, is_private: false)
+      end
+    end
+
     # Bot Runtime handles debounce, AI calls and dispatch externally
     # Bypass it for messages with attachments since it doesn't support them yet
     if BotRuntime::Config.enabled? && !has_attachments

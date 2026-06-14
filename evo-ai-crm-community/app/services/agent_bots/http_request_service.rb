@@ -41,25 +41,9 @@ class AgentBots::HttpRequestService
   private
 
   def trigger_typing_on
-    conversation = find_conversation_from_payload
-    return unless conversation
-
-    # Mark conversation as read to trigger blue ticks (listen confirmation)
-    conversation.update(agent_last_seen_at: Time.current)
-    Rails.configuration.dispatcher.dispatch(Events::Types::MESSAGES_READ, Time.zone.now, conversation: conversation)
-
-    # Check if this is an audio message to display "recording" instead of "typing"
-    is_audio = false
-    attachments = @payload[:attachments] || []
-    if attachments.is_a?(Array) && attachments.any?
-      is_audio = attachments.any? { |a| a[:file_type] == 'audio' || a['file_type'] == 'audio' }
-    end
-
-    typing_event = is_audio ? Events::Types::CONVERSATION_RECORDING : Events::Types::CONVERSATION_TYPING_ON
-
-    Rails.configuration.dispatcher.dispatch(typing_event, Time.zone.now, conversation: conversation, user: @agent_bot, is_private: false)
-  rescue StandardError => e
-    Rails.logger.error "[AgentBot HTTP] Error triggering typing on: #{e.message}"
+    # Typing indicator is now triggered globally in AgentBotListener#process_webhook_bot_event
+    # before delegating to the specific AI provider service. This ensures all providers
+    # (BotRuntime, N8n, Webhook, HttpRequest) trigger typing status.
   end
 
   def trigger_typing_off
