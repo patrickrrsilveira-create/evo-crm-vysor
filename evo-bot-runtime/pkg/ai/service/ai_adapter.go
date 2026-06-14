@@ -3,12 +3,14 @@ package service
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
+	"strings"
 	"time"
 
 	brtErrors "github.com/EvolutionAPI/evo-bot-runtime/internal/errors"
@@ -183,6 +185,19 @@ func downloadAudioFromArtifacts(ctx context.Context, client *http.Client, timeou
 
 	if audioURL == "" {
 		return nil, nil
+	}
+
+	// Handle data URIs natively (base64 encoded audio)
+	if strings.HasPrefix(audioURL, "data:") {
+		parts := strings.SplitN(audioURL, ",", 2)
+		if len(parts) == 2 {
+			decoded, err := base64.StdEncoding.DecodeString(parts[1])
+			if err != nil {
+				return nil, fmt.Errorf("decode base64 audio: %w", err)
+			}
+			slog.Info("pipeline.ai.download_audio.completed", "bytes", len(decoded), "source", "data_uri")
+			return decoded, nil
+		}
 	}
 
 	slog.Info("pipeline.ai.download_audio.started", "url", audioURL)

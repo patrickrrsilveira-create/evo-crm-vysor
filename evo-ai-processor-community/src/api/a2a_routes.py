@@ -1322,14 +1322,10 @@ async def handle_message_send(
                     )
                     url = None
                     mime_type = "audio/ogg"
-                    if art:
-                        if hasattr(art, "text") and art.text and "Artifact URL:" in art.text:
-                            url = art.text.split("Artifact URL:")[1].strip()
-                        elif hasattr(art, "inline_data") and art.inline_data and art.inline_data.data:
-                            import base64
-                            b64 = base64.b64encode(art.inline_data.data).decode("utf-8")
-                            mime_type = art.inline_data.mime_type or mime_type
-                            url = f"data:{mime_type};base64,{b64}"
+                    
+                    import base64
+                    b64 = base64.b64encode(audio_bytes).decode("utf-8")
+                    url = f"data:{mime_type};base64,{b64}"
                             
                     if url:
                         artifacts.append({
