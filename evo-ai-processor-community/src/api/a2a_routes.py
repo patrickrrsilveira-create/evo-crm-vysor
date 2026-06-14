@@ -1036,6 +1036,9 @@ async def handle_message_send(
     text = extract_text_from_message(message)
     files = await extract_files_from_message_async(message)
     
+    # Check if the user sent an audio message (detect before stripping)
+    has_audio_in_files = any(f.content_type.startswith("audio/") for f in files)
+    
     # Filter out audio files if using OpenRouter to prevent API connection errors
     # (OpenRouter models generally don't support audio_url parts, and UI already transcribes speech)
     agent_config = agent.config or {}
@@ -1046,6 +1049,7 @@ async def handle_message_send(
     # Filter out audio files if using OpenRouter to prevent API connection errors
     if provider == "openrouter" or "openrouter/" in model_name:
         files = [f for f in files if not f.content_type.startswith("audio/")]
+        
     # Use default text if only files provided or if message is completely empty
     if (not text or text.strip() == "No content") and files:
         text = "Analyze the provided files"
@@ -1062,10 +1066,16 @@ async def handle_message_send(
         
         # Check if the user sent an audio message
         metadata = params.get("metadata", {})
-        has_audio = metadata.get("has_audio", False)
+        has_audio = metadata.get("has_audio", False) or has_audio_in_files
+        
+        # Ensure metadata has_audio is updated for fallback logic later in this function
+        if has_audio and "has_audio" not in metadata:
+            metadata["has_audio"] = True
+            params["metadata"] = metadata
         
         if respond_in_audio == "always" or (respond_in_audio == "when_client_asks" and has_audio):
             text += "\n\n[SYSTEM DIRECTIVE]: You must call the `text_to_speech` tool using the exact text of your response to generate the audio. Do not just reply with text, you MUST execute the tool call."
+            logger.info("🔊 Appended TTS tool directive because user sent audio or agent is configured to always respond in audio")
 
     logger.info(f"📝 Extracted text: {text}")
     logger.info(f"📎 Extracted files: {len(files)}")
@@ -1385,6 +1395,8 @@ async def handle_message_stream(
     # Extract text and files from message
     text = extract_text_from_message(message)
     files = await extract_files_from_message_async(message)
+    # Check if the user sent an audio message (detect before stripping)
+    has_audio_in_files = any(f.content_type.startswith("audio/") for f in files)
     
     # Filter out audio files if using OpenRouter to prevent API connection errors
     # (OpenRouter models generally don't support audio_url parts, and UI already transcribes speech)
@@ -1403,6 +1415,23 @@ async def handle_message_stream(
         text = "Analyze the provided files"
     elif not text or text.strip() == "No content":
         text = " "  # Send a blank space to prevent LLM validation errors
+
+    # Check TTS config and append strong instruction if needed to force weak models
+    if agent:
+        agent_config = agent.config or {}
+        integrations = agent_config.get("integrations", {})
+        tts_config = integrations.get("tts") or integrations.get("elevenlabs")
+        
+        if tts_config and tts_config.get("apiKey"):
+            respond_in_audio = tts_config.get("respondInAudio", "when_client_asks")
+            
+            # Check if the user sent an audio message
+            metadata = params.get("metadata", {})
+            has_audio = metadata.get("has_audio", False) or has_audio_in_files
+            
+            if respond_in_audio == "always" or (respond_in_audio == "when_client_asks" and has_audio):
+                text += "\n\n[SYSTEM DIRECTIVE]: You must call the `text_to_speech` tool using the exact text of your response to generate the audio. Do not just reply with text, you MUST execute the tool call."
+                logger.info("🔊 Appended TTS tool directive in stream because user sent audio or agent is configured to always respond in audio")
 
     # Extract and combine conversation history
     conversation_history = await extract_conversation_history(str(agent_id), context_id, db=db)
