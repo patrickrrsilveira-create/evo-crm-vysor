@@ -103,7 +103,7 @@ class AgentBots::ResponseProcessor
     end
 
     # Check if text segmentation is enabled for this agent bot
-    if select_items.blank? && @agent_bot.text_segmentation_enabled && ['evo_ai_provider', 'n8n_provider'].include?(@agent_bot.bot_provider) && text_content.present?
+    if attachments.blank? && select_items.blank? && @agent_bot.text_segmentation_enabled && ['evo_ai_provider', 'n8n_provider'].include?(@agent_bot.bot_provider) && text_content.present?
       process_segmented_response(text_content, conversation)
     else
       # Process as a single message with signature
