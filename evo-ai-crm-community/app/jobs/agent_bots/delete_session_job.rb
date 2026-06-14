@@ -1,5 +1,6 @@
-class AgentBots::DeleteSessionJob < ApplicationJob
-  queue_as :default
+module AgentBots
+  class DeleteSessionJob < ApplicationJob
+    queue_as :default
 
   def perform(agent_bot_id, session_id, api_key, outgoing_url)
     Rails.logger.info "[DeleteSessionJob] Starting session deletion for session_id: #{session_id}, agent_bot_id: #{agent_bot_id}"
@@ -41,5 +42,6 @@ class AgentBots::DeleteSessionJob < ApplicationJob
     Rails.logger.error "[DeleteSessionJob] Error deleting session #{session_id}: #{e.message}"
     Rails.logger.error "[DeleteSessionJob] Backtrace: #{e.backtrace.first(5).join("\n")}"
     # Don't re-raise - we don't want to retry session deletions that fail
+  end
   end
 end
