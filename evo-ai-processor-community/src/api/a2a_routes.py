@@ -1301,12 +1301,13 @@ async def handle_message_send(
                 try:
                     logger.info("🎧 LLM ignored TTS tool. Generating fallback audio manually...")
                     from src.services.adk.tts.factory import get_tts_provider
-                    from src.services.adk.tools.text_to_speech import _convert_to_ogg_opus
+                    from src.services.adk.tools.text_to_speech import _convert_to_ogg_opus, _clean_text_for_tts
                     from google.genai import types
                     
                     provider_name = tts_config.get("provider", "elevenlabs")
                     provider = get_tts_provider(provider_name)
-                    audio_bytes = await provider.generate_speech(final_response, tts_config)
+                    cleaned_text = _clean_text_for_tts(final_response)
+                    audio_bytes = await provider.generate_speech(cleaned_text, tts_config)
                     audio_bytes = _convert_to_ogg_opus(audio_bytes)
                     
                     filename = f"speech_fallback_{uuid.uuid4().hex[:8]}.ogg"
