@@ -369,7 +369,20 @@ class ToolBuilder:
 
         if tts_config:
             api_key = str(tts_config.get("apiKey") or "").strip()
-            if api_key and api_key.lower() not in ("null", "none", "undefined"):
+            
+            # If it's a UUID, decrypt it using the DB
+            if api_key and db:
+                import uuid
+                from src.services.apikey_service import get_decrypted_api_key
+                try:
+                    key_uuid = uuid.UUID(api_key)
+                    decrypted_key = get_decrypted_api_key(db, key_uuid)
+                    if decrypted_key:
+                        api_key = decrypted_key
+                except ValueError:
+                    pass
+                    
+            if api_key and api_key.lower() not in ("null", "none", "undefined", "false", "0"):
                 try:
                     provider = tts_config.get("provider", "elevenlabs")
                     voice_id = tts_config.get("voice") or tts_config.get("voice_id")

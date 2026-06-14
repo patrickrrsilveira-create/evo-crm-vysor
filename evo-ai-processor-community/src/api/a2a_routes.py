@@ -1063,7 +1063,20 @@ async def handle_message_send(
     
     if tts_config:
         api_key = str(tts_config.get("apiKey") or "").strip()
-        api_key_valid = bool(api_key and api_key.lower() not in ("null", "none", "undefined"))
+        
+        # If it's a UUID, decrypt it using the DB
+        if api_key and db:
+            import uuid
+            from src.services.apikey_service import get_decrypted_api_key
+            try:
+                key_uuid = uuid.UUID(api_key)
+                decrypted_key = get_decrypted_api_key(db, key_uuid)
+                if decrypted_key:
+                    api_key = decrypted_key
+            except ValueError:
+                pass
+                
+        api_key_valid = bool(api_key and api_key.lower() not in ("null", "none", "undefined", "false", "0"))
         
         if api_key_valid:
             respond_in_audio = tts_config.get("respondInAudio", "when_client_asks")
@@ -1254,7 +1267,21 @@ async def handle_message_send(
         api_key_valid = False
         if tts_config:
             api_key = str(tts_config.get("apiKey") or "").strip()
-            api_key_valid = bool(api_key and api_key.lower() not in ("null", "none", "undefined"))
+            
+            # If it's a UUID, decrypt it using the DB
+            if api_key and db:
+                import uuid
+                from src.services.apikey_service import get_decrypted_api_key
+                try:
+                    key_uuid = uuid.UUID(api_key)
+                    decrypted_key = get_decrypted_api_key(db, key_uuid)
+                    if decrypted_key:
+                        api_key = decrypted_key
+                except ValueError:
+                    pass
+            
+            logger.error(f"DEBUG TTS API KEY: '{api_key}' (len: {len(api_key)})")
+            api_key_valid = bool(api_key and api_key.lower() not in ("null", "none", "undefined", "false", "0"))
             
         if not has_audio_artifact and api_key_valid:
             respond_in_audio = tts_config.get("respondInAudio", "when_client_asks")
@@ -1434,7 +1461,20 @@ async def handle_message_stream(
         
         if tts_config:
             api_key = str(tts_config.get("apiKey") or "").strip()
-            api_key_valid = bool(api_key and api_key.lower() not in ("null", "none", "undefined"))
+            
+            # If it's a UUID, decrypt it using the DB
+            if api_key and db:
+                import uuid
+                from src.services.apikey_service import get_decrypted_api_key
+                try:
+                    key_uuid = uuid.UUID(api_key)
+                    decrypted_key = get_decrypted_api_key(db, key_uuid)
+                    if decrypted_key:
+                        api_key = decrypted_key
+                except ValueError:
+                    pass
+            
+            api_key_valid = bool(api_key and api_key.lower() not in ("null", "none", "undefined", "false", "0"))
             
             if api_key_valid:
                 respond_in_audio = tts_config.get("respondInAudio", "when_client_asks")
