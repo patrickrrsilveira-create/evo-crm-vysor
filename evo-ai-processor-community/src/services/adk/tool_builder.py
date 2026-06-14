@@ -367,26 +367,28 @@ class ToolBuilder:
         # Support either a generic 'tts' config or legacy 'elevenlabs' config
         tts_config = integrations.get("tts") or integrations.get("elevenlabs")
 
-        if tts_config and tts_config.get("apiKey"):
-            try:
-                provider = tts_config.get("provider", "elevenlabs")
-                voice_id = tts_config.get("voice") or tts_config.get("voice_id")
-                
-                config = {
-                    "provider": provider,
-                    "apiKey": tts_config.get("apiKey"),
-                    "voice_id": voice_id,
-                    "api_url": tts_config.get("api_url"),
-                    "model": tts_config.get("model"),
-                    # ElevenLabs specific
-                    "stability": tts_config.get("stability", 80),
-                    "similarity_boost": tts_config.get("similarity", 50),
-                }
-                
-                self.tools.append(create_text_to_speech_tool(config))
-                logger.info(f"Added text_to_speech tool from TTS integration ({provider}, voice_id: {voice_id})")
-            except Exception as e:
-                logger.error(f"Error creating text_to_speech tool from ElevenLabs integration: {e}")
+        if tts_config:
+            api_key = str(tts_config.get("apiKey") or "").strip()
+            if api_key and api_key.lower() not in ("null", "none", "undefined"):
+                try:
+                    provider = tts_config.get("provider", "elevenlabs")
+                    voice_id = tts_config.get("voice") or tts_config.get("voice_id")
+                    
+                    config = {
+                        "provider": provider,
+                        "apiKey": api_key,
+                        "voice_id": voice_id,
+                        "api_url": tts_config.get("api_url"),
+                        "model": tts_config.get("model"),
+                        # ElevenLabs specific
+                        "stability": tts_config.get("stability", 80),
+                        "similarity_boost": tts_config.get("similarity", 50),
+                    }
+                    
+                    self.tools.append(create_text_to_speech_tool(config))
+                    logger.info(f"Added text_to_speech tool from TTS integration ({provider}, voice_id: {voice_id})")
+                except Exception as e:
+                    logger.error(f"Error creating text_to_speech tool from ElevenLabs integration: {e}")
 
         # Process Knowledge Nexus integration (knowledge_nexus_search)
         knowledge_nexus_config = integrations.get("knowledge-nexus") or integrations.get("knowledge_nexus")

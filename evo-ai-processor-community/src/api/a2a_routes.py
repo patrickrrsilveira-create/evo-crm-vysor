@@ -1061,12 +1061,16 @@ async def handle_message_send(
     integrations = agent_config.get("integrations", {})
     tts_config = integrations.get("tts") or integrations.get("elevenlabs")
     
-    if tts_config and tts_config.get("apiKey"):
-        respond_in_audio = tts_config.get("respondInAudio", "when_client_asks")
+    if tts_config:
+        api_key = str(tts_config.get("apiKey") or "").strip()
+        api_key_valid = bool(api_key and api_key.lower() not in ("null", "none", "undefined"))
         
-        # Check if the user sent an audio message
-        metadata = params.get("metadata", {})
-        has_audio = metadata.get("has_audio", False) or has_audio_in_files
+        if api_key_valid:
+            respond_in_audio = tts_config.get("respondInAudio", "when_client_asks")
+            
+            # Check if the user sent an audio message
+            metadata = params.get("metadata", {})
+            has_audio = metadata.get("has_audio", False) or has_audio_in_files
         
         # Ensure metadata has_audio is updated for fallback logic later in this function
         if has_audio and "has_audio" not in metadata:
@@ -1246,7 +1250,13 @@ async def handle_message_send(
         )
         
         tts_config = (agent.config or {}).get("integrations", {}).get("tts") or (agent.config or {}).get("integrations", {}).get("elevenlabs")
-        if not has_audio_artifact and tts_config and tts_config.get("apiKey"):
+        
+        api_key_valid = False
+        if tts_config:
+            api_key = str(tts_config.get("apiKey") or "").strip()
+            api_key_valid = bool(api_key and api_key.lower() not in ("null", "none", "undefined"))
+            
+        if not has_audio_artifact and api_key_valid:
             respond_in_audio = tts_config.get("respondInAudio", "when_client_asks")
             metadata = params.get("metadata", {})
             has_audio = metadata.get("has_audio", False)
@@ -1422,12 +1432,16 @@ async def handle_message_stream(
         integrations = agent_config.get("integrations", {})
         tts_config = integrations.get("tts") or integrations.get("elevenlabs")
         
-        if tts_config and tts_config.get("apiKey"):
-            respond_in_audio = tts_config.get("respondInAudio", "when_client_asks")
+        if tts_config:
+            api_key = str(tts_config.get("apiKey") or "").strip()
+            api_key_valid = bool(api_key and api_key.lower() not in ("null", "none", "undefined"))
             
-            # Check if the user sent an audio message
-            metadata = params.get("metadata", {})
-            has_audio = metadata.get("has_audio", False) or has_audio_in_files
+            if api_key_valid:
+                respond_in_audio = tts_config.get("respondInAudio", "when_client_asks")
+                
+                # Check if the user sent an audio message
+                metadata = params.get("metadata", {})
+                has_audio = metadata.get("has_audio", False) or has_audio_in_files
             
             if respond_in_audio == "always" or (respond_in_audio == "when_client_asks" and has_audio):
                 text += "\n\n[SYSTEM DIRECTIVE]: You must call the `text_to_speech` tool using the exact text of your response to generate the audio. Do not just reply with text, you MUST execute the tool call."
