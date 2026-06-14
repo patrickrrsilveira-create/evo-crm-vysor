@@ -67,38 +67,19 @@ func (d *dispatchEngineImpl) Dispatch(
 	cfg            model.BotConfig,
 	postbackURL    string,
 ) error {
-	var audioErr error
+	// If audio is provided, try to send a single audio part WITHOUT text content
 	if len(audio) > 0 {
-		// Send the first part of the text with the audio, or just the whole text if it fits
-		parts := segmentContent(content, cfg)
-		var audioContent string
-		if len(parts) > 0 {
-			audioContent = parts[0]
-			if cfg.MessageSignature != "" {
-				audioContent = cfg.MessageSignature + audioContent
-			}
-		}
+		// Send audio without any text content to satisfy the "only audio" requirement
+		audioErr := d.sendAudioPart(ctx, postbackURL, "", audio)
 		
-		audioErr = d.sendAudioPart(ctx, postbackURL, audioContent, audio)
-		if audioErr != nil {
-			slog.Error("pipeline.dispatch.audio_failed", "error", audioErr)
-		} else if len(parts) > 0 {
-			// If audio succeeded, the first text part was already sent with the audio!
-			// We only need to send the REMAINING parts (if any) as separate text messages.
-			parts = parts[1:]
-			
-			// We skip the standard text sending below by reassigning content to only the remaining parts.
-			// Actually, just sending the remaining parts directly here is easier.
-			for i, part := range parts {
-				if strings.TrimSpace(part) == "" {
-					continue
-				}
-				if err := d.sendPart(ctx, postbackURL, part); err != nil {
-					return fmt.Errorf("pipeline.dispatch.send_remaining[%d]: %w", i, err)
-				}
-			}
+		if audioErr == nil {
+			// Successfully sent audio, so we are done! Do NOT send text.
+			slog.Info("pipeline.dispatch.audio.success", "contact_id", contactID)
 			return nil
 		}
+		
+		// If audio failed, log the error and fall through to send the text message as a fallback
+		slog.Error("pipeline.dispatch.audio_failed_fallback_to_text", "error", audioErr)
 	}
 
 	parts := segmentContent(content, cfg)
