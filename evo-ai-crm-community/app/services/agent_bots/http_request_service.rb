@@ -46,7 +46,7 @@ class AgentBots::HttpRequestService
 
     # Mark conversation as read to trigger blue ticks (listen confirmation)
     conversation.update(agent_last_seen_at: Time.current)
-    Rails.configuration.dispatcher.dispatch(Events::Types::CONVERSATION_READ, Time.zone.now, conversation: conversation)
+    Rails.configuration.dispatcher.dispatch(Events::Types::MESSAGES_READ, Time.zone.now, conversation: conversation)
 
     # Check if this is an audio message to display "recording" instead of "typing"
     is_audio = false
