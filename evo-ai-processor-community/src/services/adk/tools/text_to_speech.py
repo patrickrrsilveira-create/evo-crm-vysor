@@ -164,6 +164,76 @@ def _convert_to_ogg_opus(audio_bytes: bytes) -> bytes:
                 pass
 
 
+def _convert_to_mp4_aac(audio_bytes: bytes) -> bytes:
+    """Convert audio bytes to MP4/AAC using ffmpeg.
+
+    Returns the converted bytes, or the original bytes if conversion fails.
+    """
+    # Detect input format
+    detected = _detect_audio_format(audio_bytes)
+    logger.info(f"[TTS] Input audio: {len(audio_bytes)} bytes, detected format: {detected}")
+
+    # Determine file extension for temp file
+    ext_map = {"mp3": ".mp3", "wav": ".wav", "flac": ".flac", "m4a": ".m4a"}
+    ext = ext_map.get(detected, ".bin")
+
+    tmp_in_path = ""
+    tmp_out_path = ""
+    try:
+        with tempfile.NamedTemporaryFile(suffix=ext, delete=False) as tmp_in:
+            tmp_in.write(audio_bytes)
+            tmp_in_path = tmp_in.name
+
+        tmp_out_path = tmp_in_path.rsplit(".", 1)[0] + ".mp4"
+
+        # Try conversion with auto-detect first
+        result = subprocess.run(
+            [
+                "ffmpeg", "-y",
+                "-i", tmp_in_path,
+                "-c:a", "aac",
+                "-b:a", "64k",
+                "-vn",
+                tmp_out_path,
+            ],
+            capture_output=True,
+            timeout=30,
+        )
+
+        if result.returncode == 0 and os.path.exists(tmp_out_path):
+            with open(tmp_out_path, "rb") as f:
+                converted = f.read()
+            if len(converted) > 100:  # Sanity check
+                logger.info(
+                    f"[TTS] Converted {len(audio_bytes)} bytes {detected} -> "
+                    f"{len(converted)} bytes MP4/AAC"
+                )
+                return converted
+
+        # Log full error
+        stderr_full = result.stderr.decode("utf-8", errors="replace") if result.stderr else "(no stderr)"
+        logger.warning(
+            f"[TTS] ffmpeg conversion failed (rc={result.returncode}). "
+            f"STDERR (last 600): {stderr_full[-600:]}"
+        )
+        return audio_bytes
+
+    except FileNotFoundError:
+        logger.warning("[TTS] ffmpeg not found, returning raw audio bytes")
+        return audio_bytes
+    except Exception as e:
+        logger.warning(f"[TTS] Conversion error: {e}, returning raw audio bytes")
+        return audio_bytes
+    finally:
+        for path in [tmp_in_path, tmp_out_path]:
+            try:
+                if path and os.path.exists(path):
+                    os.unlink(path)
+            except OSError:
+                pass
+
+
+
 def create_text_to_speech_tool(config: Dict[str, Any]) -> FunctionTool:
     """Create the text_to_speech tool for LoopAgent.
 

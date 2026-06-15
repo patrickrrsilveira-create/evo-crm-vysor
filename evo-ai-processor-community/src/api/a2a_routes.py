@@ -1331,17 +1331,29 @@ async def handle_message_send(
                 try:
                     logger.info("🎧 LLM ignored TTS tool. Generating fallback audio manually...")
                     from src.services.adk.tts.factory import get_tts_provider
-                    from src.services.adk.tools.text_to_speech import _convert_to_ogg_opus, _clean_text_for_tts
+                    from src.services.adk.tools.text_to_speech import _convert_to_ogg_opus, _convert_to_mp4_aac, _clean_text_for_tts
                     from google.genai import types
                     
                     provider_name = tts_config.get("provider", "elevenlabs")
                     provider = get_tts_provider(provider_name)
                     cleaned_text = _clean_text_for_tts(final_response)
                     audio_bytes = await provider.generate_speech(cleaned_text, tts_config)
-                    audio_bytes = _convert_to_ogg_opus(audio_bytes)
                     
-                    filename = f"speech_fallback_{uuid.uuid4().hex[:8]}.ogg"
-                    audio_blob = types.Blob(mime_type="audio/ogg", data=audio_bytes)
+                    channel = "unknown"
+                    if "evoai_crm_data" in metadata:
+                        channel = metadata["evoai_crm_data"].get("channel", "unknown")
+                    
+                    if "instagram" in str(channel).lower():
+                        audio_bytes = _convert_to_mp4_aac(audio_bytes)
+                        mime_type = "audio/mp4"
+                        ext = "mp4"
+                    else:
+                        audio_bytes = _convert_to_ogg_opus(audio_bytes)
+                        mime_type = "audio/ogg"
+                        ext = "ogg"
+                    
+                    filename = f"speech_fallback_{uuid.uuid4().hex[:8]}.{ext}"
+                    audio_blob = types.Blob(mime_type=mime_type, data=audio_bytes)
                     audio_part = types.Part(inline_data=audio_blob)
                     
                     # Save to ADK artifacts
@@ -1360,7 +1372,7 @@ async def handle_message_send(
                         session_id=session_id
                     )
                     url = None
-                    mime_type = "audio/ogg"
+                    # mime_type is already set dynamically above
                     
                     import base64
                     b64 = base64.b64encode(audio_bytes).decode("utf-8")
