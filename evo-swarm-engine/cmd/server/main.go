@@ -1,12 +1,14 @@
 package main
 
 import (
+	"context"
 	"log"
 	"os"
 
 	"github.com/PatrickRSilveira/evo-swarm-engine/internal/coordinator"
 	"github.com/PatrickRSilveira/evo-swarm-engine/internal/database"
 	"github.com/PatrickRSilveira/evo-swarm-engine/internal/events"
+	"github.com/PatrickRSilveira/evo-swarm-engine/internal/mcp"
 	"github.com/PatrickRSilveira/evo-swarm-engine/internal/workers"
 	"github.com/gofiber/fiber/v2"
 	"github.com/joho/godotenv"
@@ -38,6 +40,14 @@ func main() {
 	agentWorker := workers.NewAgentWorker(events.GlobalEventBus)
 	if err := agentWorker.Start(); err != nil {
 		log.Fatalf("Falha ao iniciar o Agent Worker: %v", err)
+	}
+
+	// Inicializa o Client MCP (Conexão com as Ferramentas)
+	mcpClient := mcp.NewClient("http://localhost:3000/sse") // Exemplo de servidor MCP externo
+	if err := mcpClient.Connect(context.Background()); err != nil {
+		log.Printf("Aviso: Falha ao conectar ao servidor MCP: %v", err)
+	} else {
+		mcpClient.DiscoverTools(context.Background())
 	}
 
 	// Inicializa o Fiber (Framework Web Ultra-rápido)
