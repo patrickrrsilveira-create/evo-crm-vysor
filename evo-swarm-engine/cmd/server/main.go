@@ -9,6 +9,7 @@ import (
 	"github.com/PatrickRSilveira/evo-swarm-engine/internal/database"
 	"github.com/PatrickRSilveira/evo-swarm-engine/internal/events"
 	"github.com/PatrickRSilveira/evo-swarm-engine/internal/mcp"
+	"github.com/PatrickRSilveira/evo-swarm-engine/internal/adapters"
 	"github.com/PatrickRSilveira/evo-swarm-engine/internal/workers"
 	"github.com/gofiber/fiber/v2"
 	"github.com/joho/godotenv"
@@ -49,6 +50,15 @@ func main() {
 	} else {
 		mcpClient.DiscoverTools(context.Background())
 	}
+
+	// Inicializa Adaptadores Omni-Channel (Fase 5)
+	adapters.NewEvolutionAdapter(events.GlobalEventBus, "http://evo:8080", "123").Start(context.Background())
+	adapters.NewTeamsAdapter(events.GlobalEventBus, "appid", "pass").Start(context.Background())
+	adapters.NewEmailAdapter("smtp", "imap", "user", "pass").Start(context.Background())
+	adapters.NewCalendarAdapter("creds.json").Start(context.Background())
+	
+	// Nota: Google Drive não implementa Start() de escuta passiva, apenas métodos ativos
+	adapters.NewGoogleDriveAdapter("creds.json")
 
 	// Inicializa o Fiber (Framework Web Ultra-rápido)
 	app := fiber.New(fiber.Config{
