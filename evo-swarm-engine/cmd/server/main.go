@@ -10,6 +10,7 @@ import (
 	"github.com/PatrickRSilveira/evo-swarm-engine/internal/events"
 	"github.com/PatrickRSilveira/evo-swarm-engine/internal/mcp"
 	"github.com/PatrickRSilveira/evo-swarm-engine/internal/adapters"
+	"github.com/PatrickRSilveira/evo-swarm-engine/internal/memory"
 	"github.com/PatrickRSilveira/evo-swarm-engine/internal/workers"
 	"github.com/gofiber/fiber/v2"
 	"github.com/joho/godotenv"
@@ -62,6 +63,9 @@ func main() {
 
 	// Inicializa o Mirroring Nativo do Chatwoot (PostgreSQL)
 	adapters.NewChatwootMirrorAdapter(events.GlobalEventBus).Start(context.Background())
+
+	// Inicializa a Memory Engine (Vector Database via PostgreSQL/PGVector)
+	memory.NewMemoryEngine()
 
 	// Inicializa o Fiber (Framework Web Ultra-rápido)
 	app := fiber.New(fiber.Config{
