@@ -23,7 +23,7 @@ func NewAgentWorker(bus *evbus.EventBus) *AgentWorker {
 
 // Start inicia a escuta de eventos direcionados a Agentes.
 func (w *AgentWorker) Start() error {
-	log.Println("🤖 Agent Worker inciado, aguardando tarefas...")
+	log.Println("🤖 Agent Worker iniciado, aguardando tarefas...")
 
 	// Inscreve-se usando QueueGroup do NATS para balanceamento de carga real!
 	// Se tivermos 10 instâncias do motor Go, o NATS vai entregar a tarefa de forma balanceada.
@@ -46,7 +46,7 @@ func (w *AgentWorker) handleAgentTask(msg *nats.Msg) {
 
 	finishedEvent := events.AgentFinishedEvent{
 		BaseEvent: events.BaseEvent{
-			EventID:   event.EventID,     // Propaga o ID para rastro
+			EventID:   event.EventID, // Propaga o ID para rastro
 			EventType: events.EventAgentFinished,
 			TraceID:   event.TraceID,
 		},

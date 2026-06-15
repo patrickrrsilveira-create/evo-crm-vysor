@@ -5,11 +5,11 @@ import (
 	"log"
 	"os"
 
+	"github.com/PatrickRSilveira/evo-swarm-engine/internal/adapters"
 	"github.com/PatrickRSilveira/evo-swarm-engine/internal/coordinator"
 	"github.com/PatrickRSilveira/evo-swarm-engine/internal/database"
 	"github.com/PatrickRSilveira/evo-swarm-engine/internal/events"
 	"github.com/PatrickRSilveira/evo-swarm-engine/internal/mcp"
-	"github.com/PatrickRSilveira/evo-swarm-engine/internal/adapters"
 	"github.com/PatrickRSilveira/evo-swarm-engine/internal/memory"
 	"github.com/PatrickRSilveira/evo-swarm-engine/internal/workers"
 	"github.com/gofiber/fiber/v2"
@@ -57,7 +57,7 @@ func main() {
 	adapters.NewTeamsAdapter(events.GlobalEventBus, "appid", "pass").Start(context.Background())
 	adapters.NewEmailAdapter("smtp", "imap", "user", "pass").Start(context.Background())
 	adapters.NewCalendarAdapter("creds.json").Start(context.Background())
-	
+
 	// Nota: Google Drive não implementa Start() de escuta passiva, apenas métodos ativos
 	adapters.NewGoogleDriveAdapter("creds.json")
 
@@ -75,8 +75,8 @@ func main() {
 	// Rota de Healthcheck básica
 	app.Get("/health", func(c *fiber.Ctx) error {
 		return c.JSON(fiber.Map{
-			"status": "online",
-			"engine": "Go Swarm",
+			"status":  "online",
+			"engine":  "Go Swarm",
 			"version": "1.0.0",
 		})
 	})

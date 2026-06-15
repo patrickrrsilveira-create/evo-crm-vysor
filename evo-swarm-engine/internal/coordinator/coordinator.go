@@ -56,7 +56,7 @@ func (c *Coordinator) handleLeadCreated(msg *nats.Msg) {
 // handleAgentFinished intercepta o fim de um trabalho de um agente.
 func (c *Coordinator) handleAgentFinished(msg *nats.Msg) {
 	log.Printf("[Coordinator] Agente finalizou tarefa: %s", msg.Subject)
-	
+
 	var event events.AgentFinishedEvent
 	if err := json.Unmarshal(msg.Data, &event); err != nil {
 		log.Printf("[Coordinator] Erro ao decodificar AgentFinishedEvent: %v", err)

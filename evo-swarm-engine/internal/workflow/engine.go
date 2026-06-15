@@ -18,18 +18,18 @@ const (
 
 // Node representa um passo no Workflow
 type Node struct {
-	ID         string
-	Type       NodeType
-	Action     func(ctx context.Context, state map[string]interface{}) error
-	NextNodes  []string // IDs of nodes to execute after this one
+	ID        string
+	Type      NodeType
+	Action    func(ctx context.Context, state map[string]interface{}) error
+	NextNodes []string // IDs of nodes to execute after this one
 }
 
 // Workflow (DAG Engine) representa o grafo de execução
 type Workflow struct {
-	ID       string
-	Nodes    map[string]*Node
-	StartID  string
-	mu       sync.RWMutex
+	ID      string
+	Nodes   map[string]*Node
+	StartID string
+	mu      sync.RWMutex
 }
 
 // NewWorkflow cria uma nova engine de workflow baseada em DAG

@@ -10,11 +10,11 @@ import (
 
 // DocumentMemory representa a tabela de memórias vetoriais do Agente
 type DocumentMemory struct {
-	ID        int64          `gorm:"primaryKey;autoIncrement"`
-	AgentID   string         `gorm:"index"` // ID do agente ou workflow dono da memória
-	Content   string         `gorm:"type:text"`
+	ID        int64           `gorm:"primaryKey;autoIncrement"`
+	AgentID   string          `gorm:"index"` // ID do agente ou workflow dono da memória
+	Content   string          `gorm:"type:text"`
 	Embedding pgvector.Vector `gorm:"type:vector(1536)"` // Padrão OpenAI (text-embedding-ada-002 ou text-embedding-3-small)
-	Metadata  string         `gorm:"type:jsonb"`        // Metadados adicionais em JSON (URL, título, etc)
+	Metadata  string          `gorm:"type:jsonb"`        // Metadados adicionais em JSON (URL, título, etc)
 }
 
 func (DocumentMemory) TableName() string {

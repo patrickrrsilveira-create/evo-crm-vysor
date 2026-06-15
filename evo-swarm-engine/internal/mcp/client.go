@@ -33,10 +33,10 @@ func NewClient(serverURL string) *Client {
 // Connect estabelece conexão com o Servidor MCP e realiza o handshake
 func (c *Client) Connect(ctx context.Context) error {
 	log.Printf("🔌 Conectando ao servidor MCP em %s...", c.serverURL)
-	
+
 	// Simulação de Handshake (Substituir por SDK Oficial MCP para Go quando disponível)
 	// c.conn = mcpgo.Connect(c.serverURL)
-	
+
 	log.Println("✅ MCP Client conectado com sucesso!")
 	return nil
 }
@@ -88,7 +88,7 @@ func (c *Client) ExecuteTool(ctx context.Context, toolName string, args map[stri
 
 	// Simulação de chamada remota para o MCP Server
 	// result := c.conn.Call(toolName, args)
-	
+
 	return map[string]interface{}{
 		"status": "success",
 		"result": "Operação realizada pelo MCP",

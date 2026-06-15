@@ -21,9 +21,9 @@ func Connect() {
 
 	// Conecta usando GORM com log no modo Silent para não sujar o terminal em dev
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Info),
+		Logger: logger.Default.LogMode(logger.Silent),
 	})
-	
+
 	if err != nil {
 		log.Fatalf("Falha crítica: Não foi possível conectar ao banco de dados: %v", err)
 	}

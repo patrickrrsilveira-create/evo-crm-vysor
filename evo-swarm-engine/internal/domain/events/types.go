@@ -36,8 +36,8 @@ type AgentStartedEvent struct {
 // AgentFinishedEvent é disparado quando o Agente conclui com sucesso ou falha
 type AgentFinishedEvent struct {
 	BaseEvent
-	AgentID   uuid.UUID `json:"agent_id"`
-	TaskID    uuid.UUID `json:"task_id"`
-	Result    string    `json:"result"`
-	Success   bool      `json:"success"`
+	AgentID uuid.UUID `json:"agent_id"`
+	TaskID  uuid.UUID `json:"task_id"`
+	Result  string    `json:"result"`
+	Success bool      `json:"success"`
 }
