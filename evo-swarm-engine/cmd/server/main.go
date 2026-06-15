@@ -57,7 +57,9 @@ func main() {
 	}
 
 	// Inicializa Adaptadores Omni-Channel (Fase 5)
-	adapters.NewEvolutionAdapter(events.GlobalEventBus, "http://evo:8080", "123").Start(context.Background())
+	evolutionAdapter := adapters.NewEvolutionAdapter(events.GlobalEventBus, "http://evo:8080", "123")
+	evolutionAdapter.Start(context.Background())
+
 	adapters.NewTeamsAdapter(events.GlobalEventBus, "appid", "pass").Start(context.Background())
 	adapters.NewEmailAdapter("smtp", "imap", "user", "pass").Start(context.Background())
 	adapters.NewCalendarAdapter("creds.json").Start(context.Background())
@@ -92,6 +94,7 @@ func main() {
 	app.Use(middleware.EvoAuthMiddleware())
 
 	chatwootAdapter.RegisterWebhookRoute(app)
+	evolutionAdapter.RegisterWebhookRoute(app)
 
 	// Rotas do Kubernetes (Probes)
 	app.Get("/healthz", func(c *fiber.Ctx) error {

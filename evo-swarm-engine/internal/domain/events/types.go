@@ -10,10 +10,11 @@ import (
 type EventType string
 
 const (
-	EventAgentStarted  EventType = "agent.started"
-	EventAgentFinished EventType = "agent.finished"
-	EventMessageSent   EventType = "message.sent"
-	EventLeadCreated   EventType = "lead.created"
+	EventAgentStarted    EventType = "agent.started"
+	EventAgentFinished   EventType = "agent.finished"
+	EventMessageSent     EventType = "message.sent"     // Saída (Bot -> Usuário)
+	EventMessageReceived EventType = "message.received" // Entrada (Usuário -> Bot)
+	EventLeadCreated     EventType = "lead.created"
 )
 
 // BaseEvent é a estrutura comum a todos os eventos assíncronos

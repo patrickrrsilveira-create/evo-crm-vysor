@@ -2,9 +2,12 @@ package adapters
 
 import (
 	"context"
+	"encoding/json"
 	"log"
 
+	domainEvents "github.com/PatrickRSilveira/evo-swarm-engine/internal/domain/events"
 	"github.com/PatrickRSilveira/evo-swarm-engine/internal/events"
+	"github.com/gofiber/fiber/v2"
 )
 
 // EvolutionAdapter implementa ChannelAdapter para a Evolution API (WhatsApp)
@@ -28,8 +31,6 @@ func (a *EvolutionAdapter) Name() string {
 
 func (a *EvolutionAdapter) Start(ctx context.Context) error {
 	log.Println("📱 [EvolutionAdapter] Inicializado - Webhook pronto para receber mensagens do WhatsApp")
-	// Na prática, aqui criamos endpoints Fiber (e.g., POST /webhook/evolution)
-	// que recebem o Payload, parseiam e publicam um "events.EventMessageSent" no EventBus NATS
 	return nil
 }
 
@@ -37,4 +38,29 @@ func (a *EvolutionAdapter) SendMessage(ctx context.Context, to string, content s
 	log.Printf("📱 [EvolutionAdapter] Enviando mensagem via Evolution API para: %s", to)
 	// Chamada HTTP (POST /message/sendText) usando http.Client
 	return nil
+}
+
+// RegisterWebhookRoute registra a rota HTTP para receber eventos da Evolution API (WhatsApp)
+func (a *EvolutionAdapter) RegisterWebhookRoute(app *fiber.App) {
+	app.Post("/webhooks/evolution", func(c *fiber.Ctx) error {
+		var payload map[string]interface{}
+		if err := c.BodyParser(&payload); err != nil {
+			return c.Status(400).SendString("Bad Request")
+		}
+
+		// Validação básica se é evento de mensagem nova via WhatsApp
+		if event, ok := payload["event"].(string); ok && event == "messages.upsert" {
+			log.Println("📥 [EvolutionWebhook] Nova mensagem do WhatsApp recebida! Disparando para o Swarm...")
+
+			eventData, _ := json.Marshal(map[string]interface{}{
+				"source":  "whatsapp_evolution",
+				"payload": payload,
+			})
+
+			// Dispara evento indicando Input do Usuário
+			a.EventBus.Publish(string(domainEvents.EventMessageReceived), eventData)
+		}
+
+		return c.SendStatus(200)
+	})
 }
