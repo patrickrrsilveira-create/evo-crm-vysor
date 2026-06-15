@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/PatrickRSilveira/evo-swarm-engine/internal/database"
+	"github.com/PatrickRSilveira/evo-swarm-engine/internal/events"
 	"github.com/gofiber/fiber/v2"
 	"github.com/joho/godotenv"
 )
@@ -17,6 +18,13 @@ func main() {
 
 	// Conecta ao PostgreSQL
 	database.Connect()
+
+	// Conecta ao NATS (Event Bus)
+	events.ConnectNATS()
+	defer events.GlobalEventBus.Close()
+
+	// Conecta ao Redis (Memory Engine)
+	database.ConnectRedis()
 
 	// Inicializa o Fiber (Framework Web Ultra-rápido)
 	app := fiber.New(fiber.Config{

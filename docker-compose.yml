@@ -2,6 +2,14 @@ services:
   # ---------------------------------------------------------------------------
   # Infrastructure
   # ---------------------------------------------------------------------------
+  nats:
+    image: nats:alpine
+    restart: unless-stopped
+    ports:
+      - "4222:4222"
+      - "8222:8222"
+    command: ["-m", "8222"]
+
   postgres:
     image: pgvector/pgvector:pg16
     restart: unless-stopped
