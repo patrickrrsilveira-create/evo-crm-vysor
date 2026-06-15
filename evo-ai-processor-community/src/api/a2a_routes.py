@@ -1494,7 +1494,7 @@ async def handle_message_stream(
     ]
     
     agent = await get_agent(db, agent_id)
-    if agent:
+    
     context_id = params.get("contextId", str(uuid.uuid4()))
 
     # Use default text if only files provided or if message is completely empty
