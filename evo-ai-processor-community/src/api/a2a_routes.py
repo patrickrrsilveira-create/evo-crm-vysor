@@ -1350,6 +1350,26 @@ async def handle_message_send(
                         audio_bytes = _convert_to_mp4_aac(audio_bytes)
                         mime_type = "audio/mp4"
                         ext = "mp4"
+                        
+                        # WORKAROUND: For Instagram, send text as private note to agent, 
+                        # and clear public response so only audio is sent to client.
+                        try:
+                            from src.services.adk.tools.evo_crm.base import EvoCrmClient
+                            client = EvoCrmClient()
+                            import asyncio
+                            # We don't want to block the response generation for too long, but we need to await it
+                            await client.post(
+                                endpoint=f"/conversations/{context_id}/messages",
+                                json_data={
+                                    "content": final_response,
+                                    "message_type": "outgoing",
+                                    "private": True
+                                }
+                            )
+                            logger.info(f"Sent private text message for Instagram conversation {context_id}")
+                            final_response = ""
+                        except Exception as e:
+                            logger.error(f"Failed to send private text message: {e}")
                     else:
                         audio_bytes = _convert_to_ogg_opus(audio_bytes)
                         mime_type = "audio/ogg"
