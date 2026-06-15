@@ -62,7 +62,8 @@ func main() {
 	adapters.NewGoogleDriveAdapter("creds.json")
 
 	// Inicializa o Mirroring Nativo do Chatwoot (PostgreSQL)
-	adapters.NewChatwootMirrorAdapter(events.GlobalEventBus).Start(context.Background())
+	chatwootAdapter := adapters.NewChatwootMirrorAdapter(events.GlobalEventBus)
+	chatwootAdapter.Start(context.Background())
 
 	// Inicializa a Memory Engine (Vector Database via PostgreSQL/PGVector)
 	memory.NewMemoryEngine()
@@ -71,6 +72,8 @@ func main() {
 	app := fiber.New(fiber.Config{
 		AppName: "Evo Swarm Engine",
 	})
+
+	chatwootAdapter.RegisterWebhookRoute(app)
 
 	// Rota de Healthcheck básica
 	app.Get("/health", func(c *fiber.Ctx) error {

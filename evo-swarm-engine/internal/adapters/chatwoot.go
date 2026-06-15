@@ -9,6 +9,7 @@ import (
 	"github.com/PatrickRSilveira/evo-swarm-engine/internal/domain/events"
 	"github.com/PatrickRSilveira/evo-swarm-engine/internal/domain/models"
 	evbus "github.com/PatrickRSilveira/evo-swarm-engine/internal/events"
+	"github.com/gofiber/fiber/v2"
 	"github.com/nats-io/nats.go"
 )
 
@@ -75,4 +76,33 @@ func (a *ChatwootMirrorAdapter) handleMessageSent(msg *nats.Msg) {
 	}
 
 	log.Printf("🪞 [ChatwootMirror] Mensagem inserida com sucesso! (ID: %d)", chatwootMsg.ID)
+}
+
+// RegisterWebhookRoute registra a rota HTTP para receber eventos do Chatwoot (Incoming)
+func (a *ChatwootMirrorAdapter) RegisterWebhookRoute(app *fiber.App) {
+	app.Post("/webhooks/chatwoot", func(c *fiber.Ctx) error {
+		// Chatwoot envia o payload quando uma mensagem é criada
+		var payload map[string]interface{}
+		if err := c.BodyParser(&payload); err != nil {
+			return c.Status(400).SendString("Bad Request")
+		}
+
+		// Checa se é um evento de mensagem criada e se não foi enviada por nós
+		if eventType, ok := payload["event"].(string); ok && eventType == "message_created" {
+			if msgType, ok := payload["message_type"].(float64); ok && msgType == 0 { // 0 = incoming (user)
+				log.Println("📥 [ChatwootWebhook] Nova mensagem recebida do usuário! Disparando para o Swarm...")
+
+				// Dispara no NATS
+				// Simulando montagem de payload
+				eventData, _ := json.Marshal(map[string]interface{}{
+					"source":  "chatwoot",
+					"content": payload["content"],
+				})
+
+				a.EventBus.Publish(string(events.EventMessageSent), eventData)
+			}
+		}
+
+		return c.SendStatus(200)
+	})
 }

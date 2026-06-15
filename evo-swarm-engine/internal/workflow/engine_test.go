@@ -2,8 +2,8 @@ package workflow_test
 
 import (
 	"context"
-	"testing"
 	"github.com/PatrickRSilveira/evo-swarm-engine/internal/workflow"
+	"testing"
 )
 
 func TestWorkflowDAGExecution(t *testing.T) {
