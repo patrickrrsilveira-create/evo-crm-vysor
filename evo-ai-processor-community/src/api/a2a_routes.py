@@ -401,13 +401,24 @@ async def extract_files_from_message_async(message: Dict[str, Any]) -> List[File
                         mime_type = response.headers.get("content-type", file_data.get("mimeType", "application/octet-stream"))
                         base64_data = base64.b64encode(file_bytes).decode("utf-8")
                         
+                        # Try to get a better filename from URL
+                        filename_from_url = file_data.get("name")
+                        if not filename_from_url:
+                            import urllib.parse
+                            parsed_url = urllib.parse.urlparse(url)
+                            path_name = parsed_url.path.split("/")[-1]
+                            if path_name and "." in path_name:
+                                filename_from_url = path_name
+                            else:
+                                filename_from_url = "file_from_url"
+                        
                         file_obj = FileData(
-                            filename=file_data.get("name", "file_from_url"),
+                            filename=filename_from_url,
                             content_type=mime_type,
                             data=base64_data,
                         )
                         files.append(file_obj)
-                        logger.info(f"📎 Successfully downloaded file ({mime_type})")
+                        logger.info(f"📎 Successfully downloaded file ({mime_type}) as {filename_from_url}")
                 except Exception as e:
                     logger.error(f"❌ Failed to download file from URL: {e}")
                     continue
@@ -1047,7 +1058,9 @@ async def handle_message_send(
     # Check if the user sent an audio message (detect before stripping)
     has_audio_in_files = any(
         f.content_type.startswith("audio/") or 
-        (f.content_type.startswith("video/") and any(kw in f.filename.lower() for kw in ["audio", "voice", "ptt", "record"]))
+        (f.content_type.startswith("video/") and any(kw in f.filename.lower() for kw in ["audio", "voice", "ptt", "record"])) or
+        f.filename.lower().endswith((".ogg", ".aac", ".wav", ".mp3", ".m4a")) or
+        (f.filename.lower().endswith(".mp4") and any(kw in f.filename.lower() for kw in ["audio", "voice", "ptt", "record"]))
         for f in files
     )
     
@@ -1061,7 +1074,18 @@ async def handle_message_send(
     # Filter out audio and video files if using OpenRouter to prevent API connection errors
     if provider == "openrouter" or "openrouter/" in model_name:
         # OpenRouter's video support is highly experimental and crashes often (especially with Instagram audio-only mp4s)
-        files = [f for f in files if not f.content_type.startswith("audio/") and not f.content_type.startswith("video/")]
+        # We also check filename extensions because sometimes CRM sends audio/video as application/octet-stream
+        media_exts = (".mp4", ".ogg", ".aac", ".wav", ".mp3", ".m4a", ".webm", ".avi", ".mov", ".mkv", ".flv", ".wmv")
+        
+        # Whitelist approach: only allow known safe types for OpenRouter to avoid hidden audio/video in octet-stream
+        safe_types = ("image/", "text/", "application/pdf", "application/vnd.", "application/json", "application/xml", "text/")
+        files = [
+            f for f in files 
+            if any(f.content_type.startswith(t) for t in safe_types)
+            and not f.content_type.startswith("audio/") 
+            and not f.content_type.startswith("video/")
+            and not f.filename.lower().endswith(media_exts)
+        ]
         
     # Use default text if only files provided or if message is completely empty
     if (not text or text.strip() == "No content") and files:
@@ -1445,7 +1469,9 @@ async def handle_message_stream(
     # Check if the user sent an audio message (detect before stripping)
     has_audio_in_files = any(
         f.content_type.startswith("audio/") or 
-        (f.content_type.startswith("video/") and any(kw in f.filename.lower() for kw in ["audio", "voice", "ptt", "record"]))
+        (f.content_type.startswith("video/") and any(kw in f.filename.lower() for kw in ["audio", "voice", "ptt", "record"])) or
+        f.filename.lower().endswith((".ogg", ".aac", ".wav", ".mp3", ".m4a")) or
+        (f.filename.lower().endswith(".mp4") and any(kw in f.filename.lower() for kw in ["audio", "voice", "ptt", "record"]))
         for f in files
     )
     
@@ -1459,7 +1485,18 @@ async def handle_message_stream(
         model_name = str(agent.model or "").lower()
         if provider == "openrouter" or "openrouter/" in model_name:
             # OpenRouter's video support is highly experimental and crashes often (especially with Instagram audio-only mp4s)
-            files = [f for f in files if not f.content_type.startswith("audio/") and not f.content_type.startswith("video/")]
+            # We also check filename extensions because sometimes CRM sends audio/video as application/octet-stream
+            media_exts = (".mp4", ".ogg", ".aac", ".wav", ".mp3", ".m4a", ".webm", ".avi", ".mov", ".mkv", ".flv", ".wmv")
+            
+            # Whitelist approach: only allow known safe types for OpenRouter to avoid hidden audio/video in octet-stream
+            safe_types = ("image/", "text/", "application/pdf", "application/vnd.", "application/json", "application/xml", "text/")
+            files = [
+                f for f in files 
+                if any(f.content_type.startswith(t) for t in safe_types)
+                and not f.content_type.startswith("audio/") 
+                and not f.content_type.startswith("video/")
+                and not f.filename.lower().endswith(media_exts)
+            ]
     context_id = params.get("contextId", str(uuid.uuid4()))
 
     # Use default text if only files provided or if message is completely empty
