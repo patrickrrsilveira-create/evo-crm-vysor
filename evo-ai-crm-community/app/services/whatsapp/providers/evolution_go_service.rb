@@ -157,7 +157,7 @@ class Whatsapp::Providers::EvolutionGoService < Whatsapp::Providers::BaseService
     }
 
     response = HTTParty.post(
-      "#{api_base_path}/chat/sendPresence",
+      "#{api_base_path}/chat/sendPresence/#{instance_name}",
       headers: instance_headers,
       body: body.to_json
     )
@@ -184,7 +184,7 @@ class Whatsapp::Providers::EvolutionGoService < Whatsapp::Providers::BaseService
     }
 
     response = HTTParty.post(
-      "#{api_base_path}/chat/markMessageAsRead",
+      "#{api_base_path}/chat/markMessageAsRead/#{instance_name}",
       headers: instance_headers,
       body: body.to_json
     )
