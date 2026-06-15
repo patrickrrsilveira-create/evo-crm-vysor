@@ -42,11 +42,14 @@ func main() {
 		log.Fatalf("Falha ao iniciar o Coordinator: %v", err)
 	}
 
-	// Inicializa o Worker Pool de Agentes
+	// Inicializa os Workers do Swarm
 	agentWorker := workers.NewAgentWorker(events.GlobalEventBus)
 	if err := agentWorker.Start(); err != nil {
 		log.Fatalf("Falha ao iniciar o Agent Worker: %v", err)
 	}
+
+	proactiveEngine := workers.NewProactiveEngine(events.GlobalEventBus)
+	proactiveEngine.Start()
 
 	// Inicializa o Client MCP (Conexão com as Ferramentas)
 	mcpClient := mcp.NewClient("http://localhost:3000/sse") // Exemplo de servidor MCP externo
@@ -56,9 +59,7 @@ func main() {
 		mcpClient.DiscoverTools(context.Background())
 	}
 
-	// Inicializa Adaptadores Omni-Channel (Fase 5)
-	evolutionAdapter := adapters.NewEvolutionAdapter(events.GlobalEventBus, "http://evo:8080", "123")
-	evolutionAdapter.Start(context.Background())
+	// Inicializa Adaptadores Ativos (que não dependem de rota HTTP)
 
 	adapters.NewTeamsAdapter(events.GlobalEventBus, "appid", "pass").Start(context.Background())
 	adapters.NewEmailAdapter("smtp", "imap", "user", "pass").Start(context.Background())
@@ -66,10 +67,6 @@ func main() {
 
 	// Nota: Google Drive não implementa Start() de escuta passiva, apenas métodos ativos
 	adapters.NewGoogleDriveAdapter("creds.json")
-
-	// Inicializa o Mirroring Nativo do Chatwoot (PostgreSQL)
-	chatwootAdapter := adapters.NewChatwootMirrorAdapter(events.GlobalEventBus)
-	chatwootAdapter.Start(context.Background())
 
 	// Inicializa a Memory Engine (Vector Database via PostgreSQL/PGVector)
 	memory.NewMemoryEngine()
@@ -90,11 +87,21 @@ func main() {
 		Expiration: 1 * time.Minute, // Por minuto
 	}))
 
-	// EvoAuth Middleware (Intercepta a nível de aplicação, mas ignora rotas abertas internamente)
-	app.Use(middleware.EvoAuthMiddleware())
+	// EvoAuth Middleware
+	app.Use("/api", middleware.EvoAuthMiddleware())
 
-	chatwootAdapter.RegisterWebhookRoute(app)
+	// Adapters e Webhooks Omni-Channel
+	evolutionAdapter := adapters.NewEvolutionAdapter(events.GlobalEventBus, "http://evo:8080", "123")
+	chatwootAdapter := adapters.NewChatwootMirrorAdapter(events.GlobalEventBus)
+	a2aAdapter := adapters.NewA2AAdapter(events.GlobalEventBus)
+
+	evolutionAdapter.Start(context.Background())
+	chatwootAdapter.Start(context.Background())
+
+	// Registra rotas após middleware
 	evolutionAdapter.RegisterWebhookRoute(app)
+	chatwootAdapter.RegisterWebhookRoute(app)
+	a2aAdapter.RegisterRoutes(app)
 
 	// Rotas do Kubernetes (Probes)
 	app.Get("/healthz", func(c *fiber.Ctx) error {
