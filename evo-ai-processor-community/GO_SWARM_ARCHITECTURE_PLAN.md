@@ -66,9 +66,19 @@ Respondendo à sua dúvida sobre aproveitar as integrações atuais:
   - **A Boa Notícia:** Fazer integrações de API (Webhooks, TTS, ChatGPT) em Go é extremamente simples e nativo. O Go lida com I/O de rede (HTTP) de forma muito mais rápida que o Python.
   - **Microserviço (Plano B):** Se houver alguma biblioteca do Python muito exclusiva que você não queira reescrever, podemos manter o Python vivo apenas como um "Worker de Ferramentas". O Go orquestra tudo na velocidade da luz, e quando precisa rodar uma ferramenta muito complexa, ele joga pro Python processar e devolver. Mas, para TTS, Webhooks e LLMs padrão, reescrever em Go é o caminho mais limpo, seguro e performático.
 
+## 7. A Infraestrutura Pesada (Redis, MinIO, RabbitMQ)
+Você pontuou muito bem. O Evo não é só banco de dados, tem uma infraestrutura pesada rodando em volta. No Go, nós lidaremos com isso de forma ainda mais performática:
+* **Redis:** O Go possui a biblioteca `go-redis`, que é o padrão da indústria. Continuaremos usando o seu Redis atual para controle de filas, cache de sessões do WhatsApp e controle de Handoff entre os agentes.
+* **MinIO (S3):** Todos os áudios gerados pelo TTS, imagens e documentos que hoje o Python salva no MinIO, o Go salvará usando o SDK oficial `minio-go`. O seu *bucket* atual de arquivos continuará intacto. Os agentes do Swarm farão upload/download em milissegundos usando streams do Go.
+
+## 8. Integrações Avançadas (OAuth, MCP Servers e Apps)
+As telas que você mostrou de OAuth (Google, Microsoft), Webhooks e MCP Servers funcionam sob protocolos universais.
+* **OAuth 2.0:** O processo de login (Callback URL) para Google Calendar, Sheets e Teams será reescrito nas rotas do Fiber (Go). O painel Vue continua enviando os dados pro backend, e o Go gerencia os *Tokens* no banco.
+* **Servidores MCP (Model Context Protocol):** O Go possui bibliotecas nativas para gerenciar processos MCP (via `stdio` ou `SSE`). O Go vai "ligar" o seu servidor MCP do Notion, Github e Stripe, mantendo as ferramentas ativas para os Agentes do Enxame consumirem.
+
 ## User Review Required
 
 > [!IMPORTANT]
-> Patrick, este é um projeto de re-arquitetura profundo (papo de nível Sênior/Staff Engineer). É um produto completamente novo "por baixo do capô", mas que mantém toda a casca de ouro que você já tem no frontend e no banco de dados.
+> Patrick, este é um projeto de re-arquitetura profundo (papo de nível Sênior/Staff Engineer). É um produto completamente novo "por baixo do capô", mas que mantém toda a casca de ouro que você já tem no frontend e no banco de dados, além de reaproveitar toda a infraestrutura (Redis, MinIO).
 > 
 > Esse é o plano nível 1. Faz sentido iniciarmos a execução desse escopo em fases? A Fase 1 seria iniciar os modelos do banco no novo projeto em Go. Como deseja prosseguir?
