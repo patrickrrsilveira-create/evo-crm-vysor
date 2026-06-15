@@ -141,30 +141,23 @@ class Whatsapp::Providers::EvolutionGoService < Whatsapp::Providers::BaseService
   end
 
   def toggle_typing_status(phone_number, typing_status)
-    status_str = typing_status.to_s
+    status_map = {
+      Events::Types::CONVERSATION_TYPING_ON => 'composing',
+      Events::Types::CONVERSATION_RECORDING => 'recording',
+      Events::Types::CONVERSATION_TYPING_OFF => 'paused'
+    }
 
-    if status_str == 'conversation_recording' || status_str == Events::Types::CONVERSATION_RECORDING
-      presence = 'composing'
-      is_audio = true
-    elsif status_str == 'conversation_typing_on' || status_str == Events::Types::CONVERSATION_TYPING_ON
-      presence = 'composing'
-      is_audio = false
-    else
-      presence = 'paused'
-      is_audio = false
-    end
-
+    presence = status_map[typing_status] || 'paused'
     clean_number = phone_number.delete('+')
-    remote_jid = clean_number.include?('@') ? clean_number : "#{clean_number}@s.whatsapp.net"
 
     body = {
-      number: remote_jid,
-      state: presence,
-      isAudio: is_audio
+      number: clean_number,
+      presence: presence,
+      delay: 15000
     }
 
     response = HTTParty.post(
-      "#{api_base_path}/message/presence",
+      "#{api_base_path}/chat/sendPresence/#{instance_name}",
       headers: instance_headers,
       body: body.to_json
     )
@@ -176,20 +169,22 @@ class Whatsapp::Providers::EvolutionGoService < Whatsapp::Providers::BaseService
 
   def read_messages(phone_number, messages)
     clean_number = phone_number.delete('+')
+    remote_jid = "#{clean_number}@s.whatsapp.net"
 
-    message_ids = messages.map do |msg|
-      msg.source_id || msg.additional_attributes&.dig('message_id')
-    end.compact
-
-    return if message_ids.empty?
+    read_messages_payload = messages.map do |message|
+      {
+        remoteJid: remote_jid,
+        fromMe: message.message_type == 'outgoing',
+        id: message.source_id
+      }
+    end
 
     body = {
-      id: [message_ids.first], # Assuming we just need to read the last message
-      number: clean_number
+      readMessages: read_messages_payload
     }
 
     response = HTTParty.post(
-      "#{api_base_path}/message/markread",
+      "#{api_base_path}/chat/markMessageAsRead/#{instance_name}",
       headers: instance_headers,
       body: body.to_json
     )
