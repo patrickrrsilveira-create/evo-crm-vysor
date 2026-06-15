@@ -11,11 +11,13 @@ class GoogleProvider(TTSProvider):
     """Google Cloud TTS implementation using the REST API."""
     
     async def generate_speech(self, text: str, config: typing.Dict[str, typing.Any]) -> bytes:
+        logger.error(f"DEBUG GOOGLE TTS CONFIG: {config}")
         api_key = config.get("apiKey")
         if not api_key:
             raise ValueError("Google Cloud TTS API key is not configured.")
             
         voice_id = config.get("voice_id") or config.get("voice") or "pt-BR-Neural2-A"
+        logger.error(f"DEBUG GOOGLE TTS RESOLVED VOICE_ID: {voice_id}")
         
         # Extract languageCode from voice_id if possible (e.g. pt-BR from pt-BR-Neural2-A)
         parts = voice_id.split("-")
