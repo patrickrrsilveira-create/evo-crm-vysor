@@ -1033,6 +1033,11 @@ class LlmAgentBuilder:
             if contact_info:
                 system_data += f"\n{contact_info}"
             
+            # Dynamically enforce TTS if user sent audio
+            has_audio = callback_context.state.get("has_audio", False)
+            if has_audio:
+                system_data += "\n\n[URGENT SYSTEM DIRECTIVE]: The user just sent an AUDIO message. You MUST use the `text_to_speech` tool to generate an audio response. Pass the EXACT text of your response to the tool."
+            
             # Store in state
             callback_context.state["_system_data"] = system_data
             

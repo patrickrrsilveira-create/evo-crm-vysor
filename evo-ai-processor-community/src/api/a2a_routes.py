@@ -1220,6 +1220,26 @@ async def handle_message_send(
         structured = extract_structured_from_message_history(result.get("message_history"))
         artifacts = build_a2a_artifacts(final_response, structured)
 
+        # --- EXTRACT ALL AUDIO ARTIFACTS DIRECTLY FROM ARTIFACTS_SERVICE ---
+        try:
+            # We will grab any .ogg or .mp3 artifact directly from the service
+            # since InMemoryArtifactService stores them internally.
+            service_vars = vars(artifacts_service)
+            for attr_name, attr_value in service_vars.items():
+                if isinstance(attr_value, dict):
+                    # Usually artifacts are stored in a dict like {"filename": [versions...]} or {"filename": artifact_data}
+                    for k, v in attr_value.items():
+                        if isinstance(k, str) and (k.endswith(".ogg") or k.endswith(".mp3")):
+                            logger.info(f"🔊 Found audio artifact directly in artifacts_service: {k}")
+                            artifacts.append({
+                                "name": "audio_response",
+                                "type": "audio",
+                                "url": f"{settings.APP_URL}/api/v1/sessions/{session_id}/artifacts/{k}",
+                                "content_type": "audio/ogg" if k.endswith(".ogg") else "audio/mpeg",
+                            })
+        except Exception as e:
+            logger.error(f"Error extracting artifacts directly: {e}")
+
         # Automatically attach any generated audio from this turn
         message_history = result.get("message_history", [])
         if message_history:
