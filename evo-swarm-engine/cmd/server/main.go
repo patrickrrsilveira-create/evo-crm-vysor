@@ -11,9 +11,13 @@ import (
 	"github.com/PatrickRSilveira/evo-swarm-engine/internal/events"
 	"github.com/PatrickRSilveira/evo-swarm-engine/internal/mcp"
 	"github.com/PatrickRSilveira/evo-swarm-engine/internal/memory"
+	"github.com/PatrickRSilveira/evo-swarm-engine/internal/middleware"
 	"github.com/PatrickRSilveira/evo-swarm-engine/internal/workers"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/gofiber/fiber/v2/middleware/limiter"
 	"github.com/joho/godotenv"
+	"time"
 )
 
 func main() {
@@ -73,14 +77,52 @@ func main() {
 		AppName: "Evo Swarm Engine",
 	})
 
+	// Setup Middlewares de Segurança e Tráfego
+	app.Use(cors.New(cors.Config{
+		AllowOrigins: "*",
+		AllowHeaders: "Origin, Content-Type, Accept, Authorization",
+	}))
+
+	app.Use(limiter.New(limiter.Config{
+		Max:        100,             // Máximo de 100 requests por IP
+		Expiration: 1 * time.Minute, // Por minuto
+	}))
+
+	// EvoAuth Middleware (Intercepta a nível de aplicação, mas ignora rotas abertas internamente)
+	app.Use(middleware.EvoAuthMiddleware())
+
 	chatwootAdapter.RegisterWebhookRoute(app)
 
-	// Rota de Healthcheck básica
-	app.Get("/health", func(c *fiber.Ctx) error {
+	// Rotas do Kubernetes (Probes)
+	app.Get("/healthz", func(c *fiber.Ctx) error {
+		return c.JSON(fiber.Map{"status": "ok"})
+	})
+
+	app.Get("/readyz", func(c *fiber.Ctx) error {
+		// Checar Banco e Redis
+		sqlDB, err := database.DB.DB()
+		dbStatus := "ok"
+		if err != nil || sqlDB.Ping() != nil {
+			dbStatus = "error"
+		}
+
+		redisStatus := "ok"
+		if database.RedisClient.Ping(context.Background()).Err() != nil {
+			redisStatus = "error"
+		}
+
+		if dbStatus != "ok" || redisStatus != "ok" {
+			return c.Status(503).JSON(fiber.Map{
+				"status":   "not_ready",
+				"database": dbStatus,
+				"redis":    redisStatus,
+			})
+		}
+
 		return c.JSON(fiber.Map{
-			"status":  "online",
-			"engine":  "Go Swarm",
-			"version": "1.0.0",
+			"status":   "ready",
+			"database": "ok",
+			"redis":    "ok",
 		})
 	})
 
