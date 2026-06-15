@@ -76,6 +76,13 @@ As telas que você mostrou de OAuth (Google, Microsoft), Webhooks e MCP Servers 
 * **OAuth 2.0:** O processo de login (Callback URL) para Google Calendar, Sheets e Teams será reescrito nas rotas do Fiber (Go). O painel Vue continua enviando os dados pro backend, e o Go gerencia os *Tokens* no banco.
 * **Servidores MCP (Model Context Protocol):** O Go possui bibliotecas nativas para gerenciar processos MCP (via `stdio` ou `SSE`). O Go vai "ligar" o seu servidor MCP do Notion, Github e Stripe, mantendo as ferramentas ativas para os Agentes do Enxame consumirem.
 
+## 9. Estratégia de Transição Suave (Blue/Green Deployment)
+Como testar tudo isso sem parar a operação atual (Zero Downtime)?
+1. **O Motor Gêmeo:** Criaremos o motor Go rodando em paralelo no seu servidor, mas em uma porta diferente (ex: Python na `8000` e Go na `8001`).
+2. **Mesma Base, Duas Cabeças:** O motor Go se conectará no **mesmo** banco de dados e no mesmo Redis da produção. Ele consegue ler e escrever os mesmos dados sem corromper nada.
+3. **Ambiente de Homologação (Staging):** Subiremos uma cópia do seu painel Vue apontando secretamente para a porta `8001` (Go). A sua equipe poderá criar agentes, testar integrações e bater webhooks na API do Go, validando que o Swarm está perfeito. Os clientes reais continuam sendo atendidos pelo Python.
+4. **A Virada de Chave:** Quando o Go estiver 100% testado e validado, nós apenas mudamos o roteamento do servidor (Traefik/Nginx): mandamos a porta principal apontar para o Go e desligamos o Python. O cliente final não percebe sequer 1 segundo de queda.
+
 ## User Review Required
 
 > [!IMPORTANT]
