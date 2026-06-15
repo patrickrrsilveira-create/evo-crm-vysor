@@ -146,7 +146,7 @@ class GlobalConfigService:
             client_secret = os.getenv("GOOGLE_CALENDAR_CLIENT_SECRET") or os.getenv("GOOGLE_OAUTH_CLIENT_SECRET")
         if not redirect_uri:
             frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173").rstrip("/")
-            redirect_uri = f"{frontend_url}/google-calendar/callback"
+            redirect_uri = f"{frontend_url}/oauth/google-calendar/callback"
 
         if not client_id or not client_secret:
             logger.error("Google Calendar credentials not available from CRM or environment variables")
@@ -186,6 +186,11 @@ class GlobalConfigService:
                     client_id = data.get("google_sheets_client_id")
                     client_secret = data.get("google_sheets_client_secret")
                     redirect_uri = data.get("google_sheets_redirect_uri")
+                    
+                    # Normalize empty strings to None and strip spaces
+                    client_id = client_id.strip() if client_id and isinstance(client_id, str) else client_id
+                    client_secret = client_secret.strip() if client_secret and isinstance(client_secret, str) else client_secret
+                    redirect_uri = redirect_uri.strip() if redirect_uri and isinstance(redirect_uri, str) else redirect_uri
                 else:
                     logger.warning(
                         f"CRM returned {response.status_code} for Google Sheets credentials, falling back to env vars"
@@ -201,7 +206,7 @@ class GlobalConfigService:
             client_secret = os.getenv("GOOGLE_SHEETS_CLIENT_SECRET") or os.getenv("GOOGLE_OAUTH_CLIENT_SECRET")
         if not redirect_uri:
             frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173").rstrip("/")
-            redirect_uri = f"{frontend_url}/google-sheets/callback"
+            redirect_uri = f"{frontend_url}/oauth/google-sheets/callback"
 
         if not client_id or not client_secret:
             logger.error("Google Sheets credentials not available from CRM or environment variables")
