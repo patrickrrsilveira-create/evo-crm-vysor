@@ -243,7 +243,7 @@ services:
       ENCRYPTION_KEY: XoQPOBw2FrzjQS11utERG9qO2MsAnXFxlhIns_uUxRk=
       EVOLUTION_BASE_URL: http://evo_crm:3000
       EVO_AUTH_BASE_URL: http://evo_auth:3001
-      AI_PROCESSOR_URL: http://evo_processor:8000
+      AI_PROCESSOR_URL: http://evo-processor:8000
       AI_PROCESSOR_VERSION: v1
     depends_on:
       evo_postgres:
@@ -252,7 +252,7 @@ services:
   # ---------------------------------------------------------------------------
   # Processor Service (Python / FastAPI) — Port 8000
   # ---------------------------------------------------------------------------
-  evo_processor:
+  evo-processor:
     image: evoapicloud/evo-ai-processor-community:latest
     ports:
       - "8000:8000"
@@ -284,7 +284,7 @@ services:
       TOOLS_CACHE_ENABLED: "true"
       TOOLS_CACHE_TTL: 3600
     volumes:
-      - evo_processor_logs:/app/logs
+      - evo-processor-logs:/app/logs
     depends_on:
       evo_postgres:
         condition: service_healthy
@@ -301,7 +301,7 @@ services:
     environment:
       LISTEN_ADDR: 0.0.0.0:8080
       REDIS_URL: redis://:evoai_redis_pass@evo_redis:6379
-      AI_PROCESSOR_URL: http://evo_processor:8000
+      AI_PROCESSOR_URL: http://evo-processor:8000
       BOT_RUNTIME_SECRET: evo-bot-runtime-dev-secret
       AI_CALL_TIMEOUT_SECONDS: 30
     depends_on:
@@ -325,4 +325,4 @@ services:
 volumes:
   evo_postgres_data:
   evo_redis_data:
-  evo_processor_logs:
+  evo-processor-logs:
