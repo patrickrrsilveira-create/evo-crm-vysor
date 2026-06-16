@@ -55,11 +55,15 @@ func (a *EvolutionAdapter) RegisterWebhookRoute(app *fiber.App) {
 
 		var payload map[string]interface{}
 		if err := c.BodyParser(&payload); err != nil {
+			log.Printf("⚠️ [EvolutionWebhook] Erro no BodyParser: %v", err)
 			return c.Status(400).SendString("Bad Request")
 		}
 
+		eventStr, _ := payload["event"].(string)
+		log.Printf("📥 [EvolutionWebhook] Evento Recebido: '%s' (payload completo: %+v)", eventStr, payload)
+
 		// Validação básica se é evento de mensagem nova via WhatsApp
-		if event, ok := payload["event"].(string); ok && event == "messages.upsert" {
+		if eventStr == "messages.upsert" {
 			log.Println("📥 [EvolutionWebhook] Nova mensagem do WhatsApp recebida! Disparando para o Swarm...")
 
 			eventData, _ := json.Marshal(map[string]interface{}{
