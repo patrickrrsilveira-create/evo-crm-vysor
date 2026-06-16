@@ -32,7 +32,7 @@ RUN apk --no-cache add ca-certificates tzdata
 COPY --from=builder /app/evo-swarm-engine .
 
 # Copia as variáveis de ambiente (Em produção, idealmente injetadas via Secret, mas copiamos o default)
-COPY .env .env
+# COPY .env .env
 
 # Expõe a porta do Fiber
 EXPOSE 8001
