@@ -384,7 +384,27 @@ server {
     }
 
     # =============================================================================
-    # Webhook Routes → CRM Service
+    # Agent Webhook Routes → Processor Service (Swarm Engine)
+    # =============================================================================
+    location ~ ^/webhooks/(evolution|chatwoot|msteams|typebot|n8n) {
+        proxy_pass $processor_service$request_uri;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_set_header Authorization $http_authorization;
+
+        proxy_set_header api_access_token $http_api_access_token;
+        proxy_cookie_path / /;
+        proxy_set_header Cookie $http_cookie;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        client_max_body_size 10M;
+    }
+
+    # =============================================================================
+    # Legacy Webhook Routes → CRM Service
     # =============================================================================
     location ~ ^/(api/)?(rails/)?webhooks {
         proxy_pass $crm_service$request_uri;
