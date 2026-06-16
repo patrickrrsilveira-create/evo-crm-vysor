@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/PatrickRSilveira/evo-swarm-engine/internal/domain/events"
@@ -28,12 +29,80 @@ func NewA2AAdapter(bus *evbus.EventBus) *A2AAdapter {
 func (a *A2AAdapter) RegisterRoutes(app *fiber.App, db *gorm.DB) {
 	a2aGroup := app.Group("/api/v1/a2a")
 
-	// Rota Genérica de A2A (JSON-RPC)
-	a2aGroup.Post("/:agent_id", middleware.EvoAuthMiddleware(db), func(c *fiber.Ctx) error {
+	// Rota Genérica de A2A (JSON-RPC ou Chatwoot Webhook)
+	a2aGroup.Post("/:agent_id", func(c *fiber.Ctx) error {
 		agentID := c.Params("agent_id")
 
+		// Lê o raw body para sabermos se é Chatwoot ou JSON-RPC
+		bodyBytes := c.Body()
+
+		var raw map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &raw); err == nil {
+			// Verifica se é um Webhook do Chatwoot (AgentBot)
+			if eventType, ok := raw["event"].(string); ok && eventType == "message_created" {
+				// É do Chatwoot!
+				log.Printf("🤖 [A2A Protocol] Interceptado Webhook do Chatwoot no endpoint A2A para agent_id=%s", agentID)
+				
+				isIncoming := false
+				switch mt := raw["message_type"].(type) {
+				case float64:
+					isIncoming = mt == 0
+				case string:
+					isIncoming = strings.EqualFold(mt, "incoming")
+				}
+
+				if isIncoming {
+					content := ""
+					if c, ok := raw["content"].(string); ok {
+						content = c
+					}
+
+					var conversationID int64
+					var accountID int64
+					if conv, ok := raw["conversation"].(map[string]interface{}); ok {
+						if id, ok := conv["id"].(float64); ok {
+							conversationID = int64(id)
+						}
+						if accID, ok := conv["account_id"].(float64); ok {
+							accountID = int64(accID)
+						}
+					}
+
+					sender := ""
+					if senderObj, ok := raw["sender"].(map[string]interface{}); ok {
+						if name, ok := senderObj["name"].(string); ok {
+							sender = name
+						}
+						if id, ok := senderObj["id"].(float64); ok && sender == "" {
+							sender = fmt.Sprintf("user_%d", int64(id))
+						}
+					}
+
+					eventData, _ := json.Marshal(map[string]interface{}{
+						"source":          "chatwoot",
+						"content":         content,
+						"agent_id":        agentID,
+						"sender":          sender,
+						"conversation_id": conversationID,
+						"account_id":      accountID,
+						"payload":         raw,
+					})
+
+					a.EventBus.Publish(string(events.EventMessageReceived), eventData)
+				}
+				return c.SendStatus(200)
+			}
+		}
+
+		// Se não for Chatwoot, aplica autenticação A2A padrão e processa JSON-RPC
+		authHandler := middleware.EvoAuthMiddleware(db)
+		err := authHandler(c)
+		if err != nil {
+			return err
+		}
+
 		var req models.A2ARequest
-		if err := c.BodyParser(&req); err != nil {
+		if err := json.Unmarshal(bodyBytes, &req); err != nil {
 			return c.Status(400).JSON(models.A2AResponse{
 				JSONRPC: "2.0",
 				Error:   &models.A2AError{Code: -32700, Message: "Parse error"},
