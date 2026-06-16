@@ -66,7 +66,7 @@ func EvoAuthMiddleware(db *gorm.DB) fiber.Handler {
 		}
 		var agentRow Agent
 		// Query em jsonb para achar o api_key dentro do config
-		errAgent := db.Table("agents").Select("id, name").Where("config->>'api_key' = ?", apiKeyStr).First(&agentRow).Error
+		errAgent := db.Table("evo_core_agents").Select("id, name").Where("config->>'api_key' = ?", apiKeyStr).First(&agentRow).Error
 
 		if errAgent == nil {
 			agentCtx := AgentContext{
