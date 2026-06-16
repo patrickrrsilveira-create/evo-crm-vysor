@@ -1,13 +1,16 @@
 module github.com/PatrickRSilveira/evo-swarm-engine
 
-go 1.24.0
+go 1.25.0
 
 require (
 	github.com/gofiber/fiber/v2 v2.52.13
 	github.com/google/uuid v1.6.0
 	github.com/joho/godotenv v1.5.1
 	github.com/nats-io/nats.go v1.52.0
+	github.com/pgvector/pgvector-go v0.4.0
 	github.com/redis/go-redis/v9 v9.20.1
+	github.com/robfig/cron/v3 v3.0.1
+	github.com/tmc/langchaingo v0.1.14
 	gorm.io/datatypes v1.2.7
 	gorm.io/driver/postgres v1.6.0
 	gorm.io/gorm v1.31.1
@@ -31,13 +34,10 @@ require (
 	github.com/mattn/go-runewidth v0.0.16 // indirect
 	github.com/nats-io/nkeys v0.4.15 // indirect
 	github.com/nats-io/nuid v1.0.1 // indirect
-	github.com/pgvector/pgvector-go v0.4.0 // indirect
 	github.com/philhofer/fwd v1.1.3-0.20240916144458-20a13a1f6b7c // indirect
 	github.com/pkoukk/tiktoken-go v0.1.8 // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect
-	github.com/robfig/cron/v3 v3.0.1 // indirect
 	github.com/tinylib/msgp v1.2.5 // indirect
-	github.com/tmc/langchaingo v0.1.14 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasthttp v1.51.0 // indirect
 	github.com/valyala/tcplisten v1.0.0 // indirect
