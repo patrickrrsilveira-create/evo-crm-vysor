@@ -42,7 +42,7 @@ func (a *EvolutionAdapter) SendMessage(ctx context.Context, to string, content s
 
 // RegisterWebhookRoute registra a rota HTTP para receber eventos da Evolution API (WhatsApp)
 func (a *EvolutionAdapter) RegisterWebhookRoute(app *fiber.App) {
-	app.Post("/webhooks/evolution", func(c *fiber.Ctx) error {
+	handler := func(c *fiber.Ctx) error {
 		// Blindagem de Segurança (Webhook Verification)
 		// Verifica o header de autenticação configurado na Evolution API
 		webhookKey := c.Get("apikey")
@@ -72,5 +72,9 @@ func (a *EvolutionAdapter) RegisterWebhookRoute(app *fiber.App) {
 		}
 
 		return c.SendStatus(200)
-	})
+	}
+
+	app.Post("/webhooks/evolution", handler)
+	app.Post("/webhooks/whatsapp/evolution_go", handler)
+	app.Post("/webhooks/whatsapp/evolution", handler)
 }
