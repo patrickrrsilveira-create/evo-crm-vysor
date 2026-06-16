@@ -208,7 +208,10 @@ func (a *ChatwootMirrorAdapter) RegisterWebhookRoute(app *fiber.App) {
 				var conversationID int64
 				var accountID int64
 				if conv, ok := payload["conversation"].(map[string]interface{}); ok {
-					if id, ok := conv["id"].(float64); ok {
+					// Chatwoot REST API expects display_id (integer), while id is often a UUID string.
+					if displayID, ok := conv["display_id"].(float64); ok {
+						conversationID = int64(displayID)
+					} else if id, ok := conv["id"].(float64); ok {
 						conversationID = int64(id)
 					}
 					if accID, ok := conv["account_id"].(float64); ok {
