@@ -43,6 +43,16 @@ func (a *EvolutionAdapter) SendMessage(ctx context.Context, to string, content s
 // RegisterWebhookRoute registra a rota HTTP para receber eventos da Evolution API (WhatsApp)
 func (a *EvolutionAdapter) RegisterWebhookRoute(app *fiber.App) {
 	app.Post("/webhooks/evolution", func(c *fiber.Ctx) error {
+		// Blindagem de Segurança (Webhook Verification)
+		// Verifica o header de autenticação configurado na Evolution API
+		webhookKey := c.Get("apikey")
+		if webhookKey != a.APIKey && a.APIKey != "" {
+			log.Printf("⚠️ [EvolutionWebhook] Bloqueado: Tentativa de webhook com chave inválida (IP: %s)", c.IP())
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+				"error": "Forbidden: Invalid Webhook API Key",
+			})
+		}
+
 		var payload map[string]interface{}
 		if err := c.BodyParser(&payload); err != nil {
 			return c.Status(400).SendString("Bad Request")

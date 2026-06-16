@@ -1,15 +1,20 @@
 package adapters
 
 import (
+	"bufio"
 	"encoding/json"
+	"fmt"
 	"log"
 	"time"
 
 	"github.com/PatrickRSilveira/evo-swarm-engine/internal/domain/events"
 	"github.com/PatrickRSilveira/evo-swarm-engine/internal/domain/models"
 	evbus "github.com/PatrickRSilveira/evo-swarm-engine/internal/events"
+	"github.com/PatrickRSilveira/evo-swarm-engine/internal/middleware"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
+	"github.com/nats-io/nats.go"
+	"gorm.io/gorm"
 )
 
 type A2AAdapter struct {
@@ -20,11 +25,11 @@ func NewA2AAdapter(bus *evbus.EventBus) *A2AAdapter {
 	return &A2AAdapter{EventBus: bus}
 }
 
-func (a *A2AAdapter) RegisterRoutes(app *fiber.App) {
+func (a *A2AAdapter) RegisterRoutes(app *fiber.App, db *gorm.DB) {
 	a2aGroup := app.Group("/api/v1/a2a")
 
 	// Rota Genérica de A2A (JSON-RPC)
-	a2aGroup.Post("/:agent_id", func(c *fiber.Ctx) error {
+	a2aGroup.Post("/:agent_id", middleware.EvoAuthMiddleware(db), func(c *fiber.Ctx) error {
 		agentID := c.Params("agent_id")
 
 		var req models.A2ARequest
@@ -41,8 +46,7 @@ func (a *A2AAdapter) RegisterRoutes(app *fiber.App) {
 		case "message/send":
 			return a.handleMessageSend(c, agentID, req)
 		case "message/stream":
-			// TODO: Implementar SSE Starlette style para stream real
-			return a.handleMessageSend(c, agentID, req) // Fallback para send por enquanto
+			return a.handleMessageStream(c, agentID, req)
 		default:
 			return c.Status(400).JSON(models.A2AResponse{
 				JSONRPC: "2.0",
@@ -53,9 +57,18 @@ func (a *A2AAdapter) RegisterRoutes(app *fiber.App) {
 	})
 }
 
+// handleMessageSend lida com a versão síncrona. No entanto, enviaremos via NATS para o worker
+// processar de forma não bloqueante e retornaremos o "Pending Task", respeitando a arquitetura assíncrona.
 func (a *A2AAdapter) handleMessageSend(c *fiber.Ctx, agentID string, req models.A2ARequest) error {
-	// Extrai texto da request A2A
 	var content string
+	var contextID string
+
+	if ctxID, ok := req.Params["contextId"].(string); ok {
+		contextID = ctxID
+	} else {
+		contextID = uuid.New().String()
+	}
+
 	if parts, ok := req.Params["parts"].([]interface{}); ok && len(parts) > 0 {
 		if part, ok := parts[0].(map[string]interface{}); ok {
 			if text, ok := part["text"].(string); ok {
@@ -64,23 +77,22 @@ func (a *A2AAdapter) handleMessageSend(c *fiber.Ctx, agentID string, req models.
 		}
 	}
 
+	taskID := uuid.New().String()
+
 	// 1. Dispara o evento de Input no Barramento para a Engine processar
-	// (Simula o que o webhook faria, ativando a DAG)
 	eventData, _ := json.Marshal(map[string]interface{}{
-		"source":   "a2a_protocol",
-		"content":  content,
-		"agent_id": agentID,
+		"source":     "a2a_protocol",
+		"content":    content,
+		"agent_id":   agentID,
+		"task_id":    taskID,
+		"context_id": contextID,
+		"is_stream":  false,
 	})
 	a.EventBus.Publish(string(events.EventMessageReceived), eventData)
 
-	// Na implementação síncrona/SSE real, aqui esperaríamos um channel de resposta.
-	// Por ser um MVP de paridade, retornamos o TaskID aceito (Pending state)
-
-	taskID := uuid.New().String()
-
 	task := models.A2ATask{
 		ID:        taskID,
-		ContextID: req.Params["contextId"].(string),
+		ContextID: contextID,
 		Status: models.A2ATaskStatus{
 			State:     "pending",
 			Timestamp: time.Now(),
@@ -93,4 +105,83 @@ func (a *A2AAdapter) handleMessageSend(c *fiber.Ctx, agentID string, req models.
 		ID:      req.ID,
 		Result:  task,
 	})
+}
+
+// handleMessageStream utiliza Server-Sent Events (SSE) nativo para prover respostas em stream hiper-rápidas
+// substituindo o bloqueio do Python.
+func (a *A2AAdapter) handleMessageStream(c *fiber.Ctx, agentID string, req models.A2ARequest) error {
+	var content string
+	var contextID string
+
+	if ctxID, ok := req.Params["contextId"].(string); ok {
+		contextID = ctxID
+	} else {
+		contextID = uuid.New().String()
+	}
+
+	if parts, ok := req.Params["parts"].([]interface{}); ok && len(parts) > 0 {
+		if part, ok := parts[0].(map[string]interface{}); ok {
+			if text, ok := part["text"].(string); ok {
+				content = text
+			}
+		}
+	}
+
+	taskID := uuid.New().String()
+
+	// Set headers for SSE
+	c.Set("Content-Type", "text/event-stream")
+	c.Set("Cache-Control", "no-cache")
+	c.Set("Connection", "keep-alive")
+
+	// Dispara o evento indicando que este é um fluxo de stream
+	eventData, _ := json.Marshal(map[string]interface{}{
+		"source":     "a2a_protocol",
+		"content":    content,
+		"agent_id":   agentID,
+		"task_id":    taskID,
+		"context_id": contextID,
+		"is_stream":  true,
+	})
+	a.EventBus.Publish(string(events.EventMessageReceived), eventData)
+
+	c.Context().SetBodyStreamWriter(func(w *bufio.Writer) {
+		// Inscreve num canal de NATS exclusivo para esta task (Subject: stream.taskID)
+		subject := fmt.Sprintf("stream.%s", taskID)
+		streamChan := make(chan *nats.Msg, 100)
+
+		sub, err := a.EventBus.Conn.ChanSubscribe(subject, streamChan)
+		if err != nil {
+			log.Printf("❌ Erro ao assinar canal NATS SSE: %v", err)
+			return
+		}
+		defer sub.Unsubscribe()
+
+		log.Printf("📡 SSE Stream aberto para task %s", taskID)
+
+		for {
+			select {
+			case msg := <-streamChan:
+				var payload map[string]interface{}
+				json.Unmarshal(msg.Data, &payload)
+
+				// Se for o marcador de fim, fecha o stream
+				if status, ok := payload["status"].(string); ok && status == "completed" {
+					log.Printf("📡 SSE Stream %s finalizado.", taskID)
+					return
+				}
+
+				// Envia o chunk para o cliente
+				chunkStr := fmt.Sprintf("data: %s\n\n", string(msg.Data))
+				fmt.Fprint(w, chunkStr)
+				w.Flush()
+
+			case <-time.After(5 * time.Minute): // Timeout de segurança
+				log.Printf("⚠️ SSE Timeout para task %s", taskID)
+				return
+			}
+		}
+	})
+
+	return nil
 }

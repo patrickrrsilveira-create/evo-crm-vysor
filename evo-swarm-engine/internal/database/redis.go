@@ -2,37 +2,37 @@ package database
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 
 	"github.com/redis/go-redis/v9"
 )
 
-// RedisClient é a instância global do Redis.
-var RedisClient *redis.Client
-
-// Ctx é o contexto padrão para operações do Redis.
-var Ctx = context.Background()
-
 // ConnectRedis inicializa a conexão com o Redis.
-func ConnectRedis() {
+func ConnectRedis() (*redis.Client, error) {
 	// Puxando configurações via ambiente com default para dev local
 	pass := os.Getenv("REDIS_PASSWORD")
 	if pass == "" {
 		pass = "evoai_redis_pass"
 	}
 
+	addr := os.Getenv("REDIS_ADDR")
+	if addr == "" {
+		addr = "127.0.0.1:6379"
+	}
+
 	rdb := redis.NewClient(&redis.Options{
-		Addr:     "127.0.0.1:6379",
+		Addr:     addr,
 		Password: pass,
 		DB:       0, // DB padrão
 	})
 
-	_, err := rdb.Ping(Ctx).Result()
+	_, err := rdb.Ping(context.Background()).Result()
 	if err != nil {
-		log.Fatalf("Falha crítica: Não foi possível conectar ao Redis (Memory Engine): %v", err)
+		return nil, fmt.Errorf("não foi possível conectar ao Redis (Memory Engine): %w", err)
 	}
 
 	log.Println("✅ Conectado ao Redis com sucesso! (Memory Engine Ativo)")
-	RedisClient = rdb
+	return rdb, nil
 }

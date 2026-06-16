@@ -2,20 +2,6 @@ services:
   # ---------------------------------------------------------------------------
   # Core System (Go Swarm Engine)
   # ---------------------------------------------------------------------------
-  swarm-engine:
-    build:
-      context: ./evo-swarm-engine
-      dockerfile: Dockerfile
-    container_name: evo-swarm-engine
-    restart: unless-stopped
-    ports:
-      - "8001:8001"
-    env_file:
-      - ./evo-swarm-engine/.env
-    depends_on:
-      - postgres
-      - nats
-      - redis
 
   # ---------------------------------------------------------------------------
   # Infrastructure
@@ -239,36 +225,33 @@ services:
   # ---------------------------------------------------------------------------
   evo-processor:
     build:
-      context: ./evo-ai-processor-community
+      context: ./evo-swarm-engine
       dockerfile: Dockerfile
+    container_name: evo-swarm-engine
     restart: unless-stopped
     ports:
       - "8000:8000"
-    env_file: .env
+    env_file:
+      - ./evo-swarm-engine/.env
     environment:
-      POSTGRES_CONNECTION_STRING: postgresql://${POSTGRES_USERNAME:-postgres}:${POSTGRES_PASSWORD:-evoai_dev_password}@postgres:5432/${POSTGRES_DATABASE:-evo_community}
-      REDIS_HOST: redis
-      REDIS_PORT: "6379"
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-evoai_redis_pass}
-      REDIS_SSL: "false"
-      HOST: 0.0.0.0
       PORT: "8000"
-      EVO_AI_CRM_URL: http://evo-crm:3000
-      CORE_SERVICE_URL: http://evo-core:5555/api/v1
-    volumes:
-      - processor_logs:/app/logs
-      - ./olivia-mcp-server:/olivia-mcp-server
+      DATABASE_URL: postgresql://${POSTGRES_USERNAME:-postgres}:${POSTGRES_PASSWORD:-evoai_dev_password}@postgres:5432/${POSTGRES_DATABASE:-evo_community}?sslmode=disable
+      NATS_URL: nats://nats:4222
+      REDIS_ADDR: redis:6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-evoai_redis_pass}
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
+      nats:
+        condition: service_started
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 30s
-      timeout: 10s
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8000/healthz"]
+      interval: 10s
+      timeout: 5s
       retries: 5
-      start_period: 30s
+      start_period: 15s
 
   # ---------------------------------------------------------------------------
   # Bot Runtime (Go / Gin) — Port 8080

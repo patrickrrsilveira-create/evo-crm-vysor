@@ -385,61 +385,17 @@ services:
 ## --------------------------- ORION --------------------------- ##
 
   evocrm_processor:
-    image: evoapicloud/evo-ai-processor-community:latest
-    command: sh -c "alembic upgrade head 2>&1 || echo 'Alembic migration had errors, continuing...'; python -m scripts.run_seeders; uvicorn src.main:app --host $$HOST --port $$PORT"
-
-    volumes:
-      - evocrm_processor_logs:/app/logs
-
+    image: evoapicloud/evo-swarm-engine:latest
     networks:
       - evonet ## Nome da rede interna
-
     environment:
-    ## 🗄️ PostgreSQL — troque SENHA pela mesma senha do Postgres usada nos demais serviços
-      - POSTGRES_CONNECTION_STRING=postgresql://postgres:SENHA@pgvector:5432/evocrm?sslmode=disable
-
-    ## 🧊 Redis
-      - REDIS_HOST=evocrm_redis
-      - REDIS_PORT=6379
-      - REDIS_PASSWORD=
-      - REDIS_SSL=false
-      - REDIS_DB=1
-      - REDIS_KEY_PREFIX=a2a_
-      - REDIS_TTL=3600
-
-    ## 🌐 Uvicorn (host / porta)
-      - HOST=0.0.0.0
       - PORT=8000
-
-    ## 🐛 Debug e segredos — use os MESMOS valores dos demais serviços
-      - DEBUG=false
-      - SECRET_KEY_BASE=        # Mesmo valor de SECRET_KEY_BASE usado nos demais serviços
-      - ENCRYPTION_KEY=         # Mesma chave Fernet usada no evocrm_core
-      - EVOAI_CRM_API_TOKEN=    # Mesmo valor de EVOAI_CRM_API_TOKEN usado nos demais serviços
-
-    ## 🔗 Integração CRM e Core
-      - EVO_AUTH_BASE_URL=http://evocrm_auth:3001
-      - EVO_AI_CRM_URL=http://evocrm_crm:3000
-      - CORE_SERVICE_URL=http://evocrm_core:5555/api/v1
-
-    ## 🌍 URLs públicas da API — troque SUBDOMAIN_API pelo seu domínio
-      - APP_URL=https://SUBDOMAIN_API
-      - API_URL=https://SUBDOMAIN_API
-
-    ## 🔑 Chaves OAuth (opcional via env, preferencial via Admin Panel do CRM)
-      - GOOGLE_OAUTH_CLIENT_ID=${GOOGLE_OAUTH_CLIENT_ID:-}
-      - GOOGLE_OAUTH_CLIENT_SECRET=${GOOGLE_OAUTH_CLIENT_SECRET:-}
-
-    ## 📋 Metadados da API (OpenAPI)
-      - API_TITLE=Agent Processor Community
-      - API_DESCRIPTION=Agent Processor Community for Evo AI
-      - API_VERSION=1.0.0
-      - ORGANIZATION_NAME=Evo CRM
-
-    ## 🗃️ Cache de tools
-      - TOOLS_CACHE_ENABLED=true
-      - TOOLS_CACHE_TTL=3600
-
+      - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD:-}@pgvector:5432/${POSTGRES_DATABASE:-evocrm}?sslmode=disable
+      - NATS_URL=nats://evocrm_nats:4222
+      - REDIS_ADDR=evocrm_redis:6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-}
+      - SECRET_KEY_BASE=${SECRET_KEY_BASE:-}
     deploy:
       placement:
         constraints:
@@ -529,7 +485,19 @@ services:
         constraints:
           - node.role == manager
 
-## --------------------------- ORION --------------------------- ##
+## --------------------------- NATS --------------------------- ##
+
+  evocrm_nats:
+    image: nats:alpine
+    command: ["-m", "8222"]
+    networks:
+      - evonet
+    deploy:
+      placement:
+        constraints:
+          - node.role == manager
+
+## ------------------------------------------------------------ ##
 
 volumes:
   evocrm_processor_logs:

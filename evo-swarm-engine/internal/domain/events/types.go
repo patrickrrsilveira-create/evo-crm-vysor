@@ -15,6 +15,7 @@ const (
 	EventMessageSent     EventType = "message.sent"     // Saída (Bot -> Usuário)
 	EventMessageReceived EventType = "message.received" // Entrada (Usuário -> Bot)
 	EventLeadCreated     EventType = "lead.created"
+	EventAgentHandoff    EventType = "agent.handoff"    // Notificação de transferência entre agentes
 )
 
 // BaseEvent é a estrutura comum a todos os eventos assíncronos
@@ -41,4 +42,13 @@ type AgentFinishedEvent struct {
 	TaskID  uuid.UUID `json:"task_id"`
 	Result  string    `json:"result"`
 	Success bool      `json:"success"`
+}
+
+// AgentHandoffEvent é disparado no momento em que um agente passa o controle da conversa para outro
+type AgentHandoffEvent struct {
+	BaseEvent
+	SourceAgentID  string `json:"source_agent_id"`
+	TargetAgentID  string `json:"target_agent_id"`
+	ConversationID string `json:"conversation_id"`
+	Reason         string `json:"reason"`
 }

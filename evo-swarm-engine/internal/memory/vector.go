@@ -4,8 +4,8 @@ import (
 	"context"
 	"log"
 
-	"github.com/PatrickRSilveira/evo-swarm-engine/internal/database"
 	"github.com/pgvector/pgvector-go"
+	"gorm.io/gorm"
 )
 
 // DocumentMemory representa a tabela de memórias vetoriais do Agente
@@ -22,16 +22,20 @@ func (DocumentMemory) TableName() string {
 }
 
 // MemoryEngine gerencia o armazenamento e recuperação de contexto por semântica
-type MemoryEngine struct{}
+type MemoryEngine struct{
+	db *gorm.DB
+}
 
-func NewMemoryEngine() *MemoryEngine {
+func NewMemoryEngine(db *gorm.DB) *MemoryEngine {
 	// Auto-Migra a tabela de memórias (Garante que a extensão vetor esteja ativa no Postgres)
-	database.DB.Exec("CREATE EXTENSION IF NOT EXISTS vector")
-	if err := database.DB.AutoMigrate(&DocumentMemory{}); err != nil {
+	db.Exec("CREATE EXTENSION IF NOT EXISTS vector")
+	if err := db.AutoMigrate(&DocumentMemory{}); err != nil {
 		log.Printf("Aviso: Falha ao migrar tabela de memórias: %v", err)
 	}
 
-	return &MemoryEngine{}
+	return &MemoryEngine{
+		db: db,
+	}
 }
 
 // StoreMemory salva uma nova memória (texto + vetor) para um agente
@@ -42,7 +46,7 @@ func (m *MemoryEngine) StoreMemory(ctx context.Context, agentID, content string,
 		Embedding: pgvector.NewVector(embedding),
 		Metadata:  metadata,
 	}
-	return database.DB.Create(&doc).Error
+	return m.db.Create(&doc).Error
 }
 
 // SearchSimilar busca as N memórias mais próximas (Busca Semântica usando Cosine Similarity)
@@ -51,7 +55,7 @@ func (m *MemoryEngine) SearchSimilar(ctx context.Context, agentID string, queryE
 	vec := pgvector.NewVector(queryEmbedding)
 
 	// L2 distance (<->) ou Cosine Similarity (<=>). Vamos usar Cosine Similarity:
-	err := database.DB.
+	err := m.db.
 		Where("agent_id = ?", agentID).
 		Order("embedding <=> ?").
 		Limit(limit).

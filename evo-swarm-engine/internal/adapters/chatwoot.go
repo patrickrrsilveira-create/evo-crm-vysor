@@ -5,23 +5,25 @@ import (
 	"encoding/json"
 	"log"
 
-	"github.com/PatrickRSilveira/evo-swarm-engine/internal/database"
 	"github.com/PatrickRSilveira/evo-swarm-engine/internal/domain/events"
 	"github.com/PatrickRSilveira/evo-swarm-engine/internal/domain/models"
 	evbus "github.com/PatrickRSilveira/evo-swarm-engine/internal/events"
 	"github.com/gofiber/fiber/v2"
 	"github.com/nats-io/nats.go"
+	"gorm.io/gorm"
 )
 
 // ChatwootMirrorAdapter escuta todas as mensagens enviadas pelos agentes
 // e faz o "Mirroring" (espelhamento) direto no banco PostgreSQL do Chatwoot.
 type ChatwootMirrorAdapter struct {
 	EventBus *evbus.EventBus
+	db       *gorm.DB
 }
 
-func NewChatwootMirrorAdapter(bus *evbus.EventBus) *ChatwootMirrorAdapter {
+func NewChatwootMirrorAdapter(bus *evbus.EventBus, db *gorm.DB) *ChatwootMirrorAdapter {
 	return &ChatwootMirrorAdapter{
 		EventBus: bus,
+		db:       db,
 	}
 }
 
@@ -69,7 +71,7 @@ func (a *ChatwootMirrorAdapter) handleMessageSent(msg *nats.Msg) {
 		Status:         1,          // 1 = delivered
 	}
 
-	result := database.DB.Create(&chatwootMsg)
+	result := a.db.Create(&chatwootMsg)
 	if result.Error != nil {
 		log.Printf("❌ [ChatwootMirror] Falha ao espelhar mensagem no DB: %v", result.Error)
 		return

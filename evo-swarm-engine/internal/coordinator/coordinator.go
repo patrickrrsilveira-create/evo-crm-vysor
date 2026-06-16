@@ -1,28 +1,34 @@
 package coordinator
 
 import (
+	"context"
 	"encoding/json"
+	"fmt"
 	"log"
+	"strings"
 	"time"
 
-	"github.com/PatrickRSilveira/evo-swarm-engine/internal/database"
+	"github.com/PatrickRSilveira/evo-swarm-engine/internal/ai/llm"
 	"github.com/PatrickRSilveira/evo-swarm-engine/internal/domain/events"
 	"github.com/PatrickRSilveira/evo-swarm-engine/internal/domain/models"
 	evbus "github.com/PatrickRSilveira/evo-swarm-engine/internal/events"
-	"github.com/PatrickRSilveira/evo-swarm-engine/internal/workflow"
+	"github.com/PatrickRSilveira/evo-swarm-engine/internal/swarm/registry"
 	"github.com/google/uuid"
 	"github.com/nats-io/nats.go"
+	"gorm.io/gorm"
 )
 
 // Coordinator é o roteador principal do Swarm.
 type Coordinator struct {
 	EventBus *evbus.EventBus
+	DB       *gorm.DB
 }
 
 // NewCoordinator instancia um novo Roteador.
-func NewCoordinator(bus *evbus.EventBus) *Coordinator {
+func NewCoordinator(bus *evbus.EventBus, db *gorm.DB) *Coordinator {
 	return &Coordinator{
 		EventBus: bus,
+		DB:       db,
 	}
 }
 
@@ -31,19 +37,19 @@ func (c *Coordinator) Start() error {
 	log.Println("🚀 Iniciando Swarm Coordinator...")
 
 	// Assina eventos de novos Leads (Exemplo de Ingress Point para workflows)
-	_, err := c.EventBus.Subscribe(string(events.EventLeadCreated), c.handleLeadCreated)
+	_, err := c.EventBus.Conn.QueueSubscribe(string(events.EventLeadCreated), "coordinator_pool", c.handleLeadCreated)
 	if err != nil {
 		return err
 	}
 
 	// Assina eventos de conclusão de agentes (Handoff e Continuidade do Workflow)
-	_, err = c.EventBus.Subscribe(string(events.EventAgentFinished), c.handleAgentFinished)
+	_, err = c.EventBus.Conn.QueueSubscribe(string(events.EventAgentFinished), "coordinator_pool", c.handleAgentFinished)
 	if err != nil {
 		return err
 	}
 
 	// Assina eventos de input do humano (Webhook WhatsApp/Chatwoot)
-	_, err = c.EventBus.Subscribe(string(events.EventMessageReceived), c.handleMessageReceived)
+	_, err = c.EventBus.Conn.QueueSubscribe(string(events.EventMessageReceived), "coordinator_pool", c.handleMessageReceived)
 	if err != nil {
 		return err
 	}
@@ -88,45 +94,135 @@ func (c *Coordinator) handleMessageReceived(msg *nats.Msg) {
 	var payload struct {
 		Source  string `json:"source"`
 		Content string `json:"content"`
-		AgentID string `json:"agent_id"` // Simulando que identificamos o Agente atrelado à Inbox
+		Sender  string `json:"sender"`
+		AgentID string `json:"agent_id"` // Adicionado suporte para agent_id opcional
 	}
 
 	if err := json.Unmarshal(msg.Data, &payload); err != nil {
-		log.Printf("[Coordinator] Erro ao decodificar payload: %v", err)
+		log.Printf("❌ [Coordinator] Erro ao decodificar payload da mensagem: %v", err)
 		return
 	}
 
-	// 1. Busca no PostgreSQL (`evo_core_agents`) o Agente principal.
-	var agent models.Agent
-	if err := database.DB.Where("id = ?", payload.AgentID).First(&agent).Error; err != nil {
-		log.Printf("[Coordinator] Agente não encontrado: %v", err)
-		return
+	// Resolve o AgentID para vincular no Evento
+	var resolvedAgentID uuid.UUID
+	if payload.AgentID != "" {
+		if parsed, err := uuid.Parse(payload.AgentID); err == nil {
+			resolvedAgentID = parsed
+		}
 	}
 
-	// 2. Chama a mágica do DAG Parser para traduzir o Banco em Grafo de Execução
-	dag, err := workflow.ParseAgentToDAG(&agent)
+	// Se não veio AgentID no webhook, faz o fallback para o primeiro agente LLM válido do sistema
+	if resolvedAgentID == uuid.Nil {
+		var defaultAgent models.Agent
+		if err := c.DB.Where("type = ?", "llm").First(&defaultAgent).Error; err == nil {
+			resolvedAgentID = defaultAgent.ID
+			log.Printf("🔄 [Coordinator] Webhook não especificou AgentID. Fazendo fallback para o agente padrão: %s", resolvedAgentID)
+		} else {
+			log.Printf("⚠️ [Coordinator] Nenhum Agente padrão encontrado no banco de dados!")
+		}
+	}
+
+	// Busca a primeira chave de API ativa para ser usada como roteador (Fallback: mock-key)
+	apiKey := "sk-mock-key"
+	modelName := "gpt-4o-mini"
+	
+	var dbKey models.APIKey
+	if err := c.DB.Where("is_active = ? AND provider IN ?", true, []string{"openai", "anthropic"}).First(&dbKey).Error; err == nil {
+		apiKey = dbKey.Key
+	} else {
+		log.Printf("⚠️ [Coordinator] Nenhuma chave de API ativa encontrada. Usando chave mockada.")
+	}
+
+	// Instancia LLM Rápida (Apenas para roteamento - Planner)
+	routerLLM, err := llm.NewLLMProvider(modelName, apiKey)
 	if err != nil {
-		log.Printf("[Coordinator] ❌ Falha ao montar DAG: %v", err)
+		log.Printf("❌ [Coordinator] Erro ao instanciar Router LLM: %v", err)
 		return
 	}
 
-	log.Printf("[Coordinator] ✅ DAG montada com sucesso: WorkflowID=%s, StartNode=%s", dag.ID, dag.StartID)
+	// Carrega as capabilities ativas do Registro
+	reg, err := registry.NewRegistry(c.EventBus)
+	var caps []registry.Capability
+	if err == nil {
+		caps, _ = reg.GetAllCapabilities()
+	}
 
-	agentUUID, _ := uuid.Parse(dag.StartID)
-	taskUUID := uuid.New() // Gera UUID novo para essa execução da DAG
+	optionsText := ""
+	for _, cap := range caps {
+		optionsText += fmt.Sprintf("- '%s' (%s)\n", cap.AgentID, cap.Description)
+	}
 
-	// 3. O primeiro nó da DAG é ativado, disparando o `EventAgentStarted` para o NATS.
+	systemPrompt := "Você é o Coordenador Central de um Swarm. Leia a mensagem do usuário e decida qual agente especialista deve assumir a tarefa. Responda apenas com o ID exato de um dos agentes abaixo:\n"
+	if optionsText != "" {
+		systemPrompt += optionsText
+	} else {
+		// Fallback dinâmico: Se não há agentes com capabilities, não há o que rotear
+		log.Printf("⚠️ [Coordinator] Não há agentes no Registry para roteamento.")
+		return
+	}
+
+	req := models.LLMRequest{
+		Model:       "gpt-4o-mini",
+		System:      systemPrompt,
+		Temperature: 0.1,
+		MaxTokens:   50,
+		Messages: []models.LLMMessage{
+			{Role: "user", Content: payload.Content},
+		},
+	}
+
+	resp, err := routerLLM.Generate(context.Background(), req)
+	
+	decision := ""
+	if err == nil {
+		decision = strings.ToLower(strings.TrimSpace(resp.Content))
+	} else {
+		log.Printf("⚠️ [Coordinator] Falha no Roteamento LLM: %v", err)
+	}
+
+	// Encontra o tópico NATS correspondente ao Agente escolhido
+	targetAgent := ""
+	for _, cap := range caps {
+		if cap.AgentID == decision {
+			targetAgent = cap.Subject
+			break
+		}
+	}
+
+	if targetAgent == "" && len(caps) > 0 {
+		// Fallback para o primeiro agente disponível se o LLM alucinou
+		targetAgent = caps[0].Subject
+		decision = caps[0].AgentID
+		log.Printf("⚠️ [Coordinator] LLM sugeriu agente inexistente '%s', fazendo fallback para '%s'", resp.Content, decision)
+	}
+
+	if targetAgent == "" {
+		log.Printf("❌ [Coordinator] Erro fatal: Nenhum alvo encontrado para roteamento.")
+		return
+	}
+
+	log.Printf("🔀 [Coordinator] Roteando mensagem de '%s' para '%s' (%s)", payload.Source, decision, targetAgent)
+
+	taskUUID := uuid.New()
+
+	// Envia o payload encapsulado para o Especialista
 	startEvent := events.AgentStartedEvent{
 		BaseEvent: events.BaseEvent{
 			EventID:   uuid.New(),
 			EventType: events.EventAgentStarted,
 			Timestamp: time.Now(),
 		},
-		AgentID: agentUUID,
+		AgentID: resolvedAgentID,
 		TaskID:  taskUUID,
-		Payload: payload.Content,
+		Payload: string(msg.Data), // Repassa o JSON inteiro original
 	}
 
-	eventData, _ := json.Marshal(startEvent)
-	c.EventBus.Publish(string(events.EventAgentStarted), eventData)
+	eventData, err := json.Marshal(startEvent)
+	if err != nil {
+		log.Printf("❌ [Coordinator] Erro ao serializar AgentStartedEvent: %v", err)
+		return
+	}
+	if err := c.EventBus.Publish(targetAgent, eventData); err != nil {
+		log.Printf("❌ [Coordinator] Erro ao publicar para %s: %v", targetAgent, err)
+	}
 }

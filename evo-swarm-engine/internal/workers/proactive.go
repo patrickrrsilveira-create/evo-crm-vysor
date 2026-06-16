@@ -5,11 +5,11 @@ import (
 	"log"
 	"time"
 
-	"github.com/PatrickRSilveira/evo-swarm-engine/internal/database"
 	"github.com/PatrickRSilveira/evo-swarm-engine/internal/domain/events"
 	evbus "github.com/PatrickRSilveira/evo-swarm-engine/internal/events"
 	"github.com/google/uuid"
 	"github.com/robfig/cron/v3"
+	"gorm.io/gorm"
 )
 
 type ProactiveCampaign struct {
@@ -25,14 +25,16 @@ type ProactiveCampaign struct {
 type ProactiveEngine struct {
 	Cron     *cron.Cron
 	EventBus *evbus.EventBus
+	db       *gorm.DB
 }
 
-func NewProactiveEngine(bus *evbus.EventBus) *ProactiveEngine {
+func NewProactiveEngine(bus *evbus.EventBus, db *gorm.DB) *ProactiveEngine {
 	// Cria um Cron job logger default
 	c := cron.New()
 	return &ProactiveEngine{
 		Cron:     c,
 		EventBus: bus,
+		db:       db,
 	}
 }
 
@@ -55,7 +57,7 @@ func (p *ProactiveEngine) runCampaignsLoop() {
 	var campaigns []ProactiveCampaign
 	// raw sql query similar to Python: SELECT id, account_id, trigger_target, delay_hours, message_template, agent_id FROM proactive_campaigns WHERE status = 'ACTIVE'
 	// Assume that the table exists or will exist in core database
-	result := database.DB.Table("proactive_campaigns").Where("status = ?", "ACTIVE").Find(&campaigns)
+	result := p.db.Table("proactive_campaigns").Where("status = ?", "ACTIVE").Find(&campaigns)
 
 	if result.Error != nil {
 		log.Printf("⚠️ [ProactiveEngine] Tabela proactive_campaigns não encontrada ou erro: %v", result.Error)

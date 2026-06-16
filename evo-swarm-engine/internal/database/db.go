@@ -1,22 +1,21 @@
 package database
 
 import (
+	"fmt"
 	"log"
 	"os"
 
+	"github.com/PatrickRSilveira/evo-swarm-engine/internal/domain/models"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
 
-// DB é a instância global de conexão com o banco
-var DB *gorm.DB
-
 // Connect inicializa a conexão com o PostgreSQL
-func Connect() {
+func Connect() (*gorm.DB, error) {
 	dsn := os.Getenv("DATABASE_URL")
 	if dsn == "" {
-		log.Fatal("Falha: DATABASE_URL não definida no arquivo .env")
+		return nil, fmt.Errorf("DATABASE_URL não definida no arquivo .env")
 	}
 
 	// Conecta usando GORM com log no modo Silent para não sujar o terminal em dev
@@ -25,10 +24,23 @@ func Connect() {
 	})
 
 	if err != nil {
-		log.Fatalf("Falha crítica: Não foi possível conectar ao banco de dados: %v", err)
+		return nil, fmt.Errorf("não foi possível conectar ao banco de dados: %w", err)
 	}
 
 	log.Println("✅ Conectado ao PostgreSQL com sucesso!")
 
-	DB = db
+	return db, nil
+}
+
+// AutoMigrate roda a migração dos modelos
+func AutoMigrate(db *gorm.DB) error {
+	log.Println("Rodando AutoMigrate...")
+	err := db.AutoMigrate(
+		&models.OAuthSession{},
+		&models.ConversationMessage{},
+	)
+	if err != nil {
+		return fmt.Errorf("falha no AutoMigrate: %w", err)
+	}
+	return nil
 }
