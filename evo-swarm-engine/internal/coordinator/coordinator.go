@@ -122,23 +122,8 @@ func (c *Coordinator) handleMessageReceived(msg *nats.Msg) {
 		}
 	}
 
-	// Busca a primeira chave de API ativa para ser usada como roteador (Fallback: mock-key)
-	apiKey := "sk-mock-key"
-	modelName := "gpt-4o-mini"
-	
-	var dbKey models.APIKey
-	if err := c.DB.Where("is_active = ? AND provider IN ?", true, []string{"openai", "anthropic", "openrouter", "OpenRouter"}).First(&dbKey).Error; err == nil {
-		apiKey = dbKey.Key
-	} else {
-		log.Printf("⚠️ [Coordinator] Nenhuma chave de API ativa encontrada. Usando chave mockada.")
-	}
-
-	// Instancia LLM Rápida (Apenas para roteamento - Planner)
-	routerLLM, err := llm.NewLLMProvider(modelName, apiKey)
-	if err != nil {
-		log.Printf("❌ [Coordinator] Erro ao instanciar Router LLM: %v", err)
-		return
-	}
+	var targetAgent string
+	var decision string
 
 	// Carrega as capabilities ativas do Registro
 	reg, err := registry.NewRegistry(c.EventBus)
@@ -147,63 +132,95 @@ func (c *Coordinator) handleMessageReceived(msg *nats.Msg) {
 		caps, _ = reg.GetAllCapabilities()
 	}
 
-	optionsText := ""
-	for _, cap := range caps {
-		optionsText += fmt.Sprintf("- '%s' (%s)\n", cap.AgentID, cap.Description)
-	}
-
-	systemPrompt := "Você é o Coordenador Central de um Swarm. Leia a mensagem do usuário e decida qual agente especialista deve assumir a tarefa. Responda apenas com o ID exato de um dos agentes abaixo:\n"
-	if optionsText != "" {
-		systemPrompt += optionsText
-	} else {
-		// Fallback dinâmico: Se não há agentes com capabilities, não há o que rotear
-		log.Printf("⚠️ [Coordinator] Não há agentes no Registry para roteamento.")
-		return
-	}
-
-	req := models.LLMRequest{
-		Model:       "gpt-4o-mini",
-		System:      systemPrompt,
-		Temperature: 0.1,
-		MaxTokens:   50,
-		Messages: []models.LLMMessage{
-			{Role: "user", Content: payload.Content},
-		},
-	}
-
-	resp, err := routerLLM.Generate(context.Background(), req)
-	
-	decision := ""
-	if err == nil {
-		decision = strings.ToLower(strings.TrimSpace(resp.Content))
-	} else {
-		log.Printf("⚠️ [Coordinator] Falha no Roteamento LLM: %v", err)
-	}
-
-	// Encontra o tópico NATS correspondente ao Agente escolhido
-	targetAgent := ""
-	for _, cap := range caps {
-		if cap.AgentID == decision {
-			targetAgent = cap.Subject
-			break
+	if resolvedAgentID != uuid.Nil {
+		decision = resolvedAgentID.String()
+		for _, cap := range caps {
+			if cap.AgentID == decision {
+				targetAgent = cap.Subject
+				break
+			}
+		}
+		if targetAgent == "" {
+			log.Printf("⚠️ [Coordinator] Agente %s informado no payload não encontrado nas capabilities ativas. Fazendo fallback.", decision)
+			resolvedAgentID = uuid.Nil
 		}
 	}
 
-	if targetAgent == "" && len(caps) > 0 {
-		// Fallback para o primeiro agente disponível se o LLM alucinou ou falhou
-		targetAgent = caps[0].Subject
-		decision = caps[0].AgentID
+	if resolvedAgentID == uuid.Nil {
+		// Busca a primeira chave de API ativa para ser usada como roteador (Fallback: mock-key)
+		apiKey := "sk-mock-key"
+		modelName := "gpt-4o-mini"
 		
-		suggested := ""
-		if resp != nil {
-			suggested = resp.Content
+		var dbKey models.APIKey
+		if err := c.DB.Where("is_active = ? AND provider IN ?", true, []string{"openai", "anthropic", "openrouter", "OpenRouter"}).First(&dbKey).Error; err == nil {
+			apiKey = dbKey.Key
+		} else {
+			log.Printf("⚠️ [Coordinator] Nenhuma chave de API ativa encontrada. Usando chave mockada.")
 		}
-		log.Printf("⚠️ [Coordinator] Fallback acionado (Sugestão anterior: '%s', Agente escolhido: '%s')", suggested, decision)
-	}
 
-	if targetAgent == "" {
-		log.Printf("❌ [Coordinator] Erro fatal: Nenhum alvo encontrado para roteamento.")
-		return
+		// Instancia LLM Rápida (Apenas para roteamento - Planner)
+		routerLLM, err := llm.NewLLMProvider(modelName, apiKey)
+		if err != nil {
+			log.Printf("❌ [Coordinator] Erro ao instanciar Router LLM: %v", err)
+			return
+		}
+
+		optionsText := ""
+		for _, cap := range caps {
+			optionsText += fmt.Sprintf("- '%s' (%s)\n", cap.AgentID, cap.Description)
+		}
+
+		systemPrompt := "Você é o Coordenador Central de um Swarm. Leia a mensagem do usuário e decida qual agente especialista deve assumir a tarefa. Responda apenas com o ID exato de um dos agentes abaixo:\n"
+		if optionsText != "" {
+			systemPrompt += optionsText
+		} else {
+			// Fallback dinâmico: Se não há agentes com capabilities, não há o que rotear
+			log.Printf("⚠️ [Coordinator] Não há agentes no Registry para roteamento.")
+			return
+		}
+
+		req := models.LLMRequest{
+			Model:       "gpt-4o-mini",
+			System:      systemPrompt,
+			Temperature: 0.1,
+			MaxTokens:   50,
+			Messages: []models.LLMMessage{
+				{Role: "user", Content: payload.Content},
+			},
+		}
+
+		resp, err := routerLLM.Generate(context.Background(), req)
+		
+		if err == nil {
+			decision = strings.ToLower(strings.TrimSpace(resp.Content))
+		} else {
+			log.Printf("⚠️ [Coordinator] Falha no Roteamento LLM: %v", err)
+		}
+
+		for _, cap := range caps {
+			if cap.AgentID == decision {
+				targetAgent = cap.Subject
+				break
+			}
+		}
+
+		if targetAgent == "" && len(caps) > 0 {
+			// Fallback para o primeiro agente disponível se o LLM alucinou ou falhou
+			targetAgent = caps[0].Subject
+			decision = caps[0].AgentID
+			resolvedAgentID, _ = uuid.Parse(decision) // Atualiza o resolvedAgentID
+			
+			suggested := ""
+			if resp != nil {
+				suggested = resp.Content
+			}
+			log.Printf("⚠️ [Coordinator] Fallback acionado (Sugestão anterior: '%s', Agente escolhido: '%s')", suggested, decision)
+		}
+
+		if targetAgent == "" {
+			log.Printf("❌ [Coordinator] Erro fatal: Nenhum alvo encontrado para roteamento.")
+			return
+		}
 	}
 
 	log.Printf("🔀 [Coordinator] Roteando mensagem de '%s' para '%s' (%s)", payload.Source, decision, targetAgent)

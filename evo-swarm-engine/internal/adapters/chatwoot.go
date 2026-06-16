@@ -94,11 +94,16 @@ func (a *ChatwootMirrorAdapter) RegisterWebhookRoute(app *fiber.App) {
 			if msgType, ok := payload["message_type"].(float64); ok && msgType == 0 { // 0 = incoming (user)
 				log.Println("📥 [ChatwootWebhook] Nova mensagem recebida do usuário! Disparando para o Swarm...")
 
+				// Extrai o agent_id da Query String da URL configurada no AgentBot do Chatwoot
+				agentID := c.Query("agent_id", "")
+
 				// Dispara no NATS indicando Input do Usuário
 				// Em produção real usaríamos uma struct tipada de payload
 				eventData, _ := json.Marshal(map[string]interface{}{
-					"source":  "chatwoot",
-					"content": payload["content"],
+					"source":   "chatwoot",
+					"content":  payload["content"],
+					"agent_id": agentID,
+					"payload":  payload,
 				})
 
 				a.EventBus.Publish(string(events.EventMessageReceived), eventData)

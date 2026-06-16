@@ -75,7 +75,7 @@ func (a *GenericAgent) handleTask(msg *nats.Msg) {
 		Content   string `json:"content"`
 	}
 	if err := json.Unmarshal([]byte(event.Payload), &incomingData); err != nil {
-		log.Printf("❌ [GenericAgent] [%s] Erro ao decodificar payload interno: %v", err)
+		log.Printf("❌ [GenericAgent] [%s] Erro ao decodificar payload interno: %v", a.Model.Name, err)
 		return
 	}
 
@@ -179,10 +179,45 @@ func (a *GenericAgent) handleTask(msg *nats.Msg) {
 	var caps []registry.Capability
 	if err == nil {
 		caps, _ = reg.GetAllCapabilities()
-		swarmTools = tools.GetSwarmTools(caps, a.Model.ID.String())
+		
+		// Filtra as capabilities apenas para os sub-agentes configurados no banco de dados
+		var filteredCaps []registry.Capability
+		var allowedSubAgents []string
+		
+		// a.Model.Config é do tipo datatypes.JSON, precisamos decodificar
+		var configMap map[string]interface{}
+		if len(a.Model.Config) > 0 {
+			json.Unmarshal(a.Model.Config, &configMap)
+		}
+		
+		if subAgentsRaw, ok := configMap["sub_agents"]; ok {
+			if subAgentsList, ok := subAgentsRaw.([]interface{}); ok {
+				for _, sa := range subAgentsList {
+					if idStr, ok := sa.(string); ok {
+						allowedSubAgents = append(allowedSubAgents, idStr)
+					}
+				}
+			}
+		}
+
+		if len(allowedSubAgents) > 0 {
+			for _, cap := range caps {
+				for _, allowed := range allowedSubAgents {
+					if cap.AgentID == allowed {
+						filteredCaps = append(filteredCaps, cap)
+						break
+					}
+				}
+			}
+		} else {
+			// Se não houver sub_agents configurados, não permite handoff (comportamento estrito hierárquico)
+			filteredCaps = []registry.Capability{}
+		}
+
+		swarmTools = tools.GetSwarmTools(filteredCaps, a.Model.ID.String())
 		
 		if len(swarmTools) > 0 {
-			systemInstruction += "\n\nVocê tem acesso a outros sub-agentes especializados. Se o usuário pedir algo fora de sua área, use a ferramenta 'delegate_to_agent' para passar a conversa."
+			systemInstruction += "\n\nVocê tem acesso a outros sub-agentes especializados. Se o usuário pedir algo fora de sua área, use a ferramenta 'delegate_to_agent' para transferir a conversa."
 		}
 	}
 

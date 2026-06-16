@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/PatrickRSilveira/evo-swarm-engine/internal/domain/models"
 )
