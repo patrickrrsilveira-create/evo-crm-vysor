@@ -189,6 +189,16 @@ func (a *A2AAdapter) handleMessageSend(c *fiber.Ctx, agentID string, req models.
 
 	taskID := uuid.New().String()
 
+	sub, err := a.EventBus.Conn.SubscribeSync("stream." + taskID)
+	if err != nil {
+		return c.Status(500).JSON(models.A2AResponse{
+			JSONRPC: "2.0",
+			ID:      req.ID,
+			Error:   &models.A2AError{Code: -32603, Message: "Internal Error"},
+		})
+	}
+	defer sub.Unsubscribe()
+
 	// 1. Dispara o evento de Input no Barramento para a Engine processar
 	eventData, _ := json.Marshal(map[string]interface{}{
 		"source":     "a2a_protocol",
@@ -200,14 +210,55 @@ func (a *A2AAdapter) handleMessageSend(c *fiber.Ctx, agentID string, req models.
 	})
 	a.EventBus.Publish(string(events.EventMessageReceived), eventData)
 
+	msg, err := sub.NextMsg(60 * time.Second)
+	if err != nil {
+		log.Printf("❌ [A2A Protocol] Timeout aguardando a resposta da Engine para a task=%s: %v", taskID, err)
+		return c.Status(504).JSON(models.A2AResponse{
+			JSONRPC: "2.0",
+			ID:      req.ID,
+			Error:   &models.A2AError{Code: -32000, Message: "Engine Timeout"},
+		})
+	}
+
+	type OutboundResponse struct {
+		Source         string `json:"source"`
+		Sender         string `json:"sender"`
+		Status         string `json:"status"`
+		Content        string `json:"content"`
+		AudioURL       string `json:"audio_url,omitempty"`
+		ConversationID string `json:"conversation_id"`
+		AccountID      int64  `json:"account_id"`
+	}
+
+	var outResp OutboundResponse
+	json.Unmarshal(msg.Data, &outResp)
+
+	artifacts := []models.A2AArtifact{
+		{
+			ArtifactID: uuid.New().String(),
+			Parts: []models.A2APart{
+				{Type: "text", Text: outResp.Content},
+			},
+		},
+	}
+
+	if outResp.AudioURL != "" {
+		artifacts[0].Parts = append(artifacts[0].Parts, models.A2APart{
+			Type:     "file",
+			URL:      outResp.AudioURL,
+			MimeType: "audio/ogg",
+		})
+	}
+
 	task := models.A2ATask{
 		ID:        taskID,
 		ContextID: contextID,
 		Status: models.A2ATaskStatus{
-			State:     "pending",
+			State:     "completed",
 			Timestamp: time.Now(),
 		},
-		Kind: "task",
+		Kind:      "task",
+		Artifacts: artifacts,
 	}
 
 	return c.JSON(models.A2AResponse{

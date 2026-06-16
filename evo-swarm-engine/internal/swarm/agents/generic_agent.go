@@ -2,7 +2,9 @@ package agents
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"log"
 	"time"
 
@@ -10,6 +12,7 @@ import (
 	"github.com/PatrickRSilveira/evo-swarm-engine/internal/ai/tools"
 	"github.com/PatrickRSilveira/evo-swarm-engine/internal/domain/events"
 	"github.com/PatrickRSilveira/evo-swarm-engine/internal/domain/models"
+	"github.com/PatrickRSilveira/evo-swarm-engine/internal/domain/tts"
 	evbus "github.com/PatrickRSilveira/evo-swarm-engine/internal/events"
 	"github.com/PatrickRSilveira/evo-swarm-engine/internal/swarm/registry"
 	"github.com/nats-io/nats.go"
@@ -314,11 +317,59 @@ func (a *GenericAgent) handleTask(msg *nats.Msg) {
 		} else {
 			log.Printf("💬 [GenericAgent] [%s] Resposta Final gerada com sucesso: '%s'", a.Model.Name, resp.Content)
 
+			var audioURL string
+			if len(a.Model.Config) > 0 {
+				var configMap map[string]interface{}
+				if err := json.Unmarshal(a.Model.Config, &configMap); err == nil {
+					if integrations, ok := configMap["integrations"].(map[string]interface{}); ok {
+						var ttsConfig map[string]interface{}
+						if ttsRaw, hasTts := integrations["tts"].(map[string]interface{}); hasTts {
+							ttsConfig = ttsRaw
+						} else if elevenlabsRaw, hasEleven := integrations["elevenlabs"].(map[string]interface{}); hasEleven {
+							ttsConfig = elevenlabsRaw
+							ttsConfig["provider"] = "elevenlabs"
+						}
+
+						if ttsConfig != nil {
+							providerName, _ := ttsConfig["provider"].(string)
+							voiceID, _ := ttsConfig["voice_id"].(string)
+							apiKey, _ := ttsConfig["api_key"].(string)
+
+							if providerName != "" && voiceID != "" && apiKey != "" {
+								log.Printf("🗣️ [GenericAgent] [%s] Gerando áudio via TTS (%s)", a.Model.Name, providerName)
+								ttsFactory := tts.NewFactory()
+								if provider, err := ttsFactory.GetProvider(providerName); err == nil {
+									req := tts.Request{
+										Text:    resp.Content,
+										VoiceID: voiceID,
+										APIKey:  apiKey,
+									}
+									if modelID, ok := ttsConfig["model_id"].(string); ok {
+										req.Model = modelID
+									}
+									audioBytes, err := provider.GenerateSpeech(context.Background(), req)
+									if err != nil {
+										log.Printf("❌ [GenericAgent] Erro na geração TTS: %v", err)
+									} else if len(audioBytes) > 0 {
+										audioBase64 := base64.StdEncoding.EncodeToString(audioBytes)
+										audioURL = fmt.Sprintf("data:audio/ogg;base64,%s", audioBase64)
+										log.Printf("✅ [GenericAgent] Áudio gerado com sucesso (%d bytes)", len(audioBytes))
+									}
+								} else {
+									log.Printf("❌ [GenericAgent] Provedor TTS não suportado: %s", providerName)
+								}
+							}
+						}
+					}
+				}
+			}
+
 			type OutboundResponse struct {
 				Source         string `json:"source"`
 				Sender         string `json:"sender"`
 				Status         string `json:"status"`
 				Content        string `json:"content"`
+				AudioURL       string `json:"audio_url,omitempty"`
 				ConversationID string `json:"conversation_id"`
 				AccountID      int64  `json:"account_id"`
 			}
@@ -327,6 +378,7 @@ func (a *GenericAgent) handleTask(msg *nats.Msg) {
 				Sender:         incomingData.Sender,
 				Status:         "completed",
 				Content:        resp.Content,
+				AudioURL:       audioURL,
 				ConversationID: incomingData.ConversationID,
 				AccountID:      incomingData.AccountID,
 			})

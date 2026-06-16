@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"fmt"
 	"net/http"
 	"os"
 	"strings"
@@ -68,6 +69,10 @@ func EvoAuthMiddleware(db *gorm.DB) fiber.Handler {
 		// Query em jsonb para achar o api_key dentro do config
 		errAgent := db.Table("evo_core_agents").Select("id, name").Where("config->>'api_key' = ?", apiKeyStr).First(&agentRow).Error
 
+		if errAgent != nil {
+			fmt.Printf("[AuthDebug] evo_core_agents query failed for key %s: %v\n", apiKeyStr, errAgent)
+		}
+
 		if errAgent == nil {
 			agentCtx := AgentContext{
 				AgentID:   agentRow.ID,
@@ -106,8 +111,13 @@ func EvoAuthMiddleware(db *gorm.DB) fiber.Handler {
 				return c.Next()
 			}
 			if resp != nil {
+				fmt.Printf("[AuthDebug] Evo Auth validation failed for key %s. Status: %d\n", apiKeyStr, resp.StatusCode)
 				resp.Body.Close()
+			} else {
+				fmt.Printf("[AuthDebug] Evo Auth validation request failed for key %s. Error: %v\n", apiKeyStr, respErr)
 			}
+		} else {
+			fmt.Printf("[AuthDebug] Evo Auth http.NewRequest failed for key %s. Error: %v\n", apiKeyStr, reqErr)
 		}
 
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{

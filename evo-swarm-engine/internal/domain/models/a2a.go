@@ -49,8 +49,10 @@ type A2AArtifact struct {
 }
 
 type A2APart struct {
-	Type string `json:"type"` // "text", "file"
-	Text string `json:"text,omitempty"`
+	Type     string `json:"type"` // "text", "file"
+	Text     string `json:"text,omitempty"`
+	URL      string `json:"url,omitempty"`
+	MimeType string `json:"mimeType,omitempty"`
 }
 
 type A2AMessage struct {
