@@ -127,7 +127,7 @@ func (a *GenericAgent) handleTask(msg *nats.Msg) {
 		}
 	} else {
 		var dbKey models.APIKey
-		if err := a.DB.Where("is_active = ? AND provider IN ?", true, []string{"openai", "anthropic"}).First(&dbKey).Error; err == nil {
+		if err := a.DB.Where("is_active = ? AND provider IN ?", true, []string{"openai", "anthropic", "openrouter", "OpenRouter"}).First(&dbKey).Error; err == nil {
 			apiKey = dbKey.Key
 		}
 	}

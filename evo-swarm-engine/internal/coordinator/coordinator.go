@@ -127,7 +127,7 @@ func (c *Coordinator) handleMessageReceived(msg *nats.Msg) {
 	modelName := "gpt-4o-mini"
 	
 	var dbKey models.APIKey
-	if err := c.DB.Where("is_active = ? AND provider IN ?", true, []string{"openai", "anthropic"}).First(&dbKey).Error; err == nil {
+	if err := c.DB.Where("is_active = ? AND provider IN ?", true, []string{"openai", "anthropic", "openrouter", "OpenRouter"}).First(&dbKey).Error; err == nil {
 		apiKey = dbKey.Key
 	} else {
 		log.Printf("⚠️ [Coordinator] Nenhuma chave de API ativa encontrada. Usando chave mockada.")
