@@ -117,16 +117,5 @@ func EvoAuthMiddleware(db *gorm.DB) fiber.Handler {
 			})
 		}
 
-		// 4. Se encontrou, preenchemos o Agent Context fortemente tipado
-		agentCtx := AgentContext{
-			AgentID:   "system-agent", // Em produção mapearemos para evo_core_agents
-			AgentName: keyRow.Name,
-			KeyID:     keyRow.ID.String(),
-		}
 
-		c.Locals("AgentContext", agentCtx)
-		c.Locals("is_agent_bot", true)
-
-		return c.Next()
-	}
 }
