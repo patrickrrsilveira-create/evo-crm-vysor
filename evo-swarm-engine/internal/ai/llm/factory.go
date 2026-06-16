@@ -12,7 +12,7 @@ func NewLLMProvider(modelName string, apiKey string) (models.LLMProvider, error)
 	lowerModel := strings.ToLower(modelName)
 
 	if strings.HasPrefix(lowerModel, "gpt-") || strings.HasPrefix(lowerModel, "o1-") {
-		return NewOpenAIClient(apiKey), nil
+		return NewOpenAIClient(apiKey, ""), nil
 	}
 
 	if strings.HasPrefix(lowerModel, "claude-") {
@@ -21,6 +21,10 @@ func NewLLMProvider(modelName string, apiKey string) (models.LLMProvider, error)
 
 	if strings.HasPrefix(lowerModel, "gemini-") {
 		return NewGeminiClient(apiKey), nil
+	}
+
+	if strings.HasPrefix(lowerModel, "openrouter/") {
+		return NewOpenAIClient(apiKey, "https://openrouter.ai/api/v1/chat/completions"), nil
 	}
 
 	return nil, fmt.Errorf("provedor LLM não suportado para o modelo: %s", modelName)

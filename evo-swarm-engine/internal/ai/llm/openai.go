@@ -12,14 +12,19 @@ import (
 )
 
 type OpenAIClient struct {
-	APIKey string
-	Client *http.Client
+	APIKey  string
+	BaseURL string
+	Client  *http.Client
 }
 
-func NewOpenAIClient(apiKey string) *OpenAIClient {
+func NewOpenAIClient(apiKey string, baseURL string) *OpenAIClient {
+	if baseURL == "" {
+		baseURL = "https://api.openai.com/v1/chat/completions"
+	}
 	return &OpenAIClient{
-		APIKey: apiKey,
-		Client: &http.Client{},
+		APIKey:  apiKey,
+		BaseURL: baseURL,
+		Client:  &http.Client{},
 	}
 }
 
@@ -75,9 +80,13 @@ type openAIResponse struct {
 }
 
 func (c *OpenAIClient) Generate(ctx context.Context, req models.LLMRequest) (*models.LLMResponse, error) {
-	// 1. Converter models.LLMRequest para o formato OpenAI
+	modelName := req.Model
+	if strings.HasPrefix(modelName, "openrouter/") {
+		modelName = strings.TrimPrefix(modelName, "openrouter/")
+	}
+
 	openReq := openAIRequest{
-		Model:       req.Model,
+		Model:       modelName,
 		Temperature: req.Temperature,
 		MaxTokens:   req.MaxTokens,
 	}
@@ -112,7 +121,7 @@ func (c *OpenAIClient) Generate(ctx context.Context, req models.LLMRequest) (*mo
 		return nil, fmt.Errorf("erro serializando payload OpenAI: %v", err)
 	}
 
-	httpReq, err := http.NewRequestWithContext(ctx, "POST", "https://api.openai.com/v1/chat/completions", bytes.NewReader(payloadBytes))
+	httpReq, err := http.NewRequestWithContext(ctx, "POST", c.BaseURL, bytes.NewReader(payloadBytes))
 	if err != nil {
 		return nil, err
 	}
