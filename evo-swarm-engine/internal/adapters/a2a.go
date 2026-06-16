@@ -38,43 +38,84 @@ func (a *A2AAdapter) RegisterRoutes(app *fiber.App, db *gorm.DB) {
 
 		var raw map[string]interface{}
 		if err := json.Unmarshal(bodyBytes, &raw); err == nil {
-			// Verifica se é um Webhook do Chatwoot (AgentBot)
-			if eventType, ok := raw["event"].(string); ok && eventType == "message_created" {
+			// Verifica se é um Webhook do Chatwoot (Webhook Padrão ou BotRuntime Payload)
+			eventType, _ := raw["event"].(string)
+			isStandardWebhook := eventType == "message_created"
+			
+			_, hasAgentBotId := raw["agent_bot_id"]
+			hasMetadata := raw["metadata"] != nil
+			isBotRuntime := hasAgentBotId && hasMetadata
+
+			if isStandardWebhook || isBotRuntime {
 				// É do Chatwoot!
 				log.Printf("🤖 [A2A Protocol] Interceptado Webhook do Chatwoot no endpoint A2A para agent_id=%s", agentID)
 				
-				isIncoming := false
-				switch mt := raw["message_type"].(type) {
-				case float64:
-					isIncoming = mt == 0
-				case string:
-					isIncoming = strings.EqualFold(mt, "incoming")
+				isIncoming := true // BotRuntime sempre é incoming
+				if isStandardWebhook {
+					isIncoming = false
+					switch mt := raw["message_type"].(type) {
+					case float64:
+						isIncoming = mt == 0
+					case string:
+						isIncoming = strings.EqualFold(mt, "incoming")
+					}
 				}
 
 				if isIncoming {
 					content := ""
-					if c, ok := raw["content"].(string); ok {
-						content = c
+					if isStandardWebhook {
+						if c, ok := raw["content"].(string); ok {
+							content = c
+						}
+					} else {
+						if mc, ok := raw["message_content"].(string); ok {
+							content = mc
+						}
 					}
 
 					var conversationID string
 					var accountID int64
-					if conv, ok := raw["conversation"].(map[string]interface{}); ok {
-						if idStr, ok := conv["id"].(string); ok {
-							conversationID = idStr
+					
+					if isStandardWebhook {
+						if conv, ok := raw["conversation"].(map[string]interface{}); ok {
+							if idStr, ok := conv["id"].(string); ok {
+								conversationID = idStr
+							}
+							if accID, ok := conv["account_id"].(float64); ok {
+								accountID = int64(accID)
+							}
 						}
-						if accID, ok := conv["account_id"].(float64); ok {
-							accountID = int64(accID)
+					} else {
+						if metadata, ok := raw["metadata"].(map[string]interface{}); ok {
+							if evoData, ok := metadata["evoai_crm_data"].(map[string]interface{}); ok {
+								if conv, ok := evoData["conversation"].(map[string]interface{}); ok {
+									if idStr, ok := conv["id"].(string); ok {
+										conversationID = idStr
+									}
+									if accID, ok := conv["account_id"].(float64); ok {
+										accountID = int64(accID)
+									}
+								}
+							}
+						}
+						if conversationID == "" {
+							if convID, ok := raw["conversation_id"].(float64); ok {
+								conversationID = fmt.Sprintf("%d", int64(convID))
+							} else if convIDStr, ok := raw["conversation_id"].(string); ok {
+								conversationID = convIDStr
+							}
 						}
 					}
 
 					sender := ""
-					if senderObj, ok := raw["sender"].(map[string]interface{}); ok {
-						if name, ok := senderObj["name"].(string); ok {
-							sender = name
-						}
-						if id, ok := senderObj["id"].(float64); ok && sender == "" {
-							sender = fmt.Sprintf("user_%d", int64(id))
+					if isStandardWebhook {
+						if senderObj, ok := raw["sender"].(map[string]interface{}); ok {
+							if name, ok := senderObj["name"].(string); ok {
+								sender = name
+							}
+							if id, ok := senderObj["id"].(float64); ok && sender == "" {
+								sender = fmt.Sprintf("user_%d", int64(id))
+							}
 						}
 					}
 
