@@ -190,10 +190,15 @@ func (c *Coordinator) handleMessageReceived(msg *nats.Msg) {
 	}
 
 	if targetAgent == "" && len(caps) > 0 {
-		// Fallback para o primeiro agente disponível se o LLM alucinou
+		// Fallback para o primeiro agente disponível se o LLM alucinou ou falhou
 		targetAgent = caps[0].Subject
 		decision = caps[0].AgentID
-		log.Printf("⚠️ [Coordinator] LLM sugeriu agente inexistente '%s', fazendo fallback para '%s'", resp.Content, decision)
+		
+		suggested := ""
+		if resp != nil {
+			suggested = resp.Content
+		}
+		log.Printf("⚠️ [Coordinator] Fallback acionado (Sugestão anterior: '%s', Agente escolhido: '%s')", suggested, decision)
 	}
 
 	if targetAgent == "" {
