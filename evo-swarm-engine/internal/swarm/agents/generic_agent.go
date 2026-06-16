@@ -37,8 +37,11 @@ func (a *GenericAgent) Start() error {
 	log.Printf("🤖 [GenericAgent] Agente '%s' (%s) iniciado. Escutando %s...", a.Model.Name, a.Model.ID, a.Subject)
 
 	// Registra o agente no Registry de forma dinâmica
-	reg, _ := registry.NewRegistry(a.EventBus)
-	
+	reg, err := registry.NewRegistry(a.EventBus)
+	if err != nil {
+		log.Printf("❌ [GenericAgent] Erro ao inicializar Registry (NATS JetStream offline?): %v", err)
+		return err
+	}
 	instruction := ""
 	if a.Model.Instruction != nil {
 		instruction = *a.Model.Instruction
