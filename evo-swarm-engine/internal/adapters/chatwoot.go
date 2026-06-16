@@ -150,6 +150,7 @@ func (a *ChatwootMirrorAdapter) handleOutboundMessage(msg *nats.Msg) {
 
 	httpReq.Header.Set("Content-Type", "application/json")
 	httpReq.Header.Set("api_access_token", apiToken)
+	httpReq.Header.Set("X-Service-Token", apiToken)
 
 	resp, err := http.DefaultClient.Do(httpReq)
 	if err != nil {
