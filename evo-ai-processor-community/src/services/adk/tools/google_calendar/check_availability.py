@@ -245,119 +245,150 @@ def create_check_availability_tool(
         """
         Find available time slots within a date range.
 
-        Args:
-            client: GoogleCalendarClient instance
-            credentials_config: Google Calendar credentials configuration
-            start_dt: Start of search range
-            end_dt: End of search range
-            slot_duration: Duration of each slot in minutes
-            calendar_id: Calendar to check
-            config: Integration configuration
-
-        Returns:
-            Dictionary with available time slots
+        Uses a single freebusy query to fetch all busy intervals, then computes
+        available slots locally — much faster than one API call per slot.
         """
         # Helper to extract value from config (handles both dict and direct values)
         def get_config_value(key: str, default: Any) -> Any:
             value = config.get(key, default)
-            # If value is a dict with 'value' key, extract it and convert units
             if isinstance(value, dict) and "value" in value:
                 extracted_value = value["value"]
                 unit = value.get("unit")
-
-                # Convert time units to appropriate format
                 if key in ["minAdvanceTime", "maxDistance"] and unit == "hours":
-                    return extracted_value  # Already in hours
+                    return extracted_value
                 elif key in ["minAdvanceTime", "maxDistance"] and unit == "weeks":
-                    return extracted_value * 24 * 7  # Convert weeks to hours
+                    return extracted_value * 24 * 7
                 elif key == "maxDuration" and unit == "hours":
-                    return extracted_value * 60  # Convert hours to minutes
+                    return extracted_value * 60
                 elif key == "maxDuration" and unit == "minutes":
-                    return extracted_value  # Already in minutes
-
+                    return extracted_value
                 return extracted_value
             return value
 
-        available_slots = []
         business_hours = get_config_value("businessHours", {})
         timezone = get_config_value("timezone", "America/Sao_Paulo")
         min_advance_time = get_config_value("minAdvanceTime", 0)
         max_duration = get_config_value("maxDuration", 0)
+        business_hours_enabled = business_hours.get("enabled") if isinstance(business_hours, dict) else False
 
-        logger.info(f"Finding available slots: business_hours_enabled={business_hours.get('enabled')}, timezone={timezone}, min_advance={min_advance_time}h, max_duration={max_duration}min")
+        logger.info(
+            f"Finding available slots: business_hours_enabled={business_hours_enabled}, "
+            f"timezone={timezone}, min_advance={min_advance_time}h, max_duration={max_duration}min"
+        )
 
-        # Validate slot duration
         if max_duration > 0 and slot_duration > max_duration:
             return {
                 "status": "error",
                 "message": f"Slot duration ({slot_duration} min) exceeds maximum duration ({max_duration} min)"
             }
 
-        # Iterate through days
+        # --- Step 1: Fetch ALL busy intervals with a single freebusy query ---
+        try:
+            service = client.get_calendar_service(credentials_config)
+            freebusy_body = {
+                "timeMin": start_dt.isoformat() + "Z",
+                "timeMax": end_dt.isoformat() + "Z",
+                "items": [{"id": calendar_id}],
+            }
+            fb_result = service.freebusy().query(body=freebusy_body).execute()
+            busy_raw = fb_result.get("calendars", {}).get(calendar_id, {}).get("busy", [])
+        except Exception as e:
+            logger.error(f"freebusy query failed: {e}")
+            return {"status": "error", "message": f"Google Calendar API error: {str(e)}"}
+
+        # Convert busy intervals to datetime pairs (timezone-naive for comparison)
+        busy_intervals = []
+        for b in busy_raw:
+            b_start = datetime.fromisoformat(b["start"].replace("Z", "+00:00")).replace(tzinfo=None)
+            b_end = datetime.fromisoformat(b["end"].replace("Z", "+00:00")).replace(tzinfo=None)
+            busy_intervals.append((b_start, b_end))
+        busy_intervals.sort(key=lambda x: x[0])
+
+        logger.info(f"Fetched {len(busy_intervals)} busy intervals from freebusy query")
+
+        # --- Step 2: Build business-hours windows per day ---
+        DEFAULT_BUSINESS_START = "08:00"
+        DEFAULT_BUSINESS_END = "18:00"
+        DEFAULT_BUSINESS_DAYS = {"monday", "tuesday", "wednesday", "thursday", "friday"}
+        day_names = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
+
         current_day = start_dt.replace(hour=0, minute=0, second=0, microsecond=0)
         end_day = end_dt.replace(hour=23, minute=59, second=59, microsecond=999999)
-
         logger.info(f"Searching slots from {current_day} to {end_day}")
 
+        # Minimum allowed time (for advance-time validation)
+        from zoneinfo import ZoneInfo
+        tz = ZoneInfo(timezone)
+        now_naive = datetime.now(tz).replace(tzinfo=None)
+        min_start = now_naive + timedelta(hours=min_advance_time) if min_advance_time > 0 else None
+
+        available_slots = []
+
         while current_day <= end_day:
-            # Get business hours for this day
-            day_names = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
             day_name = day_names[current_day.weekday()]
-            day_config = business_hours.get(day_name, {}) if business_hours.get("enabled") else {}
 
-            logger.debug(f"Checking {day_name} ({current_day.date()}): enabled={day_config.get('enabled') if day_config else False}")
+            if business_hours_enabled:
+                day_config = business_hours.get(day_name, {})
+                if not day_config or not day_config.get("enabled"):
+                    logger.debug(f"Skipping {day_name} - not a configured business day")
+                    current_day += timedelta(days=1)
+                    continue
+                start_time_str = day_config.get("start", DEFAULT_BUSINESS_START)
+                end_time_str = day_config.get("end", DEFAULT_BUSINESS_END)
+            else:
+                if day_name not in DEFAULT_BUSINESS_DAYS:
+                    logger.debug(f"Skipping {day_name} - not a default business day (Mon-Fri)")
+                    current_day += timedelta(days=1)
+                    continue
+                start_time_str = DEFAULT_BUSINESS_START
+                end_time_str = DEFAULT_BUSINESS_END
 
-            if not day_config or not day_config.get("enabled"):
-                # Skip non-business days
-                logger.debug(f"Skipping {day_name} - not a business day")
-                current_day += timedelta(days=1)
-                continue
+            sh, sm = map(int, start_time_str.split(":"))
+            eh, em = map(int, end_time_str.split(":"))
+            day_start = current_day.replace(hour=sh, minute=sm, second=0, microsecond=0)
+            day_end = current_day.replace(hour=eh, minute=em, second=0, microsecond=0)
 
-            # Parse business hours for this day
-            start_time_str = day_config.get("start", "09:00")
-            end_time_str = day_config.get("end", "18:00")
-
-            hour, minute = map(int, start_time_str.split(":"))
-            day_start = current_day.replace(hour=hour, minute=minute)
-
-            hour, minute = map(int, end_time_str.split(":"))
-            day_end = current_day.replace(hour=hour, minute=minute)
-
-            # Ensure we're within the requested range
+            # Clamp to requested range
             if day_start < start_dt:
-                day_start = start_dt
+                day_start = start_dt.replace(tzinfo=None) if start_dt.tzinfo else start_dt
             if day_end > end_dt:
-                day_end = end_dt
+                day_end = end_dt.replace(tzinfo=None) if end_dt.tzinfo else end_dt
 
-            # Check slots within this day
+            logger.debug(f"Checking {day_name} ({current_day.date()}): {start_time_str} - {end_time_str}")
+
+            # --- Step 3: Walk slots, skipping busy intervals without extra API calls ---
             slot_start = day_start
+            busy_idx = 0  # index into sorted busy_intervals (minor optimisation)
+
             while slot_start + timedelta(minutes=slot_duration) <= day_end:
                 slot_end = slot_start + timedelta(minutes=slot_duration)
 
-                # Check if slot meets minimum advance time
-                if not client.validate_advance_time(slot_start, min_advance_time, timezone):
-                    slot_start += timedelta(minutes=30)  # Move forward in 30-min increments
+                # Advance time check
+                if min_start and slot_start < min_start:
+                    slot_start += timedelta(minutes=30)
                     continue
 
-                # Check availability
-                result = await client.check_availability(
-                    credentials_config,
-                    slot_start,
-                    slot_end,
-                    calendar_id
-                )
+                # Check if slot overlaps any busy interval
+                is_free = True
+                for b_start, b_end in busy_intervals:
+                    if b_start >= slot_end:
+                        break  # sorted list — no more overlaps possible
+                    if b_end > slot_start:
+                        is_free = False
+                        # Jump past this busy block (round up to next 30-min boundary)
+                        mins_past = int((b_end - slot_start).total_seconds() / 60)
+                        jump = ((mins_past + 29) // 30) * 30  # ceil to 30-min grid
+                        slot_start += timedelta(minutes=max(jump, 30))
+                        break
 
-                if result["status"] == "success" and result["available"]:
+                if is_free:
                     available_slots.append({
                         "start": slot_start.isoformat(),
                         "end": slot_end.isoformat(),
                         "duration_minutes": slot_duration
                     })
+                    slot_start += timedelta(minutes=30)
 
-                # Move to next slot (30-minute increments for better coverage)
-                slot_start += timedelta(minutes=30)
-
-            # Move to next day
             current_day += timedelta(days=1)
 
         logger.info(f"Found {len(available_slots)} available time slots in range {start_dt} to {end_dt}")
@@ -374,6 +405,7 @@ def create_check_availability_tool(
         }
 
     # Set function metadata
+
     check_calendar_availability.__name__ = "check_calendar_availability"
 
     # Build dynamic docstring with config constraints
