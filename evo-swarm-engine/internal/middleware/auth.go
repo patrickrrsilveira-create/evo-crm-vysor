@@ -22,12 +22,24 @@ func EvoAuthMiddleware(db *gorm.DB) fiber.Handler {
 			return c.Next()
 		}
 
+		// Extrair agent_id do path (ex: /api/v1/a2a/1234-5678-...)
+		parts := strings.Split(path, "/")
+		var agentIDStr string
+		for i, part := range parts {
+			if part == "a2a" || part == "chat" {
+				if len(parts) > i+1 {
+					agentIDStr = parts[i+1]
+					break
+				}
+			}
+		}
+
 		// FALLBACK DE EMERGÊNCIA: Se for rota A2A (interno) não bloqueia, loga e passa!
 		// Isso garante que o evo-bot-runtime NUNCA mais receba 401.
 		if strings.Contains(path, "/a2a/") || strings.Contains(path, "/chat/") {
-			fmt.Printf("⚠️ [AuthDebug] EMERGENCY FALLBACK: Bypassing auth for internal A2A call: %s\n", path)
+			fmt.Printf("⚠️ [AuthDebug] EMERGENCY FALLBACK: Bypassing auth for internal A2A call: %s. AgentID: %s\n", path, agentIDStr)
 			c.Locals("AgentContext", AgentContext{
-				AgentID:   "fallback-agent",
+				AgentID:   agentIDStr,
 				AgentName: "Fallback Agent",
 				KeyID:     "no-key",
 			})
