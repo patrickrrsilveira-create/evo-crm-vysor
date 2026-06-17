@@ -385,8 +385,11 @@ server {
 
     # =============================================================================
     # Agent Webhook Routes → Processor Service (Swarm Engine)
+    # NOTE: chatwoot is intentionally excluded here — it falls through to the
+    # Legacy Webhook Routes block below (→ CRM Service) while the Python
+    # processor is in production. Add it back when the swarm-engine is deployed.
     # =============================================================================
-    location ~ ^/webhooks/(evolution|chatwoot|msteams|typebot|n8n) {
+    location ~ ^/webhooks/(evolution|msteams|typebot|n8n) {
         proxy_pass $processor_service$request_uri;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
