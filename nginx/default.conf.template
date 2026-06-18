@@ -1,5 +1,5 @@
 # =============================================================================
-# Evo CRM Community — Nginx API Gateway
+# Evo CRM Community ÔÇö Nginx API Gateway
 # =============================================================================
 # Adapted from the production SaaS gateway configuration.
 # Routes all API traffic through a single domain, dispatching to internal
@@ -46,7 +46,7 @@ server {
     # =============================================================================
 
     # =============================================================================
-    # Setup Wizard Routes → Auth Service
+    # Setup Wizard Routes ÔåÆ Auth Service
     # =============================================================================
     location ~ ^/setup {
         proxy_pass $auth_service$request_uri;
@@ -86,7 +86,7 @@ server {
         client_max_body_size 100M;
     }
 
-    # Super Admin catch-all → Auth Service
+    # Super Admin catch-all ÔåÆ Auth Service
     location ~ ^/api/v1/super_admin {
         proxy_pass $auth_service$request_uri;
         proxy_set_header Host $host;
@@ -177,7 +177,7 @@ server {
         proxy_set_header Connection "upgrade";
     }
 
-    # POST /api/v1/accounts → Auth Service (account creation)
+    # POST /api/v1/accounts ÔåÆ Auth Service (account creation)
     location ~ ^/api/v1/accounts$ {
         proxy_pass $auth_service$request_uri;
         proxy_set_header Host $host;
@@ -194,7 +194,7 @@ server {
         proxy_set_header Connection "upgrade";
     }
 
-    # Webhooks with accountId → CRM Service
+    # Webhooks with accountId ÔåÆ CRM Service
     location ~ ^/api/v1/accounts/[^/]+/webhooks {
         proxy_pass $crm_service$request_uri;
         proxy_set_header Host $host;
@@ -212,7 +212,7 @@ server {
         client_max_body_size 10M;
     }
 
-    # GET/PATCH /api/v1/accounts/:id → Auth Service
+    # GET/PATCH /api/v1/accounts/:id ÔåÆ Auth Service
     location ~ ^/api/v1/accounts/[^/]+$ {
         proxy_pass $auth_service$request_uri;
         proxy_set_header Host $host;
@@ -250,7 +250,7 @@ server {
     }
 
     # =============================================================================
-    # AI Processor Service Routes — Custom MCP Discover Tools (before EvoAI routes)
+    # AI Processor Service Routes ÔÇö Custom MCP Discover Tools (before EvoAI routes)
     # =============================================================================
     location ~ ^/api/v1/custom-mcp-servers/discover-tools {
         proxy_pass $processor_service$request_uri;
@@ -269,7 +269,7 @@ server {
     }
 
     # =============================================================================
-    # AI Processor Service Routes — Agent-specific integration endpoints
+    # AI Processor Service Routes ÔÇö Agent-specific integration endpoints
     # =============================================================================
     # Must be placed BEFORE the general EvoAI Core Service Routes to avoid shadowing!
     location ~ ^/api/v1/agents/[^/]+/integrations {
@@ -311,7 +311,7 @@ server {
     # AI Processor Service Routes
     # =============================================================================
 
-    # Chat endpoints (including WebSocket) — needs longer timeout
+    # Chat endpoints (including WebSocket) ÔÇö needs longer timeout
     location ~ ^/api/v1/chat {
         proxy_pass $processor_service$request_uri;
         proxy_set_header Host $host;
@@ -384,9 +384,9 @@ server {
     }
 
     # =============================================================================
-    # Agent Webhook Routes → Processor Service (Swarm Engine)
-    # NOTE: chatwoot is intentionally excluded here — it falls through to the
-    # Legacy Webhook Routes block below (→ CRM Service) while the Python
+    # Agent Webhook Routes ÔåÆ Processor Service (Swarm Engine)
+    # NOTE: chatwoot is intentionally excluded here ÔÇö it falls through to the
+    # Legacy Webhook Routes block below (ÔåÆ CRM Service) while the Python
     # processor is in production. Add it back when the swarm-engine is deployed.
     # =============================================================================
     location ~ ^/webhooks/(evolution|msteams|typebot|n8n) {
@@ -407,7 +407,7 @@ server {
     }
 
     # =============================================================================
-    # Legacy Webhook Routes → CRM Service
+    # Legacy Webhook Routes ÔåÆ CRM Service
     # =============================================================================
     location ~ ^/(api/)?(rails/)?webhooks {
         proxy_pass $crm_service$request_uri;
@@ -491,7 +491,7 @@ server {
     }
 
     # =============================================================================
-    # CRM Service Routes (default — all other /api/v1/* paths)
+    # CRM Service Routes (default ÔÇö all other /api/v1/* paths)
     # =============================================================================
     location ~ ^/api/v1/ {
         proxy_pass $crm_service$request_uri;
@@ -510,7 +510,7 @@ server {
     }
 
     # =============================================================================
-    # Catch-all → CRM Service
+    # Catch-all ÔåÆ CRM Service
     # =============================================================================
     location / {
         proxy_pass $crm_service$request_uri;
