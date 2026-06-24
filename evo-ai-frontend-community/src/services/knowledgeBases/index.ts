@@ -46,6 +46,21 @@ export const knowledgeBasesService = {
     return response.data;
   },
 
+  getAgentLinkedBases: async (agentId: number | string): Promise<KnowledgeBase[]> => {
+    try {
+      const response = await api.get(`/agent_bots/${agentId}`);
+      return response.data?.payload?.knowledge_bases || response.data?.knowledge_bases || [];
+    } catch (e) {
+      console.error('Error fetching linked bases:', e);
+      return [];
+    }
+  },
+
+  linkAgentBot: async (baseId: number | string, agentId: number | string): Promise<any> => {
+    const response = await api.post(`/knowledge_bases/${baseId}/agent_bots`, { agent_bot_id: agentId });
+    return response.data;
+  },
+
   unlinkAgentBot: async (baseId: number | string, agentId: number | string): Promise<any> => {
     const response = await api.delete(`/knowledge_bases/${baseId}/agent_bots/${agentId}`);
     return response.data;

@@ -18,6 +18,7 @@ export interface Agent {
   config?: AgentConfig;
   created_at: string;
   updated_at?: string;
+  knowledge_bases?: Array<{ id: number; name: string; description: string }>;
   // Metadata de compartilhamento
   is_shared?: boolean;
   permission_level?: PermissionLevel;

@@ -1,4 +1,4 @@
-import { User, Wrench, Plug, Server, Users, ListChecks, Settings, Package } from 'lucide-react';
+import { User, Wrench, Plug, Server, Users, ListChecks, Settings, Package, BookOpen } from 'lucide-react';
 import { useLanguage } from '@/hooks/useLanguage';
 import { Agent } from '@/types/agents';
 
@@ -62,6 +62,12 @@ const AgentEditSidebar = ({
         label: t('edit.menu.subAgents') || 'Sub Agentes',
         icon: Users,
         show: isSubAgentType,
+      },
+      {
+        id: 'knowledge',
+        label: t('edit.menu.knowledge') || 'Base de Conhecimento',
+        icon: BookOpen,
+        show: !isOrchestratorType && !isExternalType,
       },
       {
         id: 'tools',
