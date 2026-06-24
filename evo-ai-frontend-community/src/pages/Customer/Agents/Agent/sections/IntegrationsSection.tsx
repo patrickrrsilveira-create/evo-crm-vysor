@@ -8,7 +8,7 @@ import {
   CardTitle,
   Button,
 } from '@evoapi/design-system';
-import { ExternalLink, Plug, Check, Settings, Loader2, AlertCircle, Volume2, Video } from 'lucide-react';
+import { ExternalLink, Plug, Check, Settings, Loader2, AlertCircle, Volume2 } from 'lucide-react';
 import TTSConfigDialog from '@/components/integrations/TTSConfigDialog';
 import GoogleCalendarConfigDialog from '@/components/integrations/GoogleCalendarConfigDialog';
 import GoogleSheetsConfigDialog from '@/components/integrations/GoogleSheetsConfigDialog';
