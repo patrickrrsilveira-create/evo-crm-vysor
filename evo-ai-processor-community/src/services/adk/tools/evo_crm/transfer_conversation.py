@@ -5,7 +5,7 @@ This tool allows AI agents to transfer conversations to other AI agents
 using the atomic handoff architecture.
 """
 
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 from google.adk.tools import FunctionTool, ToolContext
 from src.utils.logger import setup_logger
 from src.services.handoff_service import transfer_conversation as atomic_transfer
