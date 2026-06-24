@@ -1,6 +1,7 @@
 import { User, Wrench, Plug, Server, Users, ListChecks, Settings, Package, BookOpen } from 'lucide-react';
 import { useLanguage } from '@/hooks/useLanguage';
 import { Agent } from '@/types/agents';
+import { usePermissions } from '@/contexts/PermissionsContext';
 
 type SidebarMenu =
   | 'profile'
@@ -45,6 +46,7 @@ const AgentEditSidebar = ({
   onTestAI,
 }: AgentEditSidebarProps) => {
   const { t } = useLanguage('aiAgents');
+  const { can } = usePermissions();
 
   // Tipos orquestradores (que usam sub-agentes ou tarefas, não tem role/goal/behavior)
   const isOrchestratorType = ['sequential', 'parallel', 'loop', 'task'].includes(agent.type || '');
@@ -52,7 +54,7 @@ const AgentEditSidebar = ({
   const isSubAgentType = ['llm', 'sequential', 'parallel', 'loop'].includes(agent.type || '');
   const isExternalType = agent.type === 'external';
 
-  // Construir menu dinamicamente baseado no tipo
+  // Construir menu dinamicamente baseado no tipo e permissões
   const allMenuItems: Array<{ id: SidebarMenu; label: string; icon: typeof User; show: boolean }> =
     [
       { id: 'profile', label: t('edit.menu.profile') || 'Perfil', icon: User, show: true },
@@ -67,25 +69,25 @@ const AgentEditSidebar = ({
         id: 'knowledge',
         label: t('edit.menu.knowledge') || 'Base de Conhecimento',
         icon: BookOpen,
-        show: !isOrchestratorType && !isExternalType,
+        show: !isOrchestratorType && !isExternalType && can('knowledge_bases', 'read'),
       },
       {
         id: 'tools',
         label: t('edit.menu.tools') || 'Ferramentas',
         icon: Wrench,
-        show: !isOrchestratorType && !isExternalType,
+        show: !isOrchestratorType && !isExternalType && can('ai_custom_tools', 'read'),
       },
       {
         id: 'integrations',
         label: t('edit.menu.integrations') || 'Integrações',
         icon: Plug,
-        show: !isOrchestratorType && !isExternalType,
+        show: !isOrchestratorType && !isExternalType && can('integrations', 'read'),
       },
       {
         id: 'mcpServers',
         label: t('edit.menu.mcpServers') || 'Servidores MCP',
         icon: Server,
-        show: !isOrchestratorType && !isExternalType,
+        show: !isOrchestratorType && !isExternalType && can('ai_custom_mcp_servers', 'read'),
       },
       {
         id: 'products',

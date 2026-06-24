@@ -146,6 +146,11 @@ class Api::V1::UsersController < Api::BaseController
     existing.destroy_all if existing.exists?
 
     UserRole.assign_role_to_user(@user, system_role, current_user)
+    
+    # Clear memoized data and cache
+    @user.remove_instance_variable(:@role_data) if @user.instance_variable_defined?(:@role_data)
+    @user.user_roles.reload
+    Rails.cache.delete(role_cache_key(@user.id))
   end
 
   def check_authorization
