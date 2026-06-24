@@ -227,17 +227,38 @@ class Messages::AudioTranscriptionService
     # Get model, fallback to OpenAI model, then whisper-1
     model_name = GlobalConfigService.load('AUDIO_TRANSCRIPTION_MODEL', nil)
     model_name = GlobalConfigService.load('OPENAI_MODEL', 'whisper-1') if model_name.blank?
-    
-    form_data = [
-      ['file', audio_file, { filename: filename }],
-      ['model', model_name]
-    ]
 
-    # Only add language if detect_language returns a non-nil value
-    detected_language = detect_language
-    form_data << ['language', detected_language] if detected_language.present?
+    if base_url.include?('openrouter.ai')
+      request['Content-Type'] = 'application/json'
+      
+      require 'base64'
+      audio_data = Base64.strict_encode64(audio_file.read)
+      audio_file.rewind
+      
+      payload = {
+        model: model_name,
+        input_audio: {
+          data: audio_data,
+          format: file_extension
+        }
+      }
+      
+      detected_language = detect_language
+      payload[:language] = detected_language if detected_language.present?
+      
+      request.body = payload.to_json
+    else
+      form_data = [
+        ['file', audio_file, { filename: filename }],
+        ['model', model_name]
+      ]
 
-    request.set_form(form_data, 'multipart/form-data')
+      # Only add language if detect_language returns a non-nil value
+      detected_language = detect_language
+      form_data << ['language', detected_language] if detected_language.present?
+
+      request.set_form(form_data, 'multipart/form-data')
+    end
 
     Rails.logger.info "Audio Transcription API request to #{transcription_url} for attachment #{attachment.id} using model #{model_name}"
     response = http.request(request)
