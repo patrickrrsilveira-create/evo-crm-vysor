@@ -142,7 +142,7 @@ class Api::V1::UsersController < Api::BaseController
     system_role = Role.find_by(key: role_key)
     raise ActiveRecord::RecordNotFound, "Role '#{role_key}' not found" unless system_role
 
-    existing = @user.user_roles.joins(:role).where(roles: { system: false })
+    existing = @user.user_roles
     existing.destroy_all if existing.exists?
 
     UserRole.assign_role_to_user(@user, system_role, current_user)

@@ -28,7 +28,7 @@ class AgentBuilder
   def assign_role
     system_role = Role.find_by(key: role) || Role.find_by!(key: :agent)
 
-    existing = @user.user_roles.joins(:role).where(roles: { system: false })
+    existing = @user.user_roles
     existing.destroy_all if existing.exists?
 
     UserRole.assign_role_to_user(@user, system_role, inviter)
