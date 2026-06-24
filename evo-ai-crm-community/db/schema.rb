@@ -10,13 +10,14 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_05_20_192951) do
+ActiveRecord::Schema[7.1].define(version: 2026_06_10_235500) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
   enable_extension "uuid-ossp"
+  enable_extension "vector"
 
   # Custom types defined in this database.
   # Note that some types may not work with other database engines. Be careful if changing database.
@@ -121,6 +122,9 @@ ActiveRecord::Schema[7.1].define(version: 2026_05_20_192951) do
     t.decimal "delay_per_character", precision: 8, scale: 2, default: "50.0"
     t.integer "debounce_time", default: 5, null: false
   end
+
+# Could not dump table "agent_memories" because of following StandardError
+#   Unknown type 'vector(1536)' for column 'embedding'
 
   create_table "ai_agent_products", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "ai_agent_id", null: false
@@ -632,6 +636,37 @@ ActiveRecord::Schema[7.1].define(version: 2026_05_20_192951) do
     t.jsonb "settings", default: {}
   end
 
+  create_table "knowledge_base_agent_bots", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "knowledge_base_id", null: false
+    t.uuid "agent_bot_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["agent_bot_id"], name: "index_knowledge_base_agent_bots_on_agent_bot_id"
+    t.index ["knowledge_base_id", "agent_bot_id"], name: "idx_kb_agent_bots_on_kb_id_and_bot_id", unique: true
+    t.index ["knowledge_base_id"], name: "index_knowledge_base_agent_bots_on_knowledge_base_id"
+  end
+
+  create_table "knowledge_bases", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.string "name", null: false
+    t.text "description"
+    t.integer "documents_count", default: 0
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+# Could not dump table "knowledge_document_chunks" because of following StandardError
+#   Unknown type 'vector(1536)' for column 'embedding'
+
+  create_table "knowledge_documents", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "knowledge_base_id", null: false
+    t.string "title", null: false
+    t.string "file_url"
+    t.string "content_type"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["knowledge_base_id"], name: "index_knowledge_documents_on_knowledge_base_id"
+  end
+
   create_table "labels", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.string "title"
     t.text "description"
@@ -941,6 +976,21 @@ ActiveRecord::Schema[7.1].define(version: 2026_05_20_192951) do
     t.index ["name"], name: "index_pipelines_on_name", unique: true
   end
 
+  create_table "proactive_campaigns", force: :cascade do |t|
+    t.string "name", null: false
+    t.string "trigger_type", null: false
+    t.string "trigger_target", null: false
+    t.integer "delay_hours", default: 0, null: false
+    t.integer "agent_id"
+    t.text "message_template", null: false
+    t.string "attachment_url"
+    t.string "status", default: "DRAFT", null: false
+    t.datetime "last_run_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["status"], name: "index_proactive_campaigns_on_status"
+  end
+
   create_table "product_variants", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "product_id", null: false
     t.string "name", limit: 255, null: false
@@ -978,8 +1028,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_05_20_192951) do
     t.index ["sku"], name: "index_products_on_sku", unique: true, where: "(sku IS NOT NULL)"
     t.index ["status"], name: "index_products_on_status"
     t.check_constraint "default_price >= 0::numeric", name: "products_default_price_non_negative"
-    t.check_constraint "kind::text = ANY (ARRAY['physical'::character varying, 'digital'::character varying]::text[])", name: "products_kind_check"
-    t.check_constraint "status::text = ANY (ARRAY['active'::character varying, 'inactive'::character varying, 'draft'::character varying]::text[])", name: "products_status_check"
+    t.check_constraint "kind::text = ANY (ARRAY['physical'::character varying::text, 'digital'::character varying::text])", name: "products_kind_check"
+    t.check_constraint "status::text = ANY (ARRAY['active'::character varying::text, 'inactive'::character varying::text, 'draft'::character varying::text])", name: "products_status_check"
     t.check_constraint "stock_quantity IS NULL OR stock_quantity >= 0", name: "products_stock_quantity_non_negative"
   end
 
@@ -1302,6 +1352,10 @@ ActiveRecord::Schema[7.1].define(version: 2026_05_20_192951) do
   add_foreign_key "data_privacy_consents", "users"
   add_foreign_key "facebook_comment_moderations", "conversations"
   add_foreign_key "facebook_comment_moderations", "messages"
+  add_foreign_key "knowledge_base_agent_bots", "agent_bots"
+  add_foreign_key "knowledge_base_agent_bots", "knowledge_bases", column: "knowledge_base_id"
+  add_foreign_key "knowledge_document_chunks", "knowledge_documents"
+  add_foreign_key "knowledge_documents", "knowledge_bases", column: "knowledge_base_id"
   add_foreign_key "macro_executions", "conversations"
   add_foreign_key "macro_executions", "macros"
   add_foreign_key "macro_executions", "users"

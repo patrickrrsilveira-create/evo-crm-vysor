@@ -1,4 +1,8 @@
 class Api::V1::KnowledgeIngestController < Api::V1::BaseController
+  require_permissions({
+    file: 'knowledge_bases.update',
+    url: 'knowledge_bases.update'
+  })
   def file
     processor_url = ENV.fetch('AI_PROCESSOR_URL', 'http://evo_processor:8000')
 

@@ -28,9 +28,16 @@ module OauthAuthorizationHelper
     'pipeline_items:write' => { actions: %w[update move_to_stage update_custom_fields], controller: 'pipeline_items' },
 
     # Knowledge Base
-    'knowledge_base:read' => [
+    'knowledge_bases:read' => [
+      { actions: %w[show index], controller: 'knowledge_bases' },
+      { actions: %w[index], controller: 'knowledge_documents' },
+      { actions: %w[index], controller: 'agent_bots' }
     ],
-    'knowledge_base:write' => [
+    'knowledge_bases:write' => [
+      { actions: %w[create update destroy], controller: 'knowledge_bases' },
+      { actions: %w[destroy], controller: 'knowledge_documents' },
+      { actions: %w[file url], controller: 'knowledge_ingest' },
+      { actions: %w[create destroy], controller: 'agent_bots' }
     ],
 
     # Automação e Bots

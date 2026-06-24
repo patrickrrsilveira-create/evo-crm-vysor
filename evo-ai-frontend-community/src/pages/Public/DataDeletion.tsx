@@ -37,7 +37,7 @@ const DataDeletion: React.FC = () => {
             <ol className="list-decimal pl-6 mt-2 mb-6">
               <li>Acesse o seu Facebook e vá em <strong>Configurações e privacidade {'>'} Configurações</strong>.</li>
               <li>No menu lateral, clique em <strong>Segurança e login</strong> ou <strong>Integrações comerciais</strong>.</li>
-              <li>Encontre o aplicativo "Vysor Tech" ou "Evo CRM" na lista de aplicativos ativos.</li>
+              <li>Encontre o aplicativo "Vysor Tech" ou "Vysor CRM" na lista de aplicativos ativos.</li>
               <li>Clique em <strong>Remover</strong> para revogar permanentemente o acesso do nosso sistema à sua conta.</li>
             </ol>
 

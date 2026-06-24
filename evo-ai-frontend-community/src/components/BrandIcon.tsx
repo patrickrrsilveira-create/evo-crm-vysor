@@ -29,7 +29,20 @@ import {
   SiIntercom,
 } from '@icons-pack/react-simple-icons';
 
-const BRAND_ICONS: Record<string, IconType> = {
+const MicrosoftTeamsIcon = ({ size = 24, className, color = 'currentColor' }: any) => (
+  <svg
+    width={size}
+    height={size}
+    className={className}
+    viewBox="0 0 24 24"
+    fill={color}
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path d="M22.022 13.636v-6.3c0-1.25-.875-2.316-2.093-2.529l-6.353-1.109a1.096 1.096 0 00-1.284 1.077v14.451c0 .656.578 1.157 1.223 1.053l6.417-1.042c1.218-.198 2.09-1.264 2.09-2.516zm-10.457-1.12v-5.26c0-1.042-.73-1.93-1.745-2.107L4.542 4.221a.914.914 0 00-1.07.903v13.753c0 .546.482.964 1.019.877l5.348-.868c1.015-.165 1.742-1.053 1.742-2.13v-4.24zM16 6.5h-2.5V8H12v6h1.5v-4.5h2.5V11h1.5V8h-1.5V6.5z"/>
+  </svg>
+);
+
+const BRAND_ICONS: Record<string, IconType | any> = {
   instagram: SiInstagram,
   telegram: SiTelegram,
   facebook: SiFacebook,
@@ -67,6 +80,8 @@ const BRAND_ICONS: Record<string, IconType> = {
   'eleven-labs': SiElevenlabs,
   whatsappcloud: SiWhatsapp,
   'whatsapp-cloud': SiWhatsapp,
+  'microsoft-teams': MicrosoftTeamsIcon,
+  microsoft_teams: MicrosoftTeamsIcon,
 };
 
 // Official brand colors from simple-icons. Used as defaults when ChannelIcon
@@ -114,7 +129,7 @@ const BRAND_COLORS: Record<string, string> = {
   microsoft_teams: '#6264A7',
 };
 
-export function getBrandIcon(id?: string): IconType | undefined {
+export function getBrandIcon(id?: string): IconType | any | undefined {
   if (!id) return undefined;
   const key = id.toLowerCase().replace(/\s|_/g, '');
   return BRAND_ICONS[key] || BRAND_ICONS[id.toLowerCase().replace(/_/g, '-')];

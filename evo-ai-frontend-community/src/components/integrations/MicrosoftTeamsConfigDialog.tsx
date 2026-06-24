@@ -4,13 +4,11 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   Input,
   Label,
   Button,
   Select,
-} from '@evoapi/design-system';
-
-import {
   SelectContent,
   SelectItem,
   SelectTrigger,
@@ -21,11 +19,10 @@ import {
   TabsList,
   TabsTrigger,
 } from '@evoapi/design-system';
+
 import {
   Calendar,
-  Clock,
   Settings,
-
   Loader2,
   CalendarCheck,
   CalendarClock,
@@ -63,7 +60,6 @@ const MicrosoftTeamsConfigDialog = ({
   agentId,
 }: MicrosoftTeamsConfigDialogProps) => {
 
-
   const [isConnecting, setIsConnecting] = useState(false);
 
   const [config, setConfig] = useState<MicrosoftTeamsConfig>({
@@ -85,10 +81,6 @@ const MicrosoftTeamsConfigDialog = ({
         value: initialConfig?.settings?.maxDuration?.value || 1,
         unit: initialConfig?.settings?.maxDuration?.unit || 'hours',
       },
-      simultaneousBookings: {
-        enabled: initialConfig?.settings?.simultaneousBookings?.enabled || false,
-        limit: initialConfig?.settings?.simultaneousBookings?.limit || 1,
-      },
       alwaysOpen: initialConfig?.settings?.alwaysOpen || false,
       businessHours: initialConfig?.settings?.businessHours || {
         monday: { enabled: true, start: '08:00', end: '18:00' },
@@ -100,66 +92,22 @@ const MicrosoftTeamsConfigDialog = ({
         sunday: { enabled: false, start: '08:00', end: '18:00' },
       },
       allowAvailabilityCheck: initialConfig?.settings?.allowAvailabilityCheck ?? true,
-      bookingFields: initialConfig?.settings?.bookingFields || [
-        { id: '1', name: 'name', label: 'Nome', enabled: false, required: false },
-        { id: '2', name: 'company', label: 'Empresa', enabled: true, required: false },
-        { id: '3', name: 'subject', label: 'Assunto', enabled: true, required: false },
-        { id: '4', name: 'duration', label: 'Duração', enabled: false, required: false },
-        { id: '5', name: 'email', label: 'E-mail', enabled: true, required: false },
-        { id: '6', name: 'summary', label: 'Resumo', enabled: false, required: false },
-      ],
     },
   });
 
-  // Sync config when initialConfig changes
   useEffect(() => {
-    if (initialConfig) {
-      setConfig({
-        provider: 'microsoft_teams',
-        webhookUrl: initialConfig?.webhookUrl || '',
-        connected: initialConfig?.connected || false,
+    if (initialConfig && open) {
+      setConfig((prev) => ({
+        ...prev,
+        webhookUrl: initialConfig.webhookUrl || '',
+        connected: initialConfig.connected || false,
         settings: {
-          minAdvanceTime: {
-            enabled: initialConfig?.settings?.minAdvanceTime?.enabled || false,
-            value: initialConfig?.settings?.minAdvanceTime?.value || 1,
-            unit: initialConfig?.settings?.minAdvanceTime?.unit || 'hours',
-          },
-          maxDistance: {
-            enabled: initialConfig?.settings?.maxDistance?.enabled || false,
-            value: initialConfig?.settings?.maxDistance?.value || 1,
-            unit: initialConfig?.settings?.maxDistance?.unit || 'weeks',
-          },
-          maxDuration: {
-            value: initialConfig?.settings?.maxDuration?.value || 1,
-            unit: initialConfig?.settings?.maxDuration?.unit || 'hours',
-          },
-          simultaneousBookings: {
-            enabled: initialConfig?.settings?.simultaneousBookings?.enabled || false,
-            limit: initialConfig?.settings?.simultaneousBookings?.limit || 1,
-          },
-          alwaysOpen: initialConfig?.settings?.alwaysOpen || false,
-          businessHours: initialConfig?.settings?.businessHours || {
-            monday: { enabled: true, start: '08:00', end: '18:00' },
-            tuesday: { enabled: true, start: '08:00', end: '18:00' },
-            wednesday: { enabled: true, start: '08:00', end: '18:00' },
-            thursday: { enabled: true, start: '08:00', end: '18:00' },
-            friday: { enabled: true, start: '08:00', end: '18:00' },
-            saturday: { enabled: false, start: '08:00', end: '18:00' },
-            sunday: { enabled: false, start: '08:00', end: '18:00' },
-          },
-          allowAvailabilityCheck: initialConfig?.settings?.allowAvailabilityCheck ?? true,
-          bookingFields: initialConfig?.settings?.bookingFields || [
-            { id: '1', name: 'name', label: 'Nome', enabled: false, required: false },
-            { id: '2', name: 'company', label: 'Empresa', enabled: true, required: false },
-            { id: '3', name: 'subject', label: 'Assunto', enabled: true, required: false },
-            { id: '4', name: 'duration', label: 'Duração', enabled: false, required: false },
-            { id: '5', name: 'email', label: 'E-mail', enabled: true, required: false },
-            { id: '6', name: 'summary', label: 'Resumo', enabled: false, required: false },
-          ],
-        },
-      });
+          ...prev.settings,
+          ...initialConfig.settings,
+        }
+      }));
     }
-  }, [initialConfig]);
+  }, [initialConfig, open]);
 
   const handleConnectTeams = async () => {
     if (!config.webhookUrl) {
@@ -175,7 +123,7 @@ const MicrosoftTeamsConfigDialog = ({
       toast.success('Conectado ao Microsoft Teams com sucesso!');
     } catch (error: any) {
       console.error('Error connecting to MS Teams:', error);
-      toast.error('Erro ao salvar as configurações. Verifique as credenciais globais.');
+      toast.error('Erro ao salvar as configurações.');
     } finally {
       setIsConnecting(false);
     }
@@ -207,7 +155,7 @@ const MicrosoftTeamsConfigDialog = ({
     }
   };
 
-  const updateBusinessHours = (day: string, field: 'enabled' | 'start' | 'end', value: boolean | string) => {
+  const updateBusinessHours = (day: string, field: 'enabled' | 'start' | 'end', value: any) => {
     setConfig((prev) => {
       const currentDayData = prev.settings?.businessHours?.[day] || { enabled: false, start: '08:00', end: '18:00' };
       return {
@@ -217,9 +165,8 @@ const MicrosoftTeamsConfigDialog = ({
           businessHours: {
             ...prev.settings?.businessHours,
             [day]: {
-              enabled: field === 'enabled' ? (value as boolean) : currentDayData.enabled,
-              start: field === 'start' ? (value as string) : currentDayData.start,
-              end: field === 'end' ? (value as string) : currentDayData.end,
+              ...currentDayData,
+              [field]: value
             },
           },
         },
@@ -235,6 +182,9 @@ const MicrosoftTeamsConfigDialog = ({
             <span className="flex items-center justify-center w-5 h-5 font-bold text-blue-600 bg-blue-100 rounded">T</span>
             Configurar Microsoft Teams
           </DialogTitle>
+          <DialogDescription>
+            Configure as opções de agendamento do agente via Microsoft Teams.
+          </DialogDescription>
         </DialogHeader>
 
         {!config.connected ? (
@@ -250,7 +200,7 @@ const MicrosoftTeamsConfigDialog = ({
                   Conectar com Microsoft Teams
                 </h3>
                 <p className="text-sm text-muted-foreground">
-                  O sistema usa credenciais de aplicativo globais. Apenas informe o e-mail do usuário que receberá as reuniões e compromissos.
+                  Insira o webhook que o agente usará para confirmar ou notificar os agendamentos.
                 </p>
               </div>
             </div>
@@ -301,157 +251,108 @@ const MicrosoftTeamsConfigDialog = ({
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="general" className="space-y-6">
-              {/* Webhook URL Display */}
-              <div className="space-y-3">
-                <Label>URL do Webhook</Label>
-                <Input value={config.webhookUrl} disabled />
-                <p className="text-xs text-muted-foreground">URL que receberá o payload para criar a reunião.</p>
+            <TabsContent value="general" className="space-y-6 pt-4">
+              <div className="space-y-4">
+                <Label>Duração Padrão da Reunião</Label>
+                <div className="flex gap-2">
+                  <Input
+                    type="number"
+                    min="1"
+                    value={config.settings?.maxDuration?.value || 1}
+                    onChange={(e) =>
+                      setConfig({
+                        ...config,
+                        settings: {
+                          ...config.settings,
+                          maxDuration: {
+                            value: parseInt(e.target.value) || 1,
+                            unit: config.settings?.maxDuration?.unit || 'hours',
+                          },
+                        },
+                      })
+                    }
+                    className="w-24"
+                  />
+                  <Select
+                    value={config.settings?.maxDuration?.unit || 'hours'}
+                    onValueChange={(value: 'minutes' | 'hours') =>
+                      setConfig({
+                        ...config,
+                        settings: {
+                          ...config.settings,
+                          maxDuration: {
+                            value: config.settings?.maxDuration?.value || 1,
+                            unit: value,
+                          },
+                        },
+                      })
+                    }
+                  >
+                    <SelectTrigger className="w-32">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="minutes">Minutos</SelectItem>
+                      <SelectItem value="hours">Horas</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
-              {/* Min Advance Time */}
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-muted-foreground" />
+                  <div className="space-y-0.5">
                     <Label>Tempo mínimo de antecedência</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Tempo mínimo antes de um evento poder ser agendado
+                    </p>
                   </div>
                   <Switch
-                    checked={config.settings?.minAdvanceTime?.enabled}
+                    checked={config.settings?.minAdvanceTime?.enabled || false}
                     onCheckedChange={(checked) =>
                       setConfig({
                         ...config,
                         settings: {
                           ...config.settings,
-                          minAdvanceTime: { ...config.settings?.minAdvanceTime, enabled: checked },
+                          minAdvanceTime: {
+                            ...config.settings?.minAdvanceTime,
+                            enabled: checked,
+                          },
                         },
                       })
                     }
                   />
                 </div>
-                {config.settings?.minAdvanceTime?.enabled && (
-                  <div className="flex gap-2">
-                    <Input
-                      type="number"
-                      min="1"
-                      value={config.settings?.minAdvanceTime?.value || 1}
-                      onChange={(e) =>
-                        setConfig({
-                          ...config,
-                          settings: {
-                            ...config.settings,
-                            minAdvanceTime: {
-                              enabled: config.settings?.minAdvanceTime?.enabled || false,
-                              value: parseInt(e.target.value) || 1,
-                              unit: config.settings?.minAdvanceTime?.unit || 'hours',
-                            },
-                          },
-                        })
-                      }
-                      className="w-24"
-                    />
-                    <Select
-                      value={config.settings?.minAdvanceTime?.unit || 'hours'}
-                      onValueChange={(value: 'hours' | 'days' | 'weeks') =>
-                        setConfig({
-                          ...config,
-                          settings: {
-                            ...config.settings,
-                            minAdvanceTime: {
-                              enabled: config.settings?.minAdvanceTime?.enabled || false,
-                              value: config.settings?.minAdvanceTime?.value || 1,
-                              unit: value,
-                            },
-                          },
-                        })
-                      }
-                    >
-                      <SelectTrigger className="w-32">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="hours">Horas</SelectItem>
-                        <SelectItem value="days">Dias</SelectItem>
-                        <SelectItem value="weeks">Semanas</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
               </div>
 
-              {/* Max Distance */}
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <CalendarCheck className="h-4 w-4 text-muted-foreground" />
-                    <Label>Distância máxima permitida</Label>
+                  <div className="space-y-0.5">
+                    <Label>Distância máxima no futuro</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Até quanto tempo no futuro os clientes podem agendar
+                    </p>
                   </div>
                   <Switch
-                    checked={config.settings?.maxDistance?.enabled}
+                    checked={config.settings?.maxDistance?.enabled || false}
                     onCheckedChange={(checked) =>
                       setConfig({
                         ...config,
                         settings: {
                           ...config.settings,
-                          maxDistance: { ...config.settings?.maxDistance, enabled: checked },
+                          maxDistance: {
+                            ...config.settings?.maxDistance,
+                            enabled: checked,
+                          },
                         },
                       })
                     }
                   />
                 </div>
-                {config.settings?.maxDistance?.enabled && (
-                  <div className="flex gap-2">
-                    <Input
-                      type="number"
-                      min="1"
-                      value={config.settings?.maxDistance?.value || 1}
-                      onChange={(e) =>
-                        setConfig({
-                          ...config,
-                          settings: {
-                            ...config.settings,
-                            maxDistance: {
-                              enabled: config.settings?.maxDistance?.enabled || false,
-                              value: parseInt(e.target.value) || 1,
-                              unit: config.settings?.maxDistance?.unit || 'weeks',
-                            },
-                          },
-                        })
-                      }
-                      className="w-24"
-                    />
-                    <Select
-                      value={config.settings?.maxDistance?.unit || 'weeks'}
-                      onValueChange={(value: 'days' | 'weeks' | 'months') =>
-                        setConfig({
-                          ...config,
-                          settings: {
-                            ...config.settings,
-                            maxDistance: {
-                              enabled: config.settings?.maxDistance?.enabled || false,
-                              value: config.settings?.maxDistance?.value || 1,
-                              unit: value,
-                            },
-                          },
-                        })
-                      }
-                    >
-                      <SelectTrigger className="w-32">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="days">Dias</SelectItem>
-                        <SelectItem value="weeks">Semanas</SelectItem>
-                        <SelectItem value="months">Meses</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
               </div>
             </TabsContent>
 
-            <TabsContent value="schedule" className="space-y-6">
-              {/* Always Open */}
+            <TabsContent value="schedule" className="space-y-6 pt-4">
               <div className="flex items-center justify-between">
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
@@ -460,7 +361,7 @@ const MicrosoftTeamsConfigDialog = ({
                   </div>
                 </div>
                 <Switch
-                  checked={config.settings?.alwaysOpen}
+                  checked={config.settings?.alwaysOpen || false}
                   onCheckedChange={(checked) =>
                     setConfig({
                       ...config,
@@ -470,25 +371,24 @@ const MicrosoftTeamsConfigDialog = ({
                 />
               </div>
 
-              {/* Business Hours */}
               {!config.settings?.alwaysOpen && (
                 <div className="space-y-4">
                   <Label>Horários de atendimento</Label>
                   <div className="space-y-3">
                     {DAYS_OF_WEEK.map((day) => {
-                      const dayData = config.settings?.businessHours?.[day];
+                      const dayData = config.settings?.businessHours?.[day] || { enabled: false, start: '08:00', end: '18:00' };
                       return (
                         <div key={day} className="flex items-center gap-3">
                           <div className="flex items-center gap-2 w-32">
                             <input
                               type="checkbox"
-                              checked={dayData?.enabled}
+                              checked={dayData.enabled}
                               onChange={(e) => updateBusinessHours(day, 'enabled', e.target.checked)}
                               className="rounded"
                             />
                             <Label className="text-sm capitalize">{day}</Label>
                           </div>
-                          {dayData?.enabled && (
+                          {dayData.enabled && (
                             <>
                               <Input
                                 type="time"
@@ -513,7 +413,7 @@ const MicrosoftTeamsConfigDialog = ({
               )}
             </TabsContent>
 
-            <TabsContent value="settings" className="space-y-6">
+            <TabsContent value="settings" className="space-y-6 pt-4">
               <div className="flex items-center justify-between">
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
@@ -521,11 +421,11 @@ const MicrosoftTeamsConfigDialog = ({
                     <Label>Consulta de horários livre</Label>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    O agente pode consultar a agenda para encontrar horários livres no Microsoft Teams
+                    O agente pode consultar a agenda para encontrar horários livres
                   </p>
                 </div>
                 <Switch
-                  checked={config.settings?.allowAvailabilityCheck}
+                  checked={config.settings?.allowAvailabilityCheck || false}
                   onCheckedChange={(checked) =>
                     setConfig({
                       ...config,

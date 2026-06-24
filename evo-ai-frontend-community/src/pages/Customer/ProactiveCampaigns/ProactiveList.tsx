@@ -79,7 +79,7 @@ export default function ProactiveList() {
             Crie automações baseadas em tempo para recuperar leads e gerenciar o pós-venda.
           </p>
         </div>
-        <Button onClick={() => navigate('/marketing/new')} className="gap-2">
+        <Button onClick={() => navigate('/campaigns/new')} className="gap-2">
           <Plus className="w-4 h-4" />
           Nova Automação
         </Button>
@@ -140,7 +140,7 @@ export default function ProactiveList() {
                       <Button variant="ghost" size="icon" onClick={() => handleClone(campaign.id)} title="Clonar">
                         <Copy className="w-4 h-4 text-blue-500" />
                       </Button>
-                      <Button variant="ghost" size="icon" onClick={() => navigate(`/marketing/${campaign.id}/edit`)} title="Editar">
+                      <Button variant="ghost" size="icon" onClick={() => navigate(`/campaigns/${campaign.id}/edit`)} title="Editar">
                         <Edit2 className="w-4 h-4 text-muted-foreground" />
                       </Button>
                       <Button variant="ghost" size="icon" onClick={() => handleDelete(campaign.id)} title="Excluir">

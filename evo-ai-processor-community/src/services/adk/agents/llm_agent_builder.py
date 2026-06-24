@@ -873,11 +873,21 @@ class LlmAgentBuilder:
 
             # Add business hours info if configured
             business_hours = calendar_settings.get("businessHours", {})
-            if business_hours and business_hours.get("enabled"):
+            # Detect enabled: explicit flag OR presence of day configs
+            if isinstance(business_hours, dict):
+                if "enabled" in business_hours:
+                    bh_enabled = bool(business_hours["enabled"])
+                else:
+                    day_keys = {"monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"}
+                    bh_enabled = any(k in business_hours and business_hours[k] for k in day_keys)
+            else:
+                bh_enabled = False
+
+            if bh_enabled:
                 enabled_days = []
                 for day in ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]:
                     day_config = business_hours.get(day, {})
-                    if day_config.get("enabled"):
+                    if day_config and (day_config.get("enabled") or isinstance(day_config, dict)):
                         start = day_config.get("start", "09:00")
                         end = day_config.get("end", "18:00")
                         enabled_days.append(f"{day.capitalize()}: {start}-{end}")
@@ -911,14 +921,23 @@ class LlmAgentBuilder:
                     "Events can include Google Meet links automatically."
                 )
 
-            # Add tool usage instructions
+            # Add explicit, unambiguous tool usage instructions
             calendar_instructions.append(
-                "Use check_calendar_availability to find available time slots, "
-                "and create_calendar_event to schedule meetings. All restrictions are "
-                "enforced automatically by the tools."
+                "CALENDAR TOOL USAGE — MANDATORY RULES:\n"
+                "1. When the customer asks WHAT TIMES are available (e.g. 'quais horários tem?', "
+                "'quando posso marcar?', 'me mostra os horários livres', 'que horas você tem?', "
+                "'what times are available?'): "
+                "ALWAYS call check_calendar_availability with find_slots=True and a date range "
+                "(e.g. today to 7 days from now). Present the returned available_slots list to the customer. "
+                "NEVER apologize or skip this call — the tool MUST be called.\n"
+                "2. When the customer GIVES a specific time (e.g. 'quero marcar amanhã às 14h'): "
+                "call check_calendar_availability with find_slots=False first to confirm, then "
+                "call create_calendar_event if available.\n"
+                "3. NEVER say the calendar tool is unavailable or broken — always attempt the call first."
             )
 
             crm_tools_instructions.append("\n".join(calendar_instructions))
+
 
         # Check if TTS integration is enabled and add instructions
         tts_config = integrations.get("tts") or integrations.get("elevenlabs")

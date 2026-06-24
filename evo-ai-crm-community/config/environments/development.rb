@@ -90,6 +90,7 @@ Rails.application.configure do
   # Bullet configuration to fix the N+1 queries
   config.after_initialize do
     Bullet.enable = true
+    Bullet.console = true
     Bullet.bullet_logger = true
     Bullet.rails_logger = true
   end

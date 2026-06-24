@@ -42,6 +42,7 @@ interface UseIntegrationsReturn {
   googleCalendarConfig: GoogleCalendarConfig | null;
   googleSheetsConfig: GoogleSheetsConfig | null;
   knowledgeNexusConfig: KnowledgeNexusConfig | null;
+  microsoftTeamsConfig: any | null;
 
   // Status
   credentialsConfigured: Record<string, boolean>;
@@ -95,6 +96,7 @@ export function useIntegrations(agentId: string): UseIntegrationsReturn {
   const [googleCalendarConfig, setGoogleCalendarConfig] = useState<GoogleCalendarConfig | null>(null);
   const [googleSheetsConfig, setGoogleSheetsConfig] = useState<GoogleSheetsConfig | null>(null);
   const [knowledgeNexusConfig, setKnowledgeNexusConfig] = useState<KnowledgeNexusConfig | null>(null);
+  const [microsoftTeamsConfig, setMicrosoftTeamsConfig] = useState<any | null>(null);
 
   const [isCheckingIntegrations, setIsCheckingIntegrations] = useState(true);
   const [credentialsConfigured, setCredentialsConfigured] = useState<Record<string, boolean>>({
@@ -103,6 +105,7 @@ export function useIntegrations(agentId: string): UseIntegrationsReturn {
     'google-calendar': false,
     'google-sheets': false,
     'knowledge-nexus': false,
+    'microsoft-teams': true,
   });
 
   const loadConfigs = useCallback(async () => {
@@ -122,6 +125,7 @@ export function useIntegrations(agentId: string): UseIntegrationsReturn {
         'google-calendar': false,
         'google-sheets': false,
         'knowledge-nexus': false,
+        'microsoft-teams': true,
       };
 
       items.forEach(item => {
@@ -130,6 +134,9 @@ export function useIntegrations(agentId: string): UseIntegrationsReturn {
         configsByProvider[key] = item.config || {};
         credentialsConfiguredNext[key] = true;
       });
+
+      // Ensure microsoft-teams is always true
+      credentialsConfiguredNext['microsoft-teams'] = true;
 
       setCredentialsConfigured(credentialsConfiguredNext);
 
@@ -161,6 +168,12 @@ export function useIntegrations(agentId: string): UseIntegrationsReturn {
             ) as unknown as KnowledgeNexusConfig)
           : null
       );
+      const teamsConfig = (configsByProvider['microsoft-teams'] || {}) as Record<string, unknown>;
+      setMicrosoftTeamsConfig(
+        (Object.keys(teamsConfig).length > 0 || teamsConfig.connected)
+          ? (sanitizeConfig(teamsConfig) as unknown as any)
+          : null
+      );
     } catch (error) {
       console.error('Error loading integrations:', error);
       // Reset both credentials flags and per-integration configs so the UI
@@ -169,12 +182,14 @@ export function useIntegrations(agentId: string): UseIntegrationsReturn {
       setGoogleCalendarConfig(null);
       setGoogleSheetsConfig(null);
       setKnowledgeNexusConfig(null);
+      setMicrosoftTeamsConfig(null);
       setCredentialsConfigured({
         elevenlabs: false,
         tts: false,
         'google-calendar': false,
         'google-sheets': false,
         'knowledge-nexus': false,
+        'microsoft-teams': false,
       });
     } finally {
       setIsCheckingIntegrations(false);
@@ -189,19 +204,20 @@ export function useIntegrations(agentId: string): UseIntegrationsReturn {
     (integrationId: string): boolean => {
       const configMap: Record<
         string,
-        ElevenLabsConfig | GoogleCalendarConfig | GoogleSheetsConfig | KnowledgeNexusConfig | null
+        any
       > = {
         elevenlabs: elevenLabsConfig,
         tts: elevenLabsConfig,
         'google-calendar': googleCalendarConfig,
         'google-sheets': googleSheetsConfig,
         'knowledge-nexus': knowledgeNexusConfig,
+        'microsoft-teams': microsoftTeamsConfig,
       };
 
       const config = configMap[integrationId];
       return config?.connected === true;
     },
-    [elevenLabsConfig, googleCalendarConfig, googleSheetsConfig, knowledgeNexusConfig]
+    [elevenLabsConfig, googleCalendarConfig, googleSheetsConfig, knowledgeNexusConfig, microsoftTeamsConfig]
   );
 
   return {
@@ -209,6 +225,7 @@ export function useIntegrations(agentId: string): UseIntegrationsReturn {
     googleCalendarConfig,
     googleSheetsConfig,
     knowledgeNexusConfig,
+    microsoftTeamsConfig,
     credentialsConfigured,
     isCheckingIntegrations,
     reloadConfigs: loadConfigs,

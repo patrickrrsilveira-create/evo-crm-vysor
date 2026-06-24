@@ -365,6 +365,17 @@ class ResourceActionsConfig
       }
     },
 
+    knowledge_bases: {
+      name: 'Knowledge Bases',
+      description: 'Knowledge bases (RAG) for AI training',
+      actions: {
+        read: { name: 'View', description: 'View knowledge bases' },
+        create: { name: 'Create', description: 'Create new knowledge bases' },
+        update: { name: 'Update', description: 'Update knowledge bases and documents' },
+        delete: { name: 'Delete', description: 'Delete knowledge bases' }
+      }
+    },
+
     products: {
       name: 'Products',
       description: 'Product catalog for AI agent recommendations and pipeline sales',

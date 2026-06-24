@@ -99,11 +99,8 @@ const IntegrationsSection = ({
     }
   };
 
-  // Integrações que sempre estão disponíveis porque o usuário fornece sua
-  // própria credencial (API key) — não dependem de OAuth global configurado
-  // pelo administrador. Google Calendar / Sheets usam OAuth global e portanto
-  // só ficam disponíveis quando `credentialsConfigured` indica que o admin
-  // configurou as chaves correspondentes.
+  // ALWAYS_AVAILABLE_INTEGRATIONS defines which integrations skip OAuth key checks
+  // and are always ready to configure/activate.
   const ALWAYS_AVAILABLE_INTEGRATIONS = ['tts', 'knowledge-nexus', 'google-calendar', 'google-sheets', 'microsoft-teams'];
 
   const availableIntegrations: Integration[] = [
@@ -195,7 +192,6 @@ const IntegrationsSection = ({
                       {/* Logo centralizada e maior — BrandIcon aplica a cor oficial da marca */}
                       <div className="flex items-center justify-center w-20 h-20 p-3 rounded-lg bg-muted/50">
                         {integration.id === 'tts' ? <Volume2 size={48} className="h-12 w-12 text-primary" /> : 
-                         integration.id === 'microsoft-teams' ? <Video size={48} className="h-12 w-12 text-[#6264A7]" /> :
                          <BrandIcon id={integration.id} size={48} className="h-12 w-12" />}
                       </div>
 
@@ -266,6 +262,8 @@ const IntegrationsSection = ({
                               setShowGoogleSheetsConfig(true);
                             } else if (integration.id === 'knowledge-nexus') {
                               setShowKnowledgeNexusConfig(true);
+                            } else if (integration.id === 'microsoft-teams') {
+                              setShowMicrosoftTeamsConfig(true);
                             }
                           }}
                         >

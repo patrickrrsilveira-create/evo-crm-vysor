@@ -432,7 +432,7 @@ export const Auth: React.FC = () => {
         <div className="w-full max-w-md space-y-6">
           {/* Logo */}
           <div className="text-center flex justify-center">
-            <AppLogo className="mx-auto" variant="login" />
+            <AppLogo className="mx-auto h-32 w-auto" variant="login" />
           </div>
 
           {/* Formulário */}

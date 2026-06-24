@@ -44,6 +44,9 @@ COPY migrations ./migrations
 # Copia o script de inicialização
 COPY entrypoint.sh ./entrypoint.sh
 
+# Remove CRLF line endings from entrypoint script
+RUN sed -i 's/\r$//' ./entrypoint.sh
+
 # Debug: Lista arquivos no diretório
 RUN ls -la /app/
 

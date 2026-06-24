@@ -135,13 +135,6 @@ export const getCustomerMenuItems = (t: (key: string) => string): MenuItem[] => 
     action: 'read',
   },
   {
-    name: 'Marketing Ativo',
-    href: '/marketing',
-    icon: Megaphone,
-    resource: 'automation_rules',
-    action: 'read',
-  },
-  {
     id: 'customer-agents',
     name: t('menu.customer.agents'),
     href: '/agents/list',
@@ -237,6 +230,8 @@ export const getCustomerMenuItems = (t: (key: string) => string): MenuItem[] => 
         name: 'Base de Conhecimento (RAG)',
         href: '/settings/knowledge-base',
         icon: BookOpen as any,
+        resource: 'knowledge_bases',
+        action: 'read',
       },
       {
         name: t('menu.settings.macros'),

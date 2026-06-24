@@ -43,7 +43,7 @@ export default function UserFormModal({ isOpen, onClose, user, onSuccess }: User
     ];
 
     // Filtramos os papéis vindos do sistema
-    const userRoleTypes = ['user', null, undefined];
+    const userRoleTypes = ['user', 'account', null, undefined];
     const filteredSystemRoles = systemRoles.filter(
       role => !!role.key && (userRoleTypes.includes(role.type as any) || !role.type)
     );

@@ -73,8 +73,8 @@
     "collapse": "Contraer barra lateral",
     "closeSubmenu": "Cerrar submenú",
     "footer": {
-      "brand": "Evo CRM",
-      "copyright": "© {{year}} Evolution Foundation. All rights reserved.",
+      "brand": "Vysor CRM",
+      "copyright": "© {{year}} Vysor. All rights reserved.",
       "documentation": "Documentación",
       "support": "Necesito soporte"
     }

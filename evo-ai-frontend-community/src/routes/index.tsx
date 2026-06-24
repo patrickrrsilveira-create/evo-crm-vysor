@@ -60,8 +60,6 @@ import Segments from '@/pages/Customer/Settings/Segments/Segments';
 import SegmentCreateEdit from '@/pages/Customer/Settings/Segments/SegmentCreateEdit';
 import Journey from '@/pages/Customer/Journey/Journey';
 import JourneyFlowEditor from '@/pages/Customer/Journey/JourneyFlowEditor';
-import Campaigns from '@/pages/Customer/Campaigns/Campaigns';
-import NewCampaign from '@/pages/Customer/Campaigns/NewCampaign/NewCampaign';
 import ProactiveList from '@/pages/Customer/ProactiveCampaigns/ProactiveList';
 import ProactiveForm from '@/pages/Customer/ProactiveCampaigns/ProactiveForm';
 import CannedResponses from '@/pages/Customer/Settings/CannedResponses';
@@ -624,7 +622,7 @@ const AppRouter = () => {
             }
           />
 
-          {/* Campaigns */}
+          {/* Campaigns (using Proactive Campaigns) */}
           <Route
             path="/campaigns"
             element={
@@ -632,7 +630,7 @@ const AppRouter = () => {
                 <CustomerRoute>
                   <MainLayout>
                     <PermissionRoute resource="campaigns" action="read">
-                      <Campaigns />
+                      <ProactiveList />
                     </PermissionRoute>
                   </MainLayout>
                 </CustomerRoute>
@@ -647,7 +645,7 @@ const AppRouter = () => {
                 <CustomerRoute>
                   <MainLayout>
                     <PermissionRoute resource="campaigns" action="create">
-                      <NewCampaign />
+                      <ProactiveForm />
                     </PermissionRoute>
                   </MainLayout>
                 </CustomerRoute>
@@ -662,37 +660,6 @@ const AppRouter = () => {
                 <CustomerRoute>
                   <MainLayout>
                     <PermissionRoute resource="campaigns" action="update">
-                      <NewCampaign />
-                    </PermissionRoute>
-                  </MainLayout>
-                </CustomerRoute>
-              </PrivateRoute>
-            }
-          />
-
-          {/* Marketing Ativo */}
-          <Route
-            path="/marketing"
-            element={
-              <PrivateRoute>
-                <CustomerRoute>
-                  <MainLayout>
-                    <PermissionRoute resource="automation_rules" action="read">
-                      <ProactiveList />
-                    </PermissionRoute>
-                  </MainLayout>
-                </CustomerRoute>
-              </PrivateRoute>
-            }
-          />
-
-          <Route
-            path="/marketing/new"
-            element={
-              <PrivateRoute>
-                <CustomerRoute>
-                  <MainLayout>
-                    <PermissionRoute resource="automation_rules" action="create">
                       <ProactiveForm />
                     </PermissionRoute>
                   </MainLayout>
@@ -701,20 +668,9 @@ const AppRouter = () => {
             }
           />
 
-          <Route
-            path="/marketing/:id/edit"
-            element={
-              <PrivateRoute>
-                <CustomerRoute>
-                  <MainLayout>
-                    <PermissionRoute resource="automation_rules" action="update">
-                      <ProactiveForm />
-                    </PermissionRoute>
-                  </MainLayout>
-                </CustomerRoute>
-              </PrivateRoute>
-            }
-          />
+          {/* Legacy Marketing Ativo Redirects */}
+          <Route path="/marketing" element={<Navigate to="/campaigns" replace />} />
+          <Route path="/marketing/*" element={<Navigate to="/campaigns" replace />} />
 
           <Route
             path="/settings/account"
@@ -913,7 +869,9 @@ const AppRouter = () => {
               <PrivateRoute>
                 <CustomerRoute>
                   <MainLayout>
-                    <GoogleCalendarGlobalPage />
+                    <PermissionRoute resource="integrations" action="read">
+                      <GoogleCalendarGlobalPage />
+                    </PermissionRoute>
                   </MainLayout>
                 </CustomerRoute>
               </PrivateRoute>
@@ -925,7 +883,9 @@ const AppRouter = () => {
               <PrivateRoute>
                 <CustomerRoute>
                   <MainLayout>
-                    <GoogleSheetsGlobalPage />
+                    <PermissionRoute resource="integrations" action="read">
+                      <GoogleSheetsGlobalPage />
+                    </PermissionRoute>
                   </MainLayout>
                 </CustomerRoute>
               </PrivateRoute>
@@ -1605,13 +1565,17 @@ const AppRouter = () => {
             path="/settings/knowledge-base"
             element={
               <PrivateRoute>
-                <MainLayout>
-                  <ErrorBoundary>
-                    <Suspense fallback={<LoadingScreen />}>
-                      <KnowledgeBasePage />
-                    </Suspense>
-                  </ErrorBoundary>
-                </MainLayout>
+                <CustomerRoute>
+                  <MainLayout>
+                    <PermissionRoute resource="knowledge_bases" action="read">
+                      <ErrorBoundary>
+                        <Suspense fallback={<LoadingScreen />}>
+                          <KnowledgeBasePage />
+                        </Suspense>
+                      </ErrorBoundary>
+                    </PermissionRoute>
+                  </MainLayout>
+                </CustomerRoute>
               </PrivateRoute>
             }
           />

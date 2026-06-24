@@ -7,8 +7,6 @@ echo "🚀 Starting EvoAI Core Service..."
 echo "📊 Database: ${DB_HOST}:${DB_PORT}/${DB_NAME}"
 echo "🔄 Running migrations..."
 
-# Fix dirty state automatically
-./migrate -database "$DB_URL" -path ./migrations force 16
 # Run migrations
 ./migrate -database "$DB_URL" -path ./migrations up
 

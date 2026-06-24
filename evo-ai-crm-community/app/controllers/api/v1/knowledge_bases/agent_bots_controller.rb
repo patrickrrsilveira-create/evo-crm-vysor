@@ -1,4 +1,10 @@
 class Api::V1::KnowledgeBases::AgentBotsController < Api::V1::BaseController
+  require_permissions({
+    index: 'knowledge_bases.read',
+    create: 'knowledge_bases.update',
+    destroy: 'knowledge_bases.update'
+  })
+
   before_action :set_knowledge_base
 
   def index

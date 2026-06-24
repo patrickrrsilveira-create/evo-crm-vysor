@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/PatrickRSilveira/evo-swarm-engine/internal/domain/models"
 )
@@ -122,7 +123,10 @@ func (c *OpenAIClient) Generate(ctx context.Context, req models.LLMRequest) (*mo
 		return nil, fmt.Errorf("erro serializando payload OpenAI: %v", err)
 	}
 
-	httpReq, err := http.NewRequestWithContext(ctx, "POST", c.BaseURL, bytes.NewReader(payloadBytes))
+	reqCtx, cancel := context.WithTimeout(ctx, 60*time.Second)
+	defer cancel()
+
+	httpReq, err := http.NewRequestWithContext(reqCtx, "POST", c.BaseURL, bytes.NewReader(payloadBytes))
 	if err != nil {
 		return nil, err
 	}

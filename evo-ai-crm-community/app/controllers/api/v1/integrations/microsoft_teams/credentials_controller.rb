@@ -12,9 +12,9 @@ class Api::V1::Integrations::MicrosoftTeams::CredentialsController < Api::Servic
   private
 
   def microsoft_teams_credentials
-    tenant_id = GlobalConfigService.load('MICROSOFT_TEAMS_TENANT_ID', nil).presence || ENV['MICROSOFT_TEAMS_TENANT_ID']
-    client_id = GlobalConfigService.load('MICROSOFT_TEAMS_CLIENT_ID', nil).presence || ENV['MICROSOFT_TEAMS_CLIENT_ID']
-    client_secret = GlobalConfigService.load('MICROSOFT_TEAMS_CLIENT_SECRET', nil).presence || ENV['MICROSOFT_TEAMS_CLIENT_SECRET']
+    tenant_id = GlobalConfigService.load('MICROSOFT_TEAMS_TENANT_ID', nil).presence || ENV['MICROSOFT_TEAMS_TENANT_ID'] || 'common'
+    client_id = GlobalConfigService.load('MICROSOFT_TEAMS_CLIENT_ID', nil).presence || ENV['MICROSOFT_TEAMS_CLIENT_ID'] || GlobalConfigService.load('AZURE_APP_ID', nil).presence || ENV['AZURE_APP_ID']
+    client_secret = GlobalConfigService.load('MICROSOFT_TEAMS_CLIENT_SECRET', nil).presence || ENV['MICROSOFT_TEAMS_CLIENT_SECRET'] || GlobalConfigService.load('AZURE_APP_SECRET', nil).presence || ENV['AZURE_APP_SECRET']
     owner_id = GlobalConfigService.load('MICROSOFT_TEAMS_MEETING_OWNER_ID', nil).presence || ENV['MICROSOFT_TEAMS_MEETING_OWNER_ID']
 
     {

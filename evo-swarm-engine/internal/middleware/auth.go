@@ -34,19 +34,6 @@ func EvoAuthMiddleware(db *gorm.DB) fiber.Handler {
 			}
 		}
 
-		// FALLBACK DE EMERGÊNCIA: Se for rota A2A (interno) não bloqueia, loga e passa!
-		// Isso garante que o evo-bot-runtime NUNCA mais receba 401.
-		if strings.Contains(path, "/a2a/") || strings.Contains(path, "/chat/") {
-			fmt.Printf("⚠️ [AuthDebug] EMERGENCY FALLBACK: Bypassing auth for internal A2A call: %s. AgentID: %s\n", path, agentIDStr)
-			c.Locals("AgentContext", AgentContext{
-				AgentID:   agentIDStr,
-				AgentName: "Fallback Agent",
-				KeyID:     "no-key",
-			})
-			c.Locals("is_agent_bot", true)
-			return c.Next()
-		}
-
 		// 1. Tentar ler X-API-Key (Agent Bots / Scripts)
 		apiKeyStr := c.Get("X-API-Key")
 
@@ -68,6 +55,7 @@ func EvoAuthMiddleware(db *gorm.DB) fiber.Handler {
 		}
 
 		// 3. Validação Rápida no Banco de Dados (substituindo chamada HTTP de rede)
+		// Primeiro, tenta validar como API Key de sistema (evo_core_api_keys)
 		var keyRow models.APIKey
 		err := db.Where("key = ?", apiKeyStr).First(&keyRow).Error
 
@@ -84,7 +72,8 @@ func EvoAuthMiddleware(db *gorm.DB) fiber.Handler {
 			return c.Next()
 		}
 
-
+		// 4. Para rotas A2A/Chat, valida contra o api_key do agente no evo_core_agents
+		// O bot-runtime envia X-API-Key que deve corresponder ao agent.config.api_key
 		if agentIDStr != "" {
 			type Agent struct {
 				ID     string
@@ -97,23 +86,33 @@ func EvoAuthMiddleware(db *gorm.DB) fiber.Handler {
 			if errAgent == nil && agentRow.Config != "" {
 				var configMap map[string]interface{}
 				if errParse := json.Unmarshal([]byte(agentRow.Config), &configMap); errParse == nil {
-					if storedKey, ok := configMap["api_key"].(string); ok && storedKey == apiKeyStr {
-						agentCtx := AgentContext{
-							AgentID:   agentRow.ID,
-							AgentName: agentRow.Name,
-							KeyID:     apiKeyStr,
+					if storedKey, ok := configMap["api_key"].(string); ok {
+						if storedKey == apiKeyStr {
+							agentCtx := AgentContext{
+								AgentID:   agentRow.ID,
+								AgentName: agentRow.Name,
+								KeyID:     apiKeyStr,
+							}
+
+							c.Locals("AgentContext", agentCtx)
+							c.Locals("is_agent_bot", true)
+
+							return c.Next()
 						}
-
-						c.Locals("AgentContext", agentCtx)
-						c.Locals("is_agent_bot", true)
-
-						return c.Next()
+						// API Key não confere - log para debug
+						fmt.Printf("⚠️ [AuthDebug] Invalid API key for agent %s: provided=%s... stored=%s...\n", agentIDStr, apiKeyStr[:min(8, len(apiKeyStr))], storedKey[:min(8, len(storedKey))])
+					} else {
+						fmt.Printf("⚠️ [AuthDebug] Agent %s has no api_key in config\n", agentIDStr)
 					}
 				}
+			} else if errAgent != nil {
+				fmt.Printf("⚠️ [AuthDebug] Agent not found in DB for A2A call: %s (error: %v)\n", agentIDStr, errAgent)
 			}
+		} else {
+			fmt.Printf("⚠️ [AuthDebug] Could not extract agent_id from path: %s\n", path)
 		}
 
-		// Não encontrou em lugar nenhum no banco local. Fallback para validação remota.
+		// 5. Não encontrou em lugar nenhum no banco local. Fallback para validação remota.
 		authBaseUrl := os.Getenv("EVO_AUTH_BASE_URL")
 		if authBaseUrl == "" {
 			authBaseUrl = "http://evo_auth:3001"
@@ -146,4 +145,11 @@ func EvoAuthMiddleware(db *gorm.DB) fiber.Handler {
 			"message": "Token de acesso (API Key ou Bearer) inválido ou expirado.",
 		})
 	}
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }

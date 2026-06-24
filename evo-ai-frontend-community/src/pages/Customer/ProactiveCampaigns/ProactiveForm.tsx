@@ -64,7 +64,7 @@ export default function ProactiveForm() {
       } else {
         await proactiveService.createCampaign(formData as any);
       }
-      navigate('/marketing');
+      navigate('/campaigns');
     } catch (error) {
       console.error('Failed to save', error);
     } finally {
@@ -87,7 +87,7 @@ export default function ProactiveForm() {
   return (
     <div className="flex flex-col h-full bg-background p-6 max-w-4xl mx-auto w-full">
       <div className="flex items-center gap-4 mb-8 border-b pb-4">
-        <Button variant="ghost" size="icon" onClick={() => navigate('/marketing')}>
+        <Button variant="ghost" size="icon" onClick={() => navigate('/campaigns')}>
           <ArrowLeft className="w-5 h-5 text-muted-foreground" />
         </Button>
         <div>
@@ -248,7 +248,7 @@ export default function ProactiveForm() {
       </div>
 
       <div className="flex justify-end gap-3 mt-8">
-        <Button variant="outline" onClick={() => navigate('/marketing')}>Cancelar</Button>
+        <Button variant="outline" onClick={() => navigate('/campaigns')}>Cancelar</Button>
         <Button onClick={handleSave} disabled={loading} className="gap-2">
           <Save className="w-4 h-4" />
           {loading ? 'Salvando...' : 'Salvar Automação'}

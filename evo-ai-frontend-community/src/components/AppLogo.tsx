@@ -1,8 +1,10 @@
 import type { CSSProperties } from 'react';
 import { useDarkMode } from '../hooks/useDarkMode';
 import { useGlobalConfig } from '@/contexts/GlobalConfigContext';
-import logoDark from '../assets/EVO_CRM.svg';
-import logoLight from '../assets/EVO_CRM_light.svg';
+import logoTextDark from '../assets/vysor_logo_text.png';
+import logoTextLight from '../assets/vysor_logo_text.png';
+import logoFullDark from '../assets/vysor_logo_full.png';
+import logoFullLight from '../assets/vysor_logo_full.png';
 
 interface AppLogoProps {
   className?: string;
@@ -12,7 +14,7 @@ interface AppLogoProps {
   variant?: 'default' | 'login';
 }
 
-export function AppLogo({ className, alt = 'EVO CRM', style, forceTheme, variant = 'default' }: AppLogoProps) {
+export function AppLogo({ className, alt = 'VYSOR CRM', style, forceTheme, variant = 'default' }: AppLogoProps) {
   const { theme } = useDarkMode();
   const config = useGlobalConfig();
   
@@ -23,7 +25,8 @@ export function AppLogo({ className, alt = 'EVO CRM', style, forceTheme, variant
   const logoWidth = isLogin && config.appLoginLogoWidth ? config.appLoginLogoWidth : config.appLogoWidth;
   const logoHeight = isLogin && config.appLoginLogoHeight ? config.appLoginLogoHeight : config.appLogoHeight;
 
-  const src = logoUrl || (effectiveTheme === 'dark' ? logoDark : logoLight);
+  const defaultLogo = isLogin ? (effectiveTheme === 'dark' ? logoFullDark : logoFullLight) : (effectiveTheme === 'dark' ? logoTextDark : logoTextLight);
+  const src = logoUrl || defaultLogo;
   const effectiveAlt = config.companyName || alt;
 
   const finalStyle = {

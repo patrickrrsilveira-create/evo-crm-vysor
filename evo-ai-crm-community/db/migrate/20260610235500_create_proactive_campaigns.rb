@@ -3,7 +3,6 @@
 class CreateProactiveCampaigns < ActiveRecord::Migration[7.0]
   def change
     create_table :proactive_campaigns do |t|
-      t.references :account, null: false, foreign_key: true
       t.string :name, null: false
       t.string :trigger_type, null: false
       t.string :trigger_target, null: false
@@ -17,6 +16,6 @@ class CreateProactiveCampaigns < ActiveRecord::Migration[7.0]
       t.timestamps
     end
 
-    add_index :proactive_campaigns, [:account_id, :status]
+    add_index :proactive_campaigns, :status
   end
 end

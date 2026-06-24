@@ -89,6 +89,9 @@ Doorkeeper.configure do
                   # Canned Responses
                   :'canned_responses:read',
                   :'canned_responses:write',
+                  # Knowledge Bases
+                  :'knowledge_bases:read',
+                  :'knowledge_bases:write',
                   # Notificações
                   :'notifications:read',
                   :'notifications:write',

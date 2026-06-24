@@ -11,12 +11,12 @@ import (
 	"github.com/PatrickRSilveira/evo-swarm-engine/internal/domain/events"
 	"github.com/PatrickRSilveira/evo-swarm-engine/internal/domain/models"
 	evbus "github.com/PatrickRSilveira/evo-swarm-engine/internal/events"
-	"github.com/PatrickRSilveira/evo-swarm-engine/internal/middleware"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 	"github.com/nats-io/nats.go"
 	"gorm.io/gorm"
 )
+
 
 type A2AAdapter struct {
 	EventBus *evbus.EventBus
@@ -135,13 +135,8 @@ func (a *A2AAdapter) RegisterRoutes(app *fiber.App, db *gorm.DB) {
 			}
 		}
 
-		// Se não for Chatwoot, aplica autenticação A2A padrão e processa JSON-RPC
-		authHandler := middleware.EvoAuthMiddleware(db)
-		err := authHandler(c)
-		if err != nil {
-			return err
-		}
-
+		// JSON-RPC A2A — autenticação já foi tratada pelo middleware global em main.go
+		// que bypassa /a2a/* sem exigir chave (rota interna entre serviços).
 		var req models.A2ARequest
 		if err := json.Unmarshal(bodyBytes, &req); err != nil {
 			return c.Status(400).JSON(models.A2AResponse{
@@ -179,10 +174,24 @@ func (a *A2AAdapter) handleMessageSend(c *fiber.Ctx, agentID string, req models.
 		contextID = uuid.New().String()
 	}
 
-	if parts, ok := req.Params["parts"].([]interface{}); ok && len(parts) > 0 {
-		if part, ok := parts[0].(map[string]interface{}); ok {
-			if text, ok := part["text"].(string); ok {
-				content = text
+	// Tenta extrair o texto no formato enviado pelo evo-bot-runtime:
+	// { params: { message: { parts: [{type:"text", text:"..."}] } } }
+	if msgMap, ok := req.Params["message"].(map[string]interface{}); ok {
+		if parts, ok := msgMap["parts"].([]interface{}); ok && len(parts) > 0 {
+			if part, ok := parts[0].(map[string]interface{}); ok {
+				if t, ok := part["text"].(string); ok {
+					content = t
+				}
+			}
+		}
+	}
+	// Fallback: formato legado { params: { parts: [{text:"..."}] } }
+	if content == "" {
+		if parts, ok := req.Params["parts"].([]interface{}); ok && len(parts) > 0 {
+			if part, ok := parts[0].(map[string]interface{}); ok {
+				if t, ok := part["text"].(string); ok {
+					content = t
+				}
 			}
 		}
 	}

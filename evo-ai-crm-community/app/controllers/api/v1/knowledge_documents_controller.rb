@@ -1,4 +1,9 @@
 class Api::V1::KnowledgeDocumentsController < Api::V1::BaseController
+  require_permissions({
+    index: 'knowledge_bases.read',
+    destroy: 'knowledge_bases.update'
+  })
+
   before_action :set_knowledge_base
   before_action :set_knowledge_document, only: [:destroy]
 

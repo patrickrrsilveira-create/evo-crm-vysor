@@ -1,6 +1,14 @@
 # frozen_string_literal: true
 
 class Api::V1::KnowledgeBasesController < Api::V1::BaseController
+  require_permissions({
+    index: 'knowledge_bases.read',
+    show: 'knowledge_bases.read',
+    create: 'knowledge_bases.create',
+    update: 'knowledge_bases.update',
+    destroy: 'knowledge_bases.delete'
+  })
+
   before_action :set_knowledge_base, only: [:show, :update, :destroy]
 
   def index
