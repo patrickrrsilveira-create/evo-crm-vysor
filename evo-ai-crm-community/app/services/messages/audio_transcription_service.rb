@@ -215,9 +215,12 @@ class Messages::AudioTranscriptionService
     file_extension = attachment.extension.presence || 'ogg'
     filename = "audio.#{file_extension}"
 
+    # Use configured model for transcription, fallback to whisper-1
+    model_name = GlobalConfigService.load('OPENAI_MODEL', 'whisper-1')
+    
     form_data = [
       ['file', audio_file, { filename: filename }],
-      ['model', 'whisper-1']
+      ['model', model_name]
     ]
 
     # Only add language if detect_language returns a non-nil value
