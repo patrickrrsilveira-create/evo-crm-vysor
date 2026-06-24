@@ -23,13 +23,23 @@ def create_transfer_conversation_tool(
     generating a session trace, context updates, and event hooks.
     """
     
+    # Build agent options text from transfer rules
     rules = transfer_rules or []
-    agent_options = []
+    agent_lines = []
     for rule in rules:
         if rule.get("transferTo") == "agent" and rule.get("agentId"):
-            agent_options.append(f"- Agent: '{rule.get('name', 'Unknown')}', UUID: '{rule.get('agentId')}'")
+            name = rule.get("name") or rule.get("agentName") or "Unknown"
+            agent_id = rule.get("agentId")
+            instructions = rule.get("instructions", "")
+            line = f"- Agent '{name}' (UUID: {agent_id})"
+            if instructions:
+                line += f" — {instructions}"
+            agent_lines.append(line)
     
-    agent_options_str = "\n".join(agent_options) if agent_options else "No specific agent routing rules configured."
+    if agent_lines:
+        agents_doc = "Available agents:\n" + "\n".join(agent_lines)
+    else:
+        agents_doc = "No specific agent routing rules configured."
 
     async def transfer_conversation(
         target_agent_id: str,
@@ -37,23 +47,7 @@ def create_transfer_conversation_tool(
         conversation_id: Optional[str] = None,
         tool_context: Optional[ToolContext] = None,
     ) -> Dict[str, Any]:
-        f"""Transfer the current conversation to another AI Agent.
-        
-        Use this tool when the current conversation needs to be handled by 
-        a different, specialized AI agent (e.g. Sales, Finance, Support).
-        
-        Available agents to transfer to based on your configuration:
-{agent_options_str}
-
-        Args:
-            target_agent_id: The UUID of the destination agent to transfer to (MUST be a valid UUID from the available agents list).
-            reason: Explanation of why the transfer is happening.
-            conversation_id: Auto-extracted conversation ID.
-            tool_context: The tool context containing session information (auto-provided).
-            
-        Returns:
-            Dictionary with transfer status.
-        """
+        """Transfer the current conversation to another AI Agent."""
         try:
             effective_conversation_id = conversation_id
             if not effective_conversation_id and tool_context:
@@ -96,7 +90,22 @@ def create_transfer_conversation_tool(
                 "status": "error",
                 "message": f"Failed to transfer conversation: {str(e)}"
             }
-            
+
+    # Dynamically set the docstring (f-string docstrings don't work in Python)
+    transfer_conversation.__doc__ = (
+        "Transfer the current conversation to another AI Agent.\n\n"
+        "Use this tool when the current conversation needs to be handled by "
+        "a different, specialized AI agent (e.g. Sales, Finance, Support).\n\n"
+        f"{agents_doc}\n\n"
+        "Args:\n"
+        "    target_agent_id: The UUID of the destination agent to transfer to. "
+        "MUST be a valid UUID from the available agents list above.\n"
+        "    reason: Explanation of why the transfer is happening.\n"
+        "    conversation_id: Auto-extracted conversation ID (do not provide).\n"
+        "    tool_context: Auto-provided by the system (do not provide).\n\n"
+        "Returns:\n"
+        "    Dictionary with transfer status."
+    )
     transfer_conversation.__name__ = "transfer_conversation"
     
     return FunctionTool(func=transfer_conversation)

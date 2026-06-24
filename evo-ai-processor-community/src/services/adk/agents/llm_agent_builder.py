@@ -794,6 +794,29 @@ class LlmAgentBuilder:
                 "Do NOT call this tool just because the user asked about a product — only call it when the purchase intent is explicit."
             )
 
+        # Add transfer_conversation (A2A handoff) instructions
+        transfer_rules = agent.config.get("transfer_rules", [])
+        a2a_agent_lines = []
+        if isinstance(transfer_rules, list):
+            for rule in transfer_rules:
+                if rule.get("transferTo") == "agent" and rule.get("agentId"):
+                    name = rule.get("name") or rule.get("agentName") or "Unknown"
+                    agent_id_val = rule.get("agentId")
+                    instructions = rule.get("instructions", "")
+                    line = f"- '{name}' (target_agent_id: {agent_id_val})"
+                    if instructions:
+                        line += f" — {instructions}"
+                    a2a_agent_lines.append(line)
+
+        if a2a_agent_lines:
+            crm_tools_instructions.append(
+                "Transfer Conversation Tool (A2A Handoff): Available. "
+                "You MUST use the transfer_conversation tool to transfer the conversation to a specialized AI agent when the user's request matches one of the agents below. "
+                "Do NOT just say you will transfer — you MUST call the transfer_conversation tool with the correct target_agent_id UUID.\n"
+                "Available agents:\n" + "\n".join(a2a_agent_lines) + "\n"
+                "When the user mentions a topic that matches an agent, call transfer_conversation immediately with the target_agent_id and a reason."
+            )
+
         # Build a <product-catalog> block from the products attached to this agent.
         # The CRM populates `assigned_products` in agent.config via the
         # Ai::AgentProductSyncService whenever the user attaches/detaches a
