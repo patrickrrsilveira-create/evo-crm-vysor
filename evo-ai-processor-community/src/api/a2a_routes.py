@@ -1318,7 +1318,6 @@ async def handle_message_send(
                 except ValueError:
                     pass
             
-            logger.error(f"DEBUG TTS API KEY: '{api_key}' (len: {len(api_key)})")
             api_key_valid = bool(api_key and api_key.lower() not in ("null", "none", "undefined", "false", "0"))
             
         if not has_audio_artifact and api_key_valid:
