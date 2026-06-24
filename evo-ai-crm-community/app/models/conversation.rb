@@ -110,6 +110,12 @@ class Conversation < ApplicationRecord
   has_many :reporting_events, dependent: :destroy_async
   has_many :pipeline_items, dependent: :destroy_async
   has_many :pipelines, through: :pipeline_items
+  
+  # Handoff Architecture Associations
+  belongs_to :active_agent, class_name: 'AgentBot', optional: true
+  has_many :agent_sessions, dependent: :destroy_async
+  has_many :conversation_transfers, dependent: :destroy_async
+  has_one :conversation_context, dependent: :destroy_async
 
   before_save :ensure_snooze_until_reset
   before_create :ensure_display_id
