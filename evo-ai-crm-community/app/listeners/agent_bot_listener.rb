@@ -406,7 +406,9 @@ class AgentBotListener < BaseListener
   end
 
   # Get the appropriate agent bot for a message
-  # For Facebook post conversations, use the configured comment agent bot if available
+  # Priority: 1) Conversation-level override (active_agent_id from bot-to-bot transfer)
+  #           2) Facebook comment-specific bot
+  #           3) Inbox default bot
   # Note: All filters (interaction type, comment replies enabled, post allowed, status/labels)
   # are already checked in message_created/message_updated before calling this method
   def get_agent_bot_for_message(inbox, message)
@@ -414,6 +416,17 @@ class AgentBotListener < BaseListener
     return inbox.agent_bot if agent_bot_inbox.blank?
 
     conversation = message.conversation
+
+    # Check for bot-to-bot transfer override (Swarm Handoff)
+    if conversation.active_agent_id.present?
+      override_bot = AgentBot.find_by(id: conversation.active_agent_id)
+      if override_bot
+        Rails.logger.info "[AgentBot Listener] 🔄 Swarm Handoff: Using override bot '#{override_bot.name}' (ID: #{override_bot.id}) instead of inbox default"
+        return override_bot
+      else
+        Rails.logger.warn "[AgentBot Listener] ⚠️ active_agent_id #{conversation.active_agent_id} not found, falling back to inbox default"
+      end
+    end
 
     # For Facebook post conversations, use comment-specific bot if configured
     if conversation.post_conversation? && inbox.facebook?

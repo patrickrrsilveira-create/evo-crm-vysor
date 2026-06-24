@@ -212,6 +212,26 @@ def create_transfer_to_human_tool(
                 except Exception as status_error:
                     # Log but don't fail the transfer if status update fails
                     logger.warning(f"Failed to update conversation status after transfer: {status_error}")
+
+                # Set active_agent_id on the conversation for bot-to-bot routing (Swarm Handoff)
+                # This tells the CRM listener to route future messages to the target bot
+                if effective_assignee_id:
+                    try:
+                        from src.services.database_service import get_database_service
+                        import uuid as uuid_module
+                        db_service = get_database_service()
+                        pool = await db_service.get_pool()
+                        async with pool.acquire() as conn:
+                            await conn.execute(
+                                "UPDATE conversations SET active_agent_id = $1 WHERE id = $2",
+                                uuid_module.UUID(effective_assignee_id),
+                                uuid_module.UUID(effective_conversation_id),
+                            )
+                        logger.info(
+                            f"✅ Swarm Handoff: Set active_agent_id={effective_assignee_id} on conversation {effective_conversation_id}"
+                        )
+                    except Exception as db_error:
+                        logger.warning(f"Failed to set active_agent_id (non-blocking): {db_error}")
                 
                 logger.info(
                     f"Successfully transferred conversation {effective_conversation_id} to agent {effective_assignee_id}"
