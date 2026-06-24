@@ -479,7 +479,8 @@ class StandardRunner:
                         break
                         
                     # Check for system instruction to halt execution (e.g. A2A Handoff)
-                    if "__system_instruction" in str(event_dict) and "HALT_EXECUTION" in str(event_dict):
+                    event_str = str(event_dict) if "event_dict" in locals() else str(event)
+                    if "__system_instruction" in event_str and "HALT_EXECUTION" in event_str:
                         logger.info("Halting agent execution due to system instruction (e.g. A2A Handoff)")
                         break
 
