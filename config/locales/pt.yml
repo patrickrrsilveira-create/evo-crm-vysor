@@ -187,6 +187,9 @@ pt:
     dashboard_apps:
       name: 'Apps de dashboard'
       description: 'Dashboard Apps allow you to create and embed applications that display user information, orders, or payment history, providing more context to your customer support agents.'
+    microsoft_teams:
+      name: 'Microsoft Teams'
+      description: 'Integração com Microsoft Teams para gerenciar reuniões online e integrações avançadas via Graph API.'
     oauth_applications:
       name: 'Aplicações OAuth'
       description: 'Aplicações OAuth permitem que aplicativos externos acessem de forma segura os dados da sua conta Evolution por meio da autenticação OAuth 2.0. Crie aplicativos para habilitar integrações de terceiros com controles de autorização apropriados.'

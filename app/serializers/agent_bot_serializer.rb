@@ -22,7 +22,8 @@ module AgentBotSerializer
       delay_per_character: agent_bot.delay_per_character,
       debounce_time: agent_bot.debounce_time,
       created_at: agent_bot.created_at&.iso8601,
-      updated_at: agent_bot.updated_at&.iso8601
+      updated_at: agent_bot.updated_at&.iso8601,
+      knowledge_bases: agent_bot.knowledge_bases.map { |kb| { id: kb.id, name: kb.name, description: kb.description } }
     }
 
     # If agent_bot_inbox is provided, return structure with agent_bot and configuration

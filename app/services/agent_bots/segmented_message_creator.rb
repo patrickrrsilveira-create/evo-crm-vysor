@@ -301,9 +301,9 @@ class AgentBots::SegmentedMessageCreator
   end
 
   def build_message_with_signature(content)
-    return content if @agent_bot.message_signature.blank?
-
-    # Add signature at the top with two line breaks before the message
-    "#{@agent_bot.message_signature}\n\n#{content}"
+    # Sempre retornar apenas o conteúdo, ignorando a assinatura do bot.
+    # O painel Chatwoot (Evo CRM) tenta colocar a assinatura, mas a IA já gerencia as respostas de forma inteligente.
+    # Isso resolve o bug do texto ficar "PaulaSão 22h49"
+    content
   end
 end

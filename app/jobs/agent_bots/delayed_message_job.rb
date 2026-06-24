@@ -1,5 +1,6 @@
-class AgentBots::DelayedMessageJob < ApplicationJob
-  queue_as :default
+module AgentBots
+  class DelayedMessageJob < ApplicationJob
+    queue_as :default
 
   def perform(agent_bot_id, segments, conversation_id, segment_index)
     Rails.logger.info '[AgentBot DelayedMessageJob] === JOB STARTED ==='
@@ -53,4 +54,5 @@ class AgentBots::DelayedMessageJob < ApplicationJob
     Rails.logger.debug { "[AgentBot DelayedMessageJob] Conversation status check: #{conversation_status} -> pending: #{is_pending}" }
     is_pending
   end
+end
 end

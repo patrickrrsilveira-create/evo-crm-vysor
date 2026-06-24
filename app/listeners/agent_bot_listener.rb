@@ -38,6 +38,13 @@ class AgentBotListener < BaseListener
       return
     end
 
+    # Skip messages that have audio attachments pending transcription
+    # These will be processed in message_updated once the transcription finishes
+    if message.attachments.present? && message.attachments.any? { |a| a.file_type == 'audio' && a.meta&.dig('transcribed_text').blank? }
+      Rails.logger.info "[AgentBot Listener] Skipping message_created for audio message pending transcription"
+      return
+    end
+
     # MODERATION MUST BE EXECUTED FIRST (before status/labels checks)
     # This ensures messages are moderated even if bot won't respond due to status/labels
     # Note: Only process moderation for incoming messages (not outgoing bot responses)
@@ -193,6 +200,13 @@ class AgentBotListener < BaseListener
 
     conversation = message.conversation
     agent_bot_inbox = inbox.agent_bot_inbox
+
+    # Skip messages that have audio attachments pending transcription
+    # These will be processed in message_updated once the transcription finishes
+    if message.attachments.present? && message.attachments.any? { |a| a.file_type == 'audio' && a.meta&.dig('transcribed_text').blank? }
+      Rails.logger.info "[AgentBot Listener] Skipping message_updated for audio message pending transcription"
+      return
+    end
 
     # MODERATION MUST BE EXECUTED FIRST (before status/labels checks)
     # This ensures messages are moderated even if bot won't respond due to status/labels
@@ -505,8 +519,38 @@ class AgentBotListener < BaseListener
   def process_webhook_bot_event(agent_bot, payload)
     return if agent_bot.outgoing_url.blank?
 
+    has_attachments = false
+    
+    # Check if payload has attachments
+    if payload[:message].present?
+      has_attachments = payload[:message].attachments.present?
+    elsif payload[:attachments].present?
+      has_attachments = payload[:attachments].any?
+    end
+
+    if incoming_message_event?(payload)
+      conversation = find_conversation_from_payload(payload)
+      if conversation
+        # Mark conversation as read to trigger blue ticks (listen confirmation)
+        conversation.update(agent_last_seen_at: Time.current)
+        Rails.configuration.dispatcher.dispatch(Events::Types::MESSAGES_READ, Time.zone.now, conversation: conversation)
+        
+        # Determine if it's audio to show recording or typing
+        has_audio = false
+        if payload[:message].present? && payload[:message].attachments.present?
+          has_audio = payload[:message].attachments.any? { |a| a.file_type == 'audio' }
+        elsif payload[:attachments].present?
+          has_audio = payload[:attachments].any? { |a| a[:file_type] == 'audio' || a['file_type'] == 'audio' }
+        end
+        
+        typing_event = has_audio ? Events::Types::CONVERSATION_RECORDING : Events::Types::CONVERSATION_TYPING_ON
+        Rails.configuration.dispatcher.dispatch(typing_event, Time.zone.now, conversation: conversation, user: agent_bot, is_private: false)
+      end
+    end
+
     # Bot Runtime handles debounce, AI calls and dispatch externally
-    if BotRuntime::Config.enabled?
+    # Bypass it for messages with attachments since it doesn't support them yet
+    if BotRuntime::Config.enabled? && !has_attachments
       delegate_to_bot_runtime(agent_bot, payload)
       return
     end

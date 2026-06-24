@@ -34,6 +34,17 @@ class Api::V1::GlobalConfigController < Api::BaseController
       enableAccountSignup: enable_account_signup?,
       recaptchaSiteKey: GlobalConfigService.load('RECAPTCHA_SITE_KEY', nil),
       clarityProjectId: GlobalConfigService.load('CLARITY_PROJECT_ID', nil),
+      appLogoUrl: GlobalConfigService.load('APP_LOGO_URL', nil),
+      appPrimaryColor: GlobalConfigService.load('APP_PRIMARY_COLOR', nil),
+      companyName: GlobalConfigService.load('COMPANY_NAME', nil),
+      appLogoWidth: GlobalConfigService.load('APP_LOGO_WIDTH', nil),
+      appLogoHeight: GlobalConfigService.load('APP_LOGO_HEIGHT', nil),
+      appLoginLogoUrl: GlobalConfigService.load('APP_LOGIN_LOGO_URL', nil),
+      appLoginLogoWidth: GlobalConfigService.load('APP_LOGIN_LOGO_WIDTH', nil),
+      appLoginLogoHeight: GlobalConfigService.load('APP_LOGIN_LOGO_HEIGHT', nil),
+      sidebarCopyrightText: GlobalConfigService.load('SIDEBAR_COPYRIGHT_TEXT', nil),
+      supportLink: GlobalConfigService.load('SUPPORT_LINK', nil),
+      docsLink: GlobalConfigService.load('DOCS_LINK', nil),
     }
   end
 

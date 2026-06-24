@@ -24,14 +24,6 @@ dashboard_apps:
   hook_type: account
   allow_multiple_hooks: true
 
-oauth_applications:
-  id: oauth_applications
-  logo: oauth.png
-  i18n_key: oauth_applications
-  action: /oauth_applications
-  hook_type: account
-  allow_multiple_hooks: true
-
 openai:
   id: openai
   logo: openai.png
@@ -99,6 +91,55 @@ slack:
   action: https://slack.com/oauth/v2/authorize?scope=commands,chat:write,channels:read,channels:manage,channels:join,groups:read,groups:write,im:write,mpim:write,users:read,users:read.email,chat:write.customize,channels:history,groups:history,mpim:history,im:history,files:read,files:write
   hook_type: account
   allow_multiple_hooks: false
+
+microsoft_teams:
+  id: microsoft_teams
+  feature_flag: microsoft_teams_integration
+  logo: msteams.png
+  i18n_key: microsoft_teams
+  action: /microsoft_teams
+  hook_type: account
+  allow_multiple_hooks: false
+  settings_json_schema:
+    {
+      "type": "object",
+      "properties":
+        {
+          "client_id": { "type": "string" },
+          "client_secret": { "type": "string" },
+          "tenant_id": { "type": "string" }
+        },
+      "required": ["client_id", "client_secret"],
+      "additionalProperties": false,
+    }
+  settings_form_schema:
+    [
+      {
+        "label": "Client ID",
+        "type": "text",
+        "name": "client_id",
+        "validation": "required",
+        "help": "Microsoft Azure Application Client ID",
+      },
+      {
+        "label": "Client Secret",
+        "type": "password",
+        "name": "client_secret",
+        "validation": "required",
+        "help": "Microsoft Azure Application Client Secret",
+      },
+      {
+        "label": "Tenant ID (Opcional)",
+        "type": "text",
+        "name": "tenant_id",
+        "help": "Deixe em branco para multi-tenant ou comum",
+      },
+    ]
+  visible_properties:
+    [
+      "client_id",
+      "tenant_id",
+    ]
 
 shopify:
   id: shopify

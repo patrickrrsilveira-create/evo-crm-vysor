@@ -1,5 +1,6 @@
-class AgentBots::InactivityCheckSchedulerJob < ApplicationJob
-  queue_as :scheduled_jobs
+module AgentBots
+  class InactivityCheckSchedulerJob < ApplicationJob
+    queue_as :scheduled_jobs
 
   def perform
     Rails.logger.info '[InactivityScheduler] === Starting inactivity check ==='
@@ -45,4 +46,5 @@ class AgentBots::InactivityCheckSchedulerJob < ApplicationJob
       AgentBots::ProcessInactivityActionsJob.perform_later(conversation.id, agent_bot.id)
     end
   end
+end
 end

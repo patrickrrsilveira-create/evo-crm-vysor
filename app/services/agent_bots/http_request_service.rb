@@ -25,6 +25,7 @@ class AgentBots::HttpRequestService
     Rails.logger.info "[AgentBot HTTP] API Key length: #{@agent_bot.api_key&.length || 0}"
 
     begin
+      trigger_typing_on
       response = make_http_request
       Rails.logger.info "[AgentBot HTTP] ✅ Request successful: #{response.code} #{response.message}"
       handle_response(response)
@@ -32,10 +33,27 @@ class AgentBots::HttpRequestService
       Rails.logger.error "[AgentBot HTTP] ❌ Error: #{e.message}"
       Rails.logger.error "[AgentBot HTTP] Error class: #{e.class}"
       Rails.logger.error "[AgentBot HTTP] Backtrace: #{e.backtrace.first(10).join("\n")}"
+    ensure
+      trigger_typing_off
     end
   end
 
   private
+
+  def trigger_typing_on
+    # Typing indicator is now triggered globally in AgentBotListener#process_webhook_bot_event
+    # before delegating to the specific AI provider service. This ensures all providers
+    # (BotRuntime, N8n, Webhook, HttpRequest) trigger typing status.
+  end
+
+  def trigger_typing_off
+    conversation = find_conversation_from_payload
+    return unless conversation
+
+    Rails.configuration.dispatcher.dispatch(Events::Types::CONVERSATION_TYPING_OFF, Time.zone.now, conversation: conversation, user: @agent_bot, is_private: false)
+  rescue StandardError => e
+    Rails.logger.error "[AgentBot HTTP] Error triggering typing off: #{e.message}"
+  end
 
   def should_process_message?
     event_valid = %w[message_created message_updated inactivity_action].include?(@payload[:event])
@@ -152,11 +170,66 @@ class AgentBots::HttpRequestService
   end
 
   def build_message
-    {
+    message = {
       role: 'user',
       parts: [{ type: 'text', text: extract_message_content }],
       messageId: extract_message_id
     }
+
+    # Add file attachments if present
+    attachments = @payload[:attachments] || []
+    if attachments.is_a?(Array) && attachments.any?
+      attachments.each do |att|
+        data_url = att[:data_url] || att['data_url']
+        att_id = att[:id] || att['id']
+        
+        file_part = {
+          type: 'file',
+          file: {
+            name: att[:fallback_title] || att['fallback_title'] || 'attachment',
+            mimeType: 'application/octet-stream' # Will be inferred by processor if needed
+          }
+        }
+        
+        # Always try to send as base64 bytes by loading the attachment directly from DB
+        bytes_added = false
+        begin
+          if att_id.present?
+            attachment_record = Attachment.find_by(id: att_id)
+            if attachment_record&.file&.attached?
+              file_part[:file][:mimeType] = attachment_record.file.content_type
+              file_bytes = attachment_record.file.download
+              file_part[:file][:bytes] = Base64.strict_encode64(file_bytes)
+              bytes_added = true
+            end
+          end
+        rescue StandardError => e
+          Rails.logger.error "[AgentBot HTTP] Error loading attachment file bytes: #{e.message}"
+        end
+        
+        unless bytes_added
+          next unless data_url.present?
+          
+          # Pass either base64 bytes or url depending on what we have as fallback
+          if data_url.start_with?('data:')
+            begin
+              mime_match = data_url.match(/data:([a-zA-Z0-9\/+-]+);base64,/)
+              file_part[:file][:mimeType] = mime_match[1] if mime_match
+              file_part[:file][:bytes] = data_url.split('base64,').last
+            rescue StandardError => e
+              Rails.logger.error "[AgentBot HTTP] Failed to parse base64 data_url: #{e.message}"
+              next
+            end
+          else
+            file_part[:file][:url] = data_url
+          end
+        end
+        
+        message[:parts] << file_part
+      end
+    end
+    
+    message
   end
 
   def build_metadata
@@ -255,20 +328,36 @@ class AgentBots::HttpRequestService
   end
 
   def extract_message_content
-    case @payload[:event]
-    when 'message_created', 'message_updated'
-      @payload[:content] || 'No content'
-    when 'inactivity_action'
-      @payload[:content] || 'Generate an appropriate message to re-engage the customer'
-    when 'conversation_opened'
-      'Conversation opened'
-    when 'conversation_resolved'
-      'Conversation resolved'
-    when 'webwidget_triggered'
-      'Widget triggered'
-    else
-      'Unknown event'
+    base_content = case @payload[:event]
+                   when 'message_created', 'message_updated'
+                     @payload[:content] || ''
+                   when 'inactivity_action'
+                     @payload[:content] || 'Generate an appropriate message to re-engage the customer'
+                   when 'conversation_opened'
+                     'Conversation opened'
+                   when 'conversation_resolved'
+                     'Conversation resolved'
+                   when 'webwidget_triggered'
+                     'Widget triggered'
+                   else
+                     'Unknown event'
+                   end
+
+    # Extract audio transcriptions from attachments if present
+    attachments = @payload[:attachments] || []
+    if attachments.is_a?(Array)
+      transcriptions = attachments.filter_map do |att|
+        meta = att[:meta] || {}
+        text = meta[:transcribed_text] || meta['transcribed_text'] || att[:transcribed_text] || att['transcribed_text']
+        text if text.present?
+      end
+
+      if transcriptions.any?
+        base_content = [base_content, *transcriptions].reject(&:blank?).join("\n\n")
+      end
     end
+
+    base_content.presence || 'No content'
   end
 
   def extract_context_id
@@ -278,8 +367,11 @@ class AgentBots::HttpRequestService
 
     conversation = find_conversation_from_payload
 
-    if conversation&.id
-      Rails.logger.info "[AgentBot HTTP] Using conversation UUID as contextId: #{conversation.id}"
+    if conversation&.uuid
+      Rails.logger.info "[AgentBot HTTP] Using conversation UUID as contextId: #{conversation.uuid}"
+      return conversation.uuid.to_s
+    elsif conversation&.id
+      Rails.logger.info "[AgentBot HTTP] Using conversation ID (fallback) as contextId: #{conversation.id}"
       return conversation.id.to_s
     end
 
@@ -296,9 +388,9 @@ class AgentBots::HttpRequestService
 
     if conversation_id
       # Try finding by UUID first
-      conversation = Conversation.find_by(id: conversation_id)
+      conversation = Conversation.find_by(uuid: conversation_id)
       if conversation
-        Rails.logger.info "[AgentBot HTTP] Found conversation by UUID: #{conversation.id}"
+        Rails.logger.info "[AgentBot HTTP] Found conversation by UUID: #{conversation.uuid}"
         return conversation
       end
 

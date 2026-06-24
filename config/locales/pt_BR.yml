@@ -205,9 +205,9 @@ pt_BR:
     dashboard_apps:
       name: 'Painel de Aplicativos'
       description: 'O Painel de Aplicativos permite que você crie e incorpore aplicativos que exibem informações, pedidos ou histórico de pagamento, fornecendo mais contexto aos seus agentes de suporte ao cliente.'
-    oauth_applications:
-      name: 'Aplicações OAuth'
-      description: 'Aplicações OAuth permitem que aplicativos externos acessem de forma segura os dados da sua conta Evolution por meio da autenticação OAuth 2.0. Crie aplicativos para habilitar integrações de terceiros com controles de autorização apropriados.'
+    microsoft_teams:
+      name: 'Microsoft Teams'
+      description: 'Conecte o Microsoft Teams para agendar reuniões, receber notificações e gerenciar comunicações da sua equipe diretamente no CRM. Acesse a Graph API para integração profunda com a Microsoft.'
     dyte:
       name: 'Dyte'
       description: 'Dyte é um produto que integra as funcionalidades de áudio e vídeo em sua aplicação. Com esta integração, os seus agentes podem iniciar chamadas de vídeo/voz com seus clientes diretamente do Evolution.'

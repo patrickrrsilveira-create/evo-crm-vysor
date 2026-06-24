@@ -44,17 +44,66 @@ class AgentBots::ResponseProcessor
     return unless artifacts
 
     extracted = extract_content_from_artifacts(artifacts)
-    text_content = extracted[:text]
-    return unless text_content
+    text_content = extracted[:text] || ''
+    file_part = extracted[:file]
+    
+    return if text_content.blank? && file_part.blank?
 
     conversation = AgentBots::ConversationFinder.new(@agent_bot, @payload).find_conversation
     return unless conversation
 
     select_part = extracted[:select]
     select_items = select_part&.dig('items')
+    
+    attachments = []
+    if file_part.present?
+      # Handle A2A Spec format (nested under 'file') or custom format (flat in part)
+      file_info = file_part['file'] || file_part
+      
+      if file_info.present?
+        base64_data = nil
+        mime_type = file_info['mimeType'] || 'application/octet-stream'
+        filename = file_info['name'] || "attachment_#{SecureRandom.hex(4)}"
+
+        if file_info['bytes'].present?
+          base64_data = file_info['bytes']
+        elsif file_info['url'].to_s.start_with?('data:')
+          # Extract base64 from data URL: data:audio/ogg;base64,T2dn...
+          match = file_info['url'].match(/data:(.*?);base64,(.*)/)
+          if match
+            mime_type = match[1] unless match[1].blank?
+            base64_data = match[2]
+            
+            # Set default extension based on mime_type if name is generic
+            if filename.start_with?('attachment_')
+              ext = mime_type.split('/').last || 'bin'
+              filename = "#{filename}.#{ext}"
+            end
+          end
+        end
+
+        if base64_data.present?
+          begin
+            decoded_bytes = Base64.decode64(base64_data)
+            io = StringIO.new(decoded_bytes)
+            
+            attachments << {
+              io: io,
+              filename: filename,
+              content_type: mime_type
+            }
+            Rails.logger.info "[AgentBot HTTP] Successfully extracted attachment: #{filename} (#{mime_type})"
+          rescue StandardError => e
+            Rails.logger.error "[AgentBot HTTP] Error decoding file bytes: #{e.message}"
+          end
+        else
+          Rails.logger.warn "[AgentBot HTTP] Could not extract base64 data from file_info"
+        end
+      end
+    end
 
     # Check if text segmentation is enabled for this agent bot
-    if select_items.blank? && @agent_bot.text_segmentation_enabled && ['evo_ai_provider', 'n8n_provider'].include?(@agent_bot.bot_provider)
+    if attachments.blank? && select_items.blank? && @agent_bot.text_segmentation_enabled && ['evo_ai_provider', 'n8n_provider'].include?(@agent_bot.bot_provider) && text_content.present?
       process_segmented_response(text_content, conversation)
     else
       # Process as a single message with signature
@@ -65,13 +114,13 @@ class AgentBots::ResponseProcessor
       message_creator = AgentBots::MessageCreator.new(@agent_bot)
       content_type = select_items.present? ? 'input_select' : 'text'
       content_attributes = select_items.present? ? { items: select_items } : nil
-      message = message_creator.create_bot_reply(final_content, conversation, content_type: content_type, content_attributes: content_attributes)
+      message = message_creator.create_bot_reply(final_content, conversation, content_type: content_type, content_attributes: content_attributes, attachments: attachments)
       
       # If message creation failed (conversation not eligible, e.g., after transfer),
       # try to force create it anyway (for final responses after transfer)
       unless message
         Rails.logger.info "[AgentBot HTTP] Message creation failed (conversation not eligible), attempting force create..."
-        message = message_creator.create_bot_reply(final_content, conversation, force: true, content_type: content_type, content_attributes: content_attributes)
+        message = message_creator.create_bot_reply(final_content, conversation, force: true, content_type: content_type, content_attributes: content_attributes, attachments: attachments)
       end
       
       message
@@ -88,6 +137,7 @@ class AgentBots::ResponseProcessor
   def extract_content_from_artifacts(artifacts)
     text = nil
     select = nil
+    file = nil
 
     artifacts.each do |artifact|
       next unless artifact.is_a?(Hash) && artifact['parts'].is_a?(Array)
@@ -102,11 +152,16 @@ class AgentBots::ResponseProcessor
         if select.nil? && part['type'] == 'select'
           select = part
         end
+
+        if file.nil? && part['type'] == 'file'
+          file = part
+        end
       end
     end
 
-    { text: text, select: select }
+    { text: text, select: select, file: file }
   end
+
 
   def process_segmented_response(text_content, conversation)
     # Create segmentation service with bot's configuration
@@ -129,9 +184,9 @@ class AgentBots::ResponseProcessor
   end
 
   def build_message_with_signature(content)
-    return content if @agent_bot.message_signature.blank?
-
-    # Add signature at the top with two line breaks before the message
-    "#{@agent_bot.message_signature}\n\n#{content}"
+    # Sempre retornar apenas o conteúdo, ignorando a assinatura do bot.
+    # O painel Chatwoot tenta colocar a assinatura, mas a IA já gerencia as respostas de forma inteligente.
+    # Isso resolve o bug do texto ficar "PaulaSão 22h49" mesmo com segmentação desativada.
+    content
   end
 end

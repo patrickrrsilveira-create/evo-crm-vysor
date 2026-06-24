@@ -93,9 +93,13 @@ class ActionCableListener < BaseListener
       tokens,
       CONVERSATION_TYPING_ON,
       conversation: conversation.push_event_data,
-      user: user.push_event_data,
+      user: user&.push_event_data,
       is_private: event.data[:is_private] || false
     )
+  end
+
+  def conversation_recording(event)
+    conversation_typing_on(event)
   end
 
   def conversation_typing_off(event)
@@ -104,12 +108,35 @@ class ActionCableListener < BaseListener
     user = event.data[:user]
     tokens = typing_event_listener_tokens(account, conversation, user)
 
+    user_data = user&.push_event_data
+    user_data[:type] = 'user' if user_data.is_a?(Hash) && user_data[:type] == 'agent_bot'
+
     broadcast(
       account,
       tokens,
       CONVERSATION_TYPING_OFF,
       conversation: conversation.push_event_data,
-      user: user.push_event_data,
+      user: user_data,
+      is_private: event.data[:is_private] || false
+    )
+  end
+
+  def conversation_recording(event)
+    conversation = event.data[:conversation]
+    account = single_tenant_account
+    user = event.data[:user]
+    tokens = typing_event_listener_tokens(account, conversation, user)
+
+    user_data = user&.push_event_data
+    user_data[:type] = 'user' if user_data.is_a?(Hash) && user_data[:type] == 'agent_bot'
+
+    # Broadcast as typing_on because the frontend only understands typing_on
+    broadcast(
+      account,
+      tokens,
+      CONVERSATION_TYPING_ON,
+      conversation: conversation.push_event_data,
+      user: user_data,
       is_private: event.data[:is_private] || false
     )
   end
@@ -175,8 +202,14 @@ class ActionCableListener < BaseListener
   end
 
   def typing_event_listener_tokens(account, conversation, user)
-    current_user_token = user.is_a?(Contact) ? conversation.contact_inbox.pubsub_token : user.pubsub_token
-    (user_tokens(account, conversation.inbox.members) + [conversation.contact_inbox.pubsub_token]) - [current_user_token]
+    current_user_token = if user.is_a?(Contact)
+                           conversation.contact_inbox.pubsub_token
+                         elsif user.respond_to?(:pubsub_token)
+                           user.pubsub_token
+                         else
+                           nil
+                         end
+    (user_tokens(account, conversation.inbox.members) + [conversation.contact_inbox.pubsub_token]) - [current_user_token].compact
   end
 
   def user_tokens(_account, agents)

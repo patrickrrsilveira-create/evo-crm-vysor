@@ -140,6 +140,60 @@ class Whatsapp::Providers::EvolutionGoService < Whatsapp::Providers::BaseService
     false
   end
 
+  def toggle_typing_status(phone_number, typing_status)
+    status_map = {
+      Events::Types::CONVERSATION_TYPING_ON => 'composing',
+      Events::Types::CONVERSATION_RECORDING => 'recording',
+      Events::Types::CONVERSATION_TYPING_OFF => 'paused'
+    }
+
+    presence = status_map[typing_status] || 'paused'
+    clean_number = phone_number.delete('+')
+
+    body = {
+      number: clean_number,
+      presence: presence,
+      delay: 15000
+    }
+
+    response = HTTParty.post(
+      "#{api_base_path}/chat/sendPresence/#{instance_name}",
+      headers: instance_headers,
+      body: body.to_json
+    )
+
+    process_evolution_go_response(response)
+  rescue StandardError => e
+    Rails.logger.error "[Evolution Go] Error toggling typing status: #{e.message}"
+  end
+
+  def read_messages(phone_number, messages)
+    clean_number = phone_number.delete('+')
+    remote_jid = "#{clean_number}@s.whatsapp.net"
+
+    read_messages_payload = messages.map do |message|
+      {
+        remoteJid: remote_jid,
+        fromMe: message.message_type == 'outgoing',
+        id: message.source_id
+      }
+    end
+
+    body = {
+      readMessages: read_messages_payload
+    }
+
+    response = HTTParty.post(
+      "#{api_base_path}/chat/markMessageAsRead/#{instance_name}",
+      headers: instance_headers,
+      body: body.to_json
+    )
+
+    process_evolution_go_response(response)
+  rescue StandardError => e
+    Rails.logger.error "[Evolution Go] Error marking messages as read: #{e.message}"
+  end
+
   def api_headers
     admin_token = whatsapp_channel.provider_config['admin_token'].presence || GlobalConfigService.load('EVOLUTION_GO_ADMIN_SECRET', '').to_s.strip
     {
@@ -195,6 +249,58 @@ class Whatsapp::Providers::EvolutionGoService < Whatsapp::Providers::BaseService
     rescue StandardError => e
       Rails.logger.error "Evolution Go disconnect error: #{e.message}"
     end
+  end
+
+  def fetch_historical_chats
+    response = HTTParty.get(
+      "#{api_base_path}/chat/findChats/#{instance_name}",
+      headers: instance_headers,
+      timeout: 30
+    )
+
+    if response.success?
+      parsed = response.parsed_response
+      # Evolution API typically returns an array of chats or a wrapper like { "chats": [...] } or { "data": [...] }
+      chats = parsed['chats'] || parsed['data'] || parsed
+      chats.is_a?(Array) ? chats : []
+    else
+      Rails.logger.error "[Evolution Go] Failed to fetch historical chats: #{response.code} - #{response.body}"
+      []
+    end
+  rescue StandardError => e
+    Rails.logger.error "[Evolution Go] Error fetching historical chats: #{e.message}"
+    []
+  end
+
+  def fetch_historical_messages(remote_jid, limit = 100)
+    body = {
+      where: {
+        remoteJid: remote_jid
+      },
+      take: limit,
+      order: {
+        messageTimestamp: 'desc'
+      }
+    }
+
+    response = HTTParty.post(
+      "#{api_base_path}/chat/findMessages/#{instance_name}",
+      headers: instance_headers,
+      body: body.to_json,
+      timeout: 30
+    )
+
+    if response.success?
+      parsed = response.parsed_response
+      messages = parsed['messages'] || parsed['data'] || parsed['records'] || parsed
+      messages.is_a?(Array) ? messages : []
+    else
+      Rails.logger.error "[Evolution Go] Failed to fetch historical messages for #{remote_jid}: #{response.code} - #{response.body}"
+      []
+    end
+  rescue StandardError => e
+    Rails.logger.error "[Evolution Go] Error fetching historical messages for #{remote_jid}: #{e.message}"
+    []
   end
 
   private
@@ -415,7 +521,7 @@ class Whatsapp::Providers::EvolutionGoService < Whatsapp::Providers::BaseService
     body = {
       number: phone_number.delete('+'),
       url: media_url,
-      caption: html_to_whatsapp(message.content.to_s),
+      caption: evolution_go_type == 'audio' ? '' : html_to_whatsapp(message.content.to_s),
       filename: attachment.file.filename.to_s,
       type: evolution_go_type,
       delay: 0

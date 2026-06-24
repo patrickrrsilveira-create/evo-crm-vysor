@@ -43,6 +43,7 @@ class Channel::Whatsapp < ApplicationRecord
   after_update_commit :subscribe,
                       if: -> { provider == 'whatsapp_cloud' && saved_change_to_provider_config? }
   after_create :sync_templates
+  after_create_commit :enqueue_sync_history, if: -> { provider == 'evolution_go' && provider_config['sync_history'] }
   before_destroy :unsubscribe
 
   before_destroy :disconnect_channel_provider, if: -> { provider.in?(%w[baileys evolution evolution_go]) }
@@ -199,6 +200,10 @@ class Channel::Whatsapp < ApplicationRecord
   end
 
   private
+
+  def enqueue_sync_history
+    EvolutionGo::SyncHistoryJob.perform_later(id)
+  end
 
   def ensure_webhook_verify_token
     provider_config['webhook_verify_token'] ||= SecureRandom.hex(16) if provider.in?(%w[whatsapp_cloud baileys notificame])

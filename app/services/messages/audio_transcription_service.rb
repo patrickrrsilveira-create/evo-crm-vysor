@@ -63,16 +63,19 @@ class Messages::AudioTranscriptionService
   private
 
   def transcription_enabled?
-    # Priority 1: Check global configuration
-    # If global config is explicitly set (not nil), use it exclusively
-    global_enabled = GlobalConfigService.load('OPENAI_ENABLE_AUDIO_TRANSCRIPTION', nil)
+    # Priority 1: Check new AUDIO_TRANSCRIPTION_ENABLED global configuration
+    global_enabled = GlobalConfigService.load('AUDIO_TRANSCRIPTION_ENABLED', nil)
+    
+    # Fallback to OPENAI_ENABLE_AUDIO_TRANSCRIPTION for backward compatibility
+    if global_enabled.nil?
+      global_enabled = GlobalConfigService.load('OPENAI_ENABLE_AUDIO_TRANSCRIPTION', nil)
+    end
+    
     unless global_enabled.nil?
       # Convert to boolean - handle both boolean and string values
-      # GlobalConfig should typecast boolean values, but we handle both cases
       enabled = if global_enabled.is_a?(TrueClass) || global_enabled.is_a?(FalseClass)
                   global_enabled
                 else
-                  # Handle string values
                   case global_enabled.to_s.downcase
                   when 'true', '1', 'yes', 'on'
                     true
@@ -87,8 +90,7 @@ class Messages::AudioTranscriptionService
 
       if enabled
         Rails.logger.info "AudioTranscriptionService: Transcription enabled via global config"
-        # Still need to check if API key is configured
-        api_key = get_openai_api_key
+        api_key = get_audio_api_key
         unless api_key.present?
           Rails.logger.warn "AudioTranscriptionService: Global config enabled but API key not configured"
         end
@@ -99,47 +101,53 @@ class Messages::AudioTranscriptionService
       end
     end
 
-    # Priority 2: Check OpenAI integration hook settings
+    # Priority 2: Check OpenAI integration hook settings (legacy)
     openai_hook = Hook.find_by(app_id: 'openai')
     return false unless openai_hook&.enabled?
     return false unless openai_hook.settings&.[]('enable_audio_transcription') == true
 
-    # Check if OpenAI API key is configured
     openai_hook.settings&.[]('api_key').present?
   end
 
   def transcribe_audio
     return nil unless attachment.file.attached?
 
-    # Get OpenAI API key from integration hook or global config
-    api_key = get_openai_api_key
+    # Get API key from integration hook or global config
+    api_key = get_audio_api_key
     return nil unless api_key.present?
 
     # Download audio file
     audio_file = download_audio_file
     return nil unless audio_file
 
-    # Call OpenAI Whisper API
-    response = call_openai_whisper_api(api_key, audio_file)
+    # Call Audio Transcription API
+    response = call_audio_transcription_api(api_key, audio_file)
 
     # Clean up temp file
     File.delete(audio_file.path) if File.exist?(audio_file.path)
 
     response&.dig('text')
   rescue StandardError => e
-    Rails.logger.error "OpenAI Whisper API error: #{e.message}"
+    Rails.logger.error "Audio Transcription API error: #{e.message}"
     nil
   end
 
-  def get_openai_api_key
-    # Priority 1: Try global configuration (same pattern as OpenaiBaseService)
-    global_api_key = GlobalConfigService.load('OPENAI_API_SECRET', nil)
+  def get_audio_api_key
+    # Priority 1: Dedicated Audio Transcription configuration
+    global_api_key = GlobalConfigService.load('AUDIO_TRANSCRIPTION_API_SECRET', nil)
     if global_api_key.present?
-      Rails.logger.info "AudioTranscriptionService: Using global OpenAI API key"
+      Rails.logger.info "AudioTranscriptionService: Using dedicated Audio Transcription API key"
       return global_api_key
     end
+    
+    # Priority 2: Fallback to global OpenAI configuration
+    fallback_api_key = GlobalConfigService.load('OPENAI_API_SECRET', nil)
+    if fallback_api_key.present?
+      Rails.logger.info "AudioTranscriptionService: Using fallback global OpenAI API key"
+      return fallback_api_key
+    end
 
-    # Priority 2: Fallback to hook settings for backward compatibility
+    # Priority 3: Fallback to hook settings for backward compatibility
     openai_hook = Hook.find_by(app_id: 'openai')
     unless openai_hook&.enabled?
       Rails.logger.warn "AudioTranscriptionService: OpenAI hook not found or not enabled"
@@ -148,7 +156,7 @@ class Messages::AudioTranscriptionService
 
     api_key = openai_hook.settings&.[]('api_key')
     if api_key.present?
-      Rails.logger.info "AudioTranscriptionService: Using hook OpenAI API key"
+      Rails.logger.info "AudioTranscriptionService: Using hook OpenAI API key as fallback"
     else
       Rails.logger.warn "AudioTranscriptionService: OpenAI hook exists but API key is not configured"
     end
@@ -196,17 +204,18 @@ class Messages::AudioTranscriptionService
     nil
   end
 
-  def call_openai_whisper_api(api_key, audio_file)
+  def call_audio_transcription_api(api_key, audio_file)
     require 'net/http'
     require 'uri'
 
-    # Use GlobalConfigService for API URL (same pattern as OpenaiBaseService)
-    base_url = GlobalConfigService.load('OPENAI_API_URL', 'https://api.openai.com/v1')
+    # Get base URL, fallback to OpenAI if not set
+    base_url = GlobalConfigService.load('AUDIO_TRANSCRIPTION_API_URL', nil)
+    base_url = GlobalConfigService.load('OPENAI_API_URL', 'https://api.openai.com/v1') if base_url.blank?
     transcription_url = "#{base_url}/audio/transcriptions"
 
     uri = URI(transcription_url)
     http = Net::HTTP.new(uri.host, uri.port)
-    http.use_ssl = true
+    http.use_ssl = (uri.scheme == 'https')
 
     request = Net::HTTP::Post.new(uri.path)
     request['Authorization'] = "Bearer #{api_key}"
@@ -215,29 +224,54 @@ class Messages::AudioTranscriptionService
     file_extension = attachment.extension.presence || 'ogg'
     filename = "audio.#{file_extension}"
 
-    form_data = [
-      ['file', audio_file, { filename: filename }],
-      ['model', 'whisper-1']
-    ]
+    # Get model, fallback to OpenAI model, then whisper-1
+    model_name = GlobalConfigService.load('AUDIO_TRANSCRIPTION_MODEL', nil)
+    model_name = GlobalConfigService.load('OPENAI_MODEL', 'whisper-1') if model_name.blank?
 
-    # Only add language if detect_language returns a non-nil value
-    detected_language = detect_language
-    form_data << ['language', detected_language] if detected_language.present?
+    if base_url.include?('openrouter.ai')
+      request['Content-Type'] = 'application/json'
+      
+      require 'base64'
+      audio_data = Base64.strict_encode64(audio_file.read)
+      audio_file.rewind
+      
+      payload = {
+        model: model_name,
+        input_audio: {
+          data: audio_data,
+          format: file_extension
+        }
+      }
+      
+      detected_language = detect_language
+      payload[:language] = detected_language if detected_language.present?
+      
+      request.body = payload.to_json
+    else
+      form_data = [
+        ['file', audio_file, { filename: filename }],
+        ['model', model_name]
+      ]
 
-    request.set_form(form_data, 'multipart/form-data')
+      # Only add language if detect_language returns a non-nil value
+      detected_language = detect_language
+      form_data << ['language', detected_language] if detected_language.present?
 
-    Rails.logger.info "OpenAI Whisper API request to #{transcription_url} for attachment #{attachment.id}"
+      request.set_form(form_data, 'multipart/form-data')
+    end
+
+    Rails.logger.info "Audio Transcription API request to #{transcription_url} for attachment #{attachment.id} using model #{model_name}"
     response = http.request(request)
-    Rails.logger.info "OpenAI Whisper API response: #{response.code} - #{response.body[0..200]}"
+    Rails.logger.info "Audio Transcription API response: #{response.code} - #{response.body[0..200]}"
 
     if response.code == '200'
       JSON.parse(response.body)
     else
-      Rails.logger.error "OpenAI Whisper API error: #{response.code} - #{response.body}"
+      Rails.logger.error "Audio Transcription API error: #{response.code} - #{response.body}"
       nil
     end
   rescue StandardError => e
-    Rails.logger.error "OpenAI Whisper API request error: #{e.message}"
+    Rails.logger.error "Audio Transcription API request error: #{e.message}"
     Rails.logger.error e.backtrace.join("\n")
     nil
   end

@@ -14,11 +14,15 @@
 #  last_activity_at       :datetime         not null
 #  priority               :integer
 #  snoozed_until          :datetime
+#  state                  :string           default("ACTIVE"), not null
+#  state_version          :integer          default(0), not null
 #  status                 :integer          default("open"), not null
+#  transfer_lock          :boolean          default(FALSE), not null
 #  uuid                   :uuid             not null
 #  waiting_since          :datetime
 #  created_at             :datetime         not null
 #  updated_at             :datetime         not null
+#  active_agent_id        :uuid
 #  assignee_id            :uuid
 #  contact_id             :uuid
 #  contact_inbox_id       :uuid
@@ -44,6 +48,10 @@
 #  index_conversations_on_team_id                        (team_id)
 #  index_conversations_on_uuid                           (uuid) UNIQUE
 #  index_conversations_on_waiting_since                  (waiting_since)
+#
+# Foreign Keys
+#
+#  fk_rails_...  (active_agent_id => agent_bots.id)
 #
 class Conversation < ApplicationRecord
   include Labelable
@@ -110,6 +118,12 @@ class Conversation < ApplicationRecord
   has_many :reporting_events, dependent: :destroy_async
   has_many :pipeline_items, dependent: :destroy_async
   has_many :pipelines, through: :pipeline_items
+  
+  # Handoff Architecture Associations
+  belongs_to :active_agent, class_name: 'AgentBot', optional: true
+  has_many :agent_sessions, dependent: :destroy_async
+  has_many :conversation_transfers, dependent: :destroy_async
+  has_one :conversation_context, dependent: :destroy_async
 
   before_save :ensure_snooze_until_reset
   before_create :ensure_display_id

@@ -74,6 +74,8 @@ class Messages::MessageBuilder
                                file_type_by_signed_id(
                                  uploaded_attachment
                                )
+                             elsif uploaded_attachment.is_a?(Hash)
+                               file_type(uploaded_attachment[:content_type] || uploaded_attachment['content_type'])
                              else
                                file_type(uploaded_attachment&.content_type)
                              end
@@ -85,12 +87,20 @@ class Messages::MessageBuilder
     return unless @is_recorded_audio
     return { is_recorded_audio: true } if @is_recorded_audio == true
 
-    return { is_recorded_audio: true } if @is_recorded_audio.is_a?(Array) && attachment.original_filename.in?(@is_recorded_audio)
+    filename = if attachment.respond_to?(:original_filename)
+                 attachment.original_filename
+               elsif attachment.is_a?(Hash)
+                 attachment[:filename] || attachment['filename']
+               else
+                 nil
+               end
+
+    return { is_recorded_audio: true } if @is_recorded_audio.is_a?(Array) && filename.in?(@is_recorded_audio)
 
     # FIXME: Remove backwards compatibility with old format.
     if @is_recorded_audio.is_a?(String)
       parsed = JSON.parse(@is_recorded_audio)
-      { is_recorded_audio: true } if parsed.is_a?(Array) && attachment.original_filename.in?(parsed)
+      { is_recorded_audio: true } if parsed.is_a?(Array) && filename.in?(parsed)
     end
   rescue JSON::ParserError
     nil

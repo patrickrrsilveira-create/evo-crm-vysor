@@ -74,6 +74,9 @@ Rails.application.routes.draw do
         namespace :supabase do
           get 'credentials', to: 'credentials#show'
         end
+        namespace :microsoft_teams do
+          get 'credentials', to: 'credentials#show'
+        end
       end
 
       namespace :oauth do
@@ -135,6 +138,7 @@ Rails.application.routes.draw do
           post :unarchive
           get :attachments
           get :inbox_assistant
+          post :microsoft_teams_meeting
         end
       end
 
@@ -238,6 +242,16 @@ Rails.application.routes.draw do
         get :runs, on: :member
       end
 
+      resources :knowledge_bases, only: [:index, :create, :show, :update, :destroy] do
+        resources :knowledge_documents, only: [:index, :create, :show, :update, :destroy]
+        resources :agent_bots, controller: 'knowledge_bases/agent_bots', only: [:index, :create, :destroy]
+      end
+
+      scope 'knowledge' do
+        post 'ingest/file', to: 'knowledge_ingest#file'
+        post 'ingest/url', to: 'knowledge_ingest#url'
+      end
+
       # Product Catalog (EVO-1109)
       resources :products, only: [:index, :create, :show, :update, :destroy], controller: 'products' do
         resources :variants, controller: 'products/variants', only: [:index, :create, :update, :destroy]
@@ -308,6 +322,9 @@ Rails.application.routes.draw do
 
           # Gmail webhooks
           post 'gmail/pubsub', to: 'webhooks/gmail#pubsub'
+          
+          # AI Processor Webhooks
+          post 'agent_processor/handoff', to: 'webhooks/agent_processor#handoff'
         end
       end
 

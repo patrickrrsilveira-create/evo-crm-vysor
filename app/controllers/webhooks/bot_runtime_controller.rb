@@ -16,9 +16,9 @@ class Webhooks::BotRuntimeController < ActionController::API
       return
     end
 
-    content = params[:content]
-    if content.blank?
-      render json: { error: 'Content is required' }, status: :bad_request
+    content = params[:content] || ''
+    if content.blank? && params[:attachments].blank?
+      render json: { error: 'Content or attachment is required' }, status: :bad_request
       return
     end
 
@@ -34,7 +34,8 @@ class Webhooks::BotRuntimeController < ActionController::API
     message = AgentBots::MessageCreator.new(agent_bot).create_bot_reply(
       content, conversation,
       content_type: content_type,
-      content_attributes: content_attributes
+      content_attributes: content_attributes,
+      attachments: params[:attachments]
     )
 
     if message

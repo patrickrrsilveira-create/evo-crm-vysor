@@ -134,7 +134,7 @@ class WebhookListener < BaseListener
 
     payload = {
       event: event_name,
-      user: user.webhook_data,
+      user: user&.webhook_data,
       conversation: conversation.webhook_data,
       is_private: event.data[:is_private] || false
     }

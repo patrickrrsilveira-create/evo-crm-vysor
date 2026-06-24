@@ -1,5 +1,6 @@
-class AgentBots::ProcessInactivityActionsJob < ApplicationJob
-  queue_as :default
+module AgentBots
+  class ProcessInactivityActionsJob < ApplicationJob
+    queue_as :default
 
   def perform(conversation_id, agent_bot_id)
     Rails.logger.info "[ProcessInactivityActions] === Processing conversation #{conversation_id} with bot #{agent_bot_id} ==="
@@ -32,5 +33,6 @@ class AgentBots::ProcessInactivityActionsJob < ApplicationJob
     Rails.logger.error e.backtrace.first(10).join("\n")
     # Deixa o Sidekiq fazer retry automático
     raise e
+  end
   end
 end
