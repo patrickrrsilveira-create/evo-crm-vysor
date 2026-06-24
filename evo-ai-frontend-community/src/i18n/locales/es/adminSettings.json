@@ -9,7 +9,8 @@
     "integrations": "Integraciones",
     "evolutionHub": "Evo Hub",
     "inboundEmail": "Correo Entrante",
-    "frontendRuntime": "Frontend Runtime"
+    "frontendRuntime": "Frontend Runtime",
+    "audioTranscription": "Audio Transcription"
   },
   "email": {
     "title": "Configuracion de Correo Electronico",
@@ -462,7 +463,9 @@
   "evolutionHub": {
     "title": "Evo Hub",
     "description": "Use Evo Hub como capa de proxy para canales Meta (WhatsApp Cloud, Messenger, Instagram). Cuando se activa, el CRM sustituye las llamadas directas a la Graph API por llamadas vía Hub.",
-    "sections": { "connection": "Conexión" },
+    "sections": {
+      "connection": "Conexión"
+    },
     "fields": {
       "enabled": "Usar Evo Hub",
       "enabledHelp": "Cuando está activado, todas las llamadas Meta pasan por el Hub configurado.",
@@ -473,7 +476,11 @@
       "webhookSecretHelp": "Use una cadena aleatoria fuerte.",
       "secretSet": "configurado"
     },
-    "actions": { "save": "Guardar", "test": "Probar conexión", "generateSecret": "Generar secreto aleatorio" },
+    "actions": {
+      "save": "Guardar",
+      "test": "Probar conexión",
+      "generateSecret": "Generar secreto aleatorio"
+    },
     "messages": {
       "saved": "Configuración guardada",
       "saveError": "Error al guardar",
@@ -481,5 +488,30 @@
       "testError": "Prueba de conexión fallida",
       "testUnknown": "Respuesta desconocida del Hub"
     }
+  },
+  "audioTranscription": {
+    "title": "Audio Transcription",
+    "description": "Configure the provider and credentials exclusively for Audio Transcription (Speech-to-Text).",
+    "connection": {
+      "cardTitle": "Connection Settings",
+      "fields": {
+        "enabled": "Enable Audio Transcription",
+        "apiUrl": "API URL",
+        "apiSecret": "API Key",
+        "model": "Audio Model"
+      },
+      "placeholders": {
+        "apiUrl": "https://api.openai.com/v1",
+        "apiSecret": "Enter API key",
+        "model": "whisper-1"
+      }
+    },
+    "messages": {
+      "saveSuccess": "Configuration saved successfully",
+      "saveError": "Failed to save configuration",
+      "loadError": "Failed to load configuration"
+    },
+    "save": "Save Configuration",
+    "saving": "Saving..."
   }
 }

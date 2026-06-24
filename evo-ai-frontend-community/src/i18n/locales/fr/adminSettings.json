@@ -8,7 +8,8 @@
     "openai": "OpenAI",
     "integrations": "Integrations",
     "inboundEmail": "E-mail Entrant",
-    "frontendRuntime": "Frontend Runtime"
+    "frontendRuntime": "Frontend Runtime",
+    "audioTranscription": "Audio Transcription"
   },
   "email": {
     "title": "Configuration E-mail",
@@ -457,5 +458,30 @@
     },
     "save": "Enregistrer la Configuration",
     "saving": "Enregistrement..."
+  },
+  "audioTranscription": {
+    "title": "Audio Transcription",
+    "description": "Configure the provider and credentials exclusively for Audio Transcription (Speech-to-Text).",
+    "connection": {
+      "cardTitle": "Connection Settings",
+      "fields": {
+        "enabled": "Enable Audio Transcription",
+        "apiUrl": "API URL",
+        "apiSecret": "API Key",
+        "model": "Audio Model"
+      },
+      "placeholders": {
+        "apiUrl": "https://api.openai.com/v1",
+        "apiSecret": "Enter API key",
+        "model": "whisper-1"
+      }
+    },
+    "messages": {
+      "saveSuccess": "Configuration saved successfully",
+      "saveError": "Failed to save configuration",
+      "loadError": "Failed to load configuration"
+    },
+    "save": "Save Configuration",
+    "saving": "Saving..."
   }
 }

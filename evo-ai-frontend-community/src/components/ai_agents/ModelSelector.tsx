@@ -273,7 +273,7 @@ const ModelSelector = ({
                   {isLoadingModels
                     ? t('llmConfig.loadingModels', { defaultValue: 'Loading models...' })
                     : value
-                      ? selectedModel?.label || value
+                      ? selectedModel?.label || 'Custom Model'
                       : t('llmConfig.searchOrSelectModel')}
                   {isLoadingModels
                     ? <Loader2 className="ml-2 h-4 w-4 shrink-0 animate-spin opacity-70" />
@@ -321,7 +321,7 @@ const ModelSelector = ({
               value={value}
               onChange={e => onChange(e.target.value)}
               placeholder={customProviderSelected ? 'model' : 'provider/model'}
-              className={className}
+              className={`${className} ${!customProviderSelected ? 'mt-2' : ''}`}
             />
           )}
         </>

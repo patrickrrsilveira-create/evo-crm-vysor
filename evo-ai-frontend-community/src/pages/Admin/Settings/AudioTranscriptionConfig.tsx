@@ -11,7 +11,6 @@ import {
   CardHeader,
   CardTitle,
   Switch,
-  Textarea,
   Select,
   SelectContent,
   SelectItem,
@@ -28,63 +27,32 @@ import ModelSelector from '@/components/ai_agents/ModelSelector';
 
 // --- Schema factory with i18n ---
 
-function createOpenAISchema(_t: (key: string) => string) {
+function createAudioTranscriptionSchema(_t: (key: string) => string) {
   return z.object({
-    OPENAI_API_URL: z.string().optional(),
-    OPENAI_API_SECRET: z.string().optional().nullable(),
-    OPENAI_MODEL: z.string().optional(),
-    OPENAI_PROMPT_REPLY: z.string().optional(),
-    OPENAI_PROMPT_SUMMARY: z.string().optional(),
-    OPENAI_PROMPT_REPHRASE: z.string().optional(),
-    OPENAI_PROMPT_FIX_GRAMMAR: z.string().optional(),
-    OPENAI_PROMPT_SHORTEN: z.string().optional(),
-    OPENAI_PROMPT_EXPAND: z.string().optional(),
-    OPENAI_PROMPT_FRIENDLY: z.string().optional(),
-    OPENAI_PROMPT_FORMAL: z.string().optional(),
-    OPENAI_PROMPT_SIMPLIFY: z.string().optional(),
+    AUDIO_TRANSCRIPTION_ENABLED: z.union([z.boolean(), z.string()]).optional(),
+    AUDIO_TRANSCRIPTION_API_URL: z.string().optional(),
+    AUDIO_TRANSCRIPTION_API_SECRET: z.string().optional().nullable(),
+    AUDIO_TRANSCRIPTION_MODEL: z.string().optional(),
   });
 }
 
-type OpenAIFormData = z.infer<ReturnType<typeof createOpenAISchema>>;
+type AudioTranscriptionFormData = z.infer<ReturnType<typeof createAudioTranscriptionSchema>>;
 
-const DEFAULTS: OpenAIFormData = {
-  OPENAI_API_URL: '',
-  OPENAI_API_SECRET: null,
-  OPENAI_MODEL: '',
-  OPENAI_PROMPT_REPLY: '',
-  OPENAI_PROMPT_SUMMARY: '',
-  OPENAI_PROMPT_REPHRASE: '',
-  OPENAI_PROMPT_FIX_GRAMMAR: '',
-  OPENAI_PROMPT_SHORTEN: '',
-  OPENAI_PROMPT_EXPAND: '',
-  OPENAI_PROMPT_FRIENDLY: '',
-  OPENAI_PROMPT_FORMAL: '',
-  OPENAI_PROMPT_SIMPLIFY: '',
+const DEFAULTS: AudioTranscriptionFormData = {
+  AUDIO_TRANSCRIPTION_ENABLED: false,
+  AUDIO_TRANSCRIPTION_API_URL: '',
+  AUDIO_TRANSCRIPTION_API_SECRET: null,
+  AUDIO_TRANSCRIPTION_MODEL: '',
 };
 
-const SECRET_FIELDS = ['OPENAI_API_SECRET'];
+const SECRET_FIELDS = ['AUDIO_TRANSCRIPTION_API_SECRET'];
 
-const AI_PROVIDERS = [
-  { id: 'openai', name: 'OpenAI', url: 'https://api.openai.com/v1', defaultModel: 'gpt-4o' },
-  { id: 'openrouter', name: 'OpenRouter', url: 'https://openrouter.ai/api/v1', defaultModel: 'moonshotai/kimi-k2.6:free' },
-  { id: 'groq', name: 'Groq', url: 'https://api.groq.com/openai/v1', defaultModel: 'llama3-70b-8192' },
-  { id: 'together', name: 'Together AI', url: 'https://api.together.xyz/v1', defaultModel: 'meta-llama/Llama-3-70b-chat-hf' },
-  { id: 'deepseek', name: 'DeepSeek', url: 'https://api.deepseek.com/v1', defaultModel: 'deepseek-chat' },
-  { id: 'moonshot', name: 'Moonshot AI', url: 'https://api.moonshot.cn/v1', defaultModel: 'moonshot-v1-8k' },
+const AUDIO_PROVIDERS = [
+  { id: 'openai', name: 'OpenAI', url: 'https://api.openai.com/v1', defaultModel: 'whisper-1' },
+  { id: 'groq', name: 'Groq', url: 'https://api.groq.com/openai/v1', defaultModel: 'whisper-large-v3-turbo' },
+  { id: 'openrouter', name: 'OpenRouter', url: 'https://openrouter.ai/api/v1', defaultModel: 'qwen/qwen3-asr-flash-2026-02-10' },
   { id: 'custom', name: 'Personalizado', url: '', defaultModel: '' },
 ];
-
-const PROMPT_FIELDS = [
-  'OPENAI_PROMPT_REPLY',
-  'OPENAI_PROMPT_SUMMARY',
-  'OPENAI_PROMPT_REPHRASE',
-  'OPENAI_PROMPT_FIX_GRAMMAR',
-  'OPENAI_PROMPT_SHORTEN',
-  'OPENAI_PROMPT_EXPAND',
-  'OPENAI_PROMPT_FRIENDLY',
-  'OPENAI_PROMPT_FORMAL',
-  'OPENAI_PROMPT_SIMPLIFY',
-] as const;
 
 function isSecretMasked(value: unknown): boolean {
   return typeof value === 'string' && value.includes('••••');
@@ -96,7 +64,7 @@ function toBool(value: unknown): boolean {
   return false;
 }
 
-function buildFormValues(data: Record<string, unknown>): OpenAIFormData {
+function buildFormValues(data: Record<string, unknown>): AudioTranscriptionFormData {
   const formValues: Record<string, unknown> = { ...DEFAULTS };
   for (const [key, value] of Object.entries(data)) {
     if (SECRET_FIELDS.includes(key)) {
@@ -105,17 +73,17 @@ function buildFormValues(data: Record<string, unknown>): OpenAIFormData {
       formValues[key] = value ?? formValues[key] ?? '';
     }
   }
-  return formValues as OpenAIFormData;
+  return formValues as AudioTranscriptionFormData;
 }
 
-export default function OpenAIConfig() {
+export default function AudioTranscriptionConfig() {
   const { t } = useLanguage('adminSettings');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [secretModified, setSecretModified] = useState<Record<string, boolean>>({});
   const [secretConfigured, setSecretConfigured] = useState<Record<string, boolean>>({});
 
-  const openaiSchema = useMemo(() => createOpenAISchema(t), [t]);
+  const schema = useMemo(() => createAudioTranscriptionSchema(t), [t]);
 
   const {
     register,
@@ -125,8 +93,8 @@ export default function OpenAIConfig() {
     control,
     watch,
     formState: { errors },
-  } = useForm<OpenAIFormData>({
-    resolver: zodResolver(openaiSchema),
+  } = useForm<AudioTranscriptionFormData>({
+    resolver: zodResolver(schema),
     defaultValues: DEFAULTS,
   });
 
@@ -142,11 +110,11 @@ export default function OpenAIConfig() {
   const loadConfig = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await adminConfigService.getConfig('openai');
+      const data = await adminConfigService.getConfig('audio_transcription');
       updateSecretStatus(data);
       reset(buildFormValues(data));
     } catch (error) {
-      toast.error(t('openai.messages.loadError'));
+      toast.error(t('audioTranscription.messages.loadError'));
     } finally {
       setLoading(false);
     }
@@ -156,7 +124,7 @@ export default function OpenAIConfig() {
     loadConfig();
   }, [loadConfig]);
 
-  const onSubmit = async (formData: OpenAIFormData) => {
+  const onSubmit = async (formData: AudioTranscriptionFormData) => {
     setSaving(true);
     try {
       const payload: Record<string, unknown> = {};
@@ -172,14 +140,14 @@ export default function OpenAIConfig() {
         }
       }
 
-      const data = await adminConfigService.saveConfig('openai', payload as AdminConfigData);
+      const data = await adminConfigService.saveConfig('audio_transcription', payload as AdminConfigData);
       updateSecretStatus(data);
       reset(buildFormValues(data));
 
-      toast.success(t('openai.messages.saveSuccess'));
+      toast.success(t('audioTranscription.messages.saveSuccess'));
     } catch (error) {
       const errorInfo = extractError(error);
-      toast.error(t('openai.messages.saveError'), {
+      toast.error(t('audioTranscription.messages.saveError'), {
         description: errorInfo.message,
       });
     } finally {
@@ -192,7 +160,7 @@ export default function OpenAIConfig() {
   };
 
   const handleClearSecret = (fieldName: string) => {
-    setValue(fieldName as keyof OpenAIFormData, '');
+    setValue(fieldName as keyof AudioTranscriptionFormData, '');
     setSecretModified((prev) => ({ ...prev, [fieldName]: true }));
   };
 
@@ -220,7 +188,7 @@ export default function OpenAIConfig() {
           type="password"
           autoComplete="off"
           placeholder={placeholder}
-          {...register(fieldName as keyof OpenAIFormData, {
+          {...register(fieldName as keyof AudioTranscriptionFormData, {
             onChange: (e: React.ChangeEvent<HTMLInputElement>) => handleSecretChange(fieldName, e.target.value),
           })}
         />
@@ -250,33 +218,54 @@ export default function OpenAIConfig() {
   return (
     <div className="max-w-2xl">
       <div className="mb-6">
-        <h2 className="text-xl font-semibold text-sidebar-foreground">{t('openai.title')}</h2>
-        <p className="text-sm text-sidebar-foreground/70 mt-1">{t('openai.description')}</p>
+        <h2 className="text-xl font-semibold text-sidebar-foreground">{t('audioTranscription.title')}</h2>
+        <p className="text-sm text-sidebar-foreground/70 mt-1">{t('audioTranscription.description')}</p>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        {/* Connection Settings */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">{t('openai.connection.cardTitle')}</CardTitle>
+            <CardTitle className="text-base">{t('audioTranscription.connection.cardTitle')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-5">
+            <Controller
+              name="AUDIO_TRANSCRIPTION_ENABLED"
+              control={control}
+              render={({ field }) => (
+                <div className="flex items-center justify-between p-3 rounded-lg border border-sidebar-border bg-sidebar-accent/30">
+                  <div>
+                    <Label htmlFor="AUDIO_TRANSCRIPTION_ENABLED" className="text-sm font-medium">
+                      {t('audioTranscription.connection.fields.enabled')}
+                    </Label>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Habilita a transcrição automática de áudios recebidos usando o provedor configurado.
+                    </p>
+                  </div>
+                  <Switch
+                    id="AUDIO_TRANSCRIPTION_ENABLED"
+                    checked={toBool(field.value)}
+                    onCheckedChange={field.onChange}
+                  />
+                </div>
+              )}
+            />
+
             <div className="space-y-2">
               <Label>Provedor de IA (Atalho)</Label>
               <Select 
                 value={
-                  AI_PROVIDERS.find(p => p.url !== '' && watch('OPENAI_API_URL')?.includes(p.url))?.id || 'custom'
+                  AUDIO_PROVIDERS.find(p => p.url !== '' && watch('AUDIO_TRANSCRIPTION_API_URL')?.includes(p.url))?.id || 'custom'
                 } 
                 onValueChange={(val) => {
                   if (val === 'custom') {
-                    setValue('OPENAI_API_URL', '');
-                    setValue('OPENAI_MODEL', '');
+                    setValue('AUDIO_TRANSCRIPTION_API_URL', '');
+                    setValue('AUDIO_TRANSCRIPTION_MODEL', '');
                   } else {
-                    const provider = AI_PROVIDERS.find(p => p.id === val);
+                    const provider = AUDIO_PROVIDERS.find(p => p.id === val);
                     if (provider) {
-                      setValue('OPENAI_API_URL', provider.url, { shouldValidate: true, shouldDirty: true });
+                      setValue('AUDIO_TRANSCRIPTION_API_URL', provider.url, { shouldValidate: true, shouldDirty: true });
                       if (provider.defaultModel) {
-                        setValue('OPENAI_MODEL', provider.defaultModel, { shouldValidate: true, shouldDirty: true });
+                        setValue('AUDIO_TRANSCRIPTION_MODEL', provider.defaultModel, { shouldValidate: true, shouldDirty: true });
                       }
                     }
                   }
@@ -286,7 +275,7 @@ export default function OpenAIConfig() {
                   <SelectValue placeholder="Selecione um provedor..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {AI_PROVIDERS.map((provider) => (
+                  {AUDIO_PROVIDERS.map((provider) => (
                     <SelectItem key={provider.id} value={provider.id}>
                       {provider.name}
                     </SelectItem>
@@ -294,73 +283,49 @@ export default function OpenAIConfig() {
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground">
-                Selecione o provedor para preencher a URL base e sugerir um modelo automaticamente.
+                Selecione o provedor para preencher a URL base e sugerir um modelo de transcrição automaticamente.
               </p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="OPENAI_API_URL">{t('openai.connection.fields.apiUrl')}</Label>
+              <Label htmlFor="AUDIO_TRANSCRIPTION_API_URL">{t('audioTranscription.connection.fields.apiUrl')}</Label>
               <Input
-                id="OPENAI_API_URL"
-                placeholder={t('openai.connection.placeholders.apiUrl')}
-                {...register('OPENAI_API_URL')}
+                id="AUDIO_TRANSCRIPTION_API_URL"
+                placeholder={t('audioTranscription.connection.placeholders.apiUrl')}
+                {...register('AUDIO_TRANSCRIPTION_API_URL')}
               />
-              {errors.OPENAI_API_URL && (
-                <p className="text-xs text-destructive">{errors.OPENAI_API_URL.message}</p>
+              {errors.AUDIO_TRANSCRIPTION_API_URL && (
+                <p className="text-xs text-destructive">{errors.AUDIO_TRANSCRIPTION_API_URL.message}</p>
               )}
             </div>
 
-            {renderSecretField('OPENAI_API_SECRET', t('openai.connection.fields.apiSecret'), t('openai.connection.placeholders.apiSecret'))}
+            {renderSecretField('AUDIO_TRANSCRIPTION_API_SECRET', t('audioTranscription.connection.fields.apiSecret'), t('audioTranscription.connection.placeholders.apiSecret'))}
 
             <div className="space-y-2">
               <Controller
-                name="OPENAI_MODEL"
+                name="AUDIO_TRANSCRIPTION_MODEL"
                 control={control}
                 render={({ field }) => (
                   <ModelSelector
-                    id="OPENAI_MODEL"
+                    id="AUDIO_TRANSCRIPTION_MODEL"
                     value={field.value || ''}
                     onChange={field.onChange}
-                    apiKeys={[]} // Pass empty array so it shows availableModels
-                    label={t('openai.connection.fields.model')}
+                    apiKeys={[]}
+                    label={t('audioTranscription.connection.fields.model')}
                     showLabel={true}
                     className="w-full"
-                    error={errors.OPENAI_MODEL?.message}
+                    error={errors.AUDIO_TRANSCRIPTION_MODEL?.message}
                   />
                 )}
               />
             </div>
-
-            <div className="p-4 bg-muted/50 rounded-lg border text-sm text-muted-foreground mt-4">
-              <strong>Nota:</strong> A configuração de Transcrição de Áudio foi movida para um menu dedicado. Acesse a seção <a href="/settings/admin/audio-transcription" className="text-primary hover:underline font-medium">Transcrição de Áudio</a> no menu lateral para configurar seu provedor de Speech-to-Text independentemente.
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* AI Prompts */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">{t('openai.prompts.cardTitle')}</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-5">
-            {PROMPT_FIELDS.map((fieldName) => (
-              <div key={fieldName} className="space-y-2">
-                <Label htmlFor={fieldName}>{t(`openai.prompts.fields.${fieldName}`)}</Label>
-                <Textarea
-                  id={fieldName}
-                  rows={4}
-                  placeholder={t(`openai.prompts.placeholders.${fieldName}`)}
-                  {...register(fieldName)}
-                />
-              </div>
-            ))}
           </CardContent>
         </Card>
 
         <div className="pt-2">
-          <Button type="submit" disabled={saving} aria-label={t('openai.save')}>
+          <Button type="submit" disabled={saving} aria-label={t('audioTranscription.save')}>
             {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {saving ? t('openai.saving') : t('openai.save')}
+            {saving ? t('audioTranscription.saving') : t('audioTranscription.save')}
           </Button>
         </div>
       </form>

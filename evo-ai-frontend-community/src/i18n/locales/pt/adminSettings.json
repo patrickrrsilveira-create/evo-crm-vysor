@@ -8,7 +8,8 @@
     "openai": "OpenAI",
     "integrations": "Integracoes",
     "inboundEmail": "E-mail de Entrada",
-    "frontendRuntime": "Frontend Runtime"
+    "frontendRuntime": "Frontend Runtime",
+    "audioTranscription": "Transcrição de Áudio"
   },
   "email": {
     "title": "Configuracao de E-mail",
@@ -457,5 +458,30 @@
     },
     "save": "Guardar Configuração",
     "saving": "A guardar..."
+  },
+  "audioTranscription": {
+    "title": "Transcrição de Áudio",
+    "description": "Configure o provedor e as credenciais exclusivamente para transcrição de áudio (Speech-to-Text).",
+    "connection": {
+      "cardTitle": "Configurações de Conexao",
+      "fields": {
+        "enabled": "Habilitar Transcrição de Áudio",
+        "apiUrl": "URL da API",
+        "apiSecret": "Chave de API",
+        "model": "Modelo de Áudio"
+      },
+      "placeholders": {
+        "apiUrl": "https://api.openai.com/v1",
+        "apiSecret": "Insira a chave de API",
+        "model": "whisper-1"
+      }
+    },
+    "messages": {
+      "saveSuccess": "Configuração salva com sucesso",
+      "saveError": "Falha ao salvar configuração",
+      "loadError": "Falha ao carregar configuração"
+    },
+    "save": "Salvar Configuração",
+    "saving": "Salvando..."
   }
 }
