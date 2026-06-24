@@ -10,7 +10,6 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-  Switch,
   Textarea,
   Select,
   SelectContent,
@@ -88,12 +87,6 @@ const PROMPT_FIELDS = [
 
 function isSecretMasked(value: unknown): boolean {
   return typeof value === 'string' && value.includes('••••');
-}
-
-function toBool(value: unknown): boolean {
-  if (typeof value === 'boolean') return value;
-  if (typeof value === 'string') return value === 'true';
-  return false;
 }
 
 function buildFormValues(data: Record<string, unknown>): OpenAIFormData {
