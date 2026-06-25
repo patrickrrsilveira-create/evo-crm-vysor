@@ -1281,11 +1281,36 @@ async def handle_message_send(
                                             session_service=session_service,
                                             artifacts_service=artifacts_service,
                                             memory_service=memory_service,
-                                            session_id=f"{context_id}_{new_agent_id}"
+                                            session_id=f"{context_id}_{new_agent_id}",
+                                            user_id=user_id
                                         )
                                         
                                         final_text = result.get("final_response", "")
-                                        if final_text:
+                                        
+                                        files_payload = None
+                                        if artifacts_service:
+                                            db_artifacts = await artifacts_service.list_artifacts(
+                                                app_name=new_agent_id, session_id=f"{context_id}_{new_agent_id}", limit=1
+                                            )
+                                            if db_artifacts:
+                                                latest_artifact = db_artifacts[0]
+                                                try:
+                                                    import base64
+                                                    import time
+                                                    artifact_content = latest_artifact.content
+                                                    if "," in artifact_content:
+                                                        _, base64_data = artifact_content.split(",", 1)
+                                                    else:
+                                                        base64_data = artifact_content
+                                                    file_bytes = base64.b64decode(base64_data)
+                                                    filename = f"audio_{int(time.time())}.ogg"
+                                                    if "pdf" in latest_artifact.content_type:
+                                                        filename = f"document_{int(time.time())}.pdf"
+                                                    files_payload = {"attachments[]": (filename, file_bytes, latest_artifact.content_type)}
+                                                except Exception as e:
+                                                    logger.error(f"Failed to decode artifact: {e}")
+
+                                        if final_text or files_payload:
                                             crm_client = EvoCrmClient()
                                             await crm_client.post(
                                                 f"/api/v1/conversations/{real_conversation_id}/messages",
@@ -1293,9 +1318,10 @@ async def handle_message_send(
                                                     "content": final_text,
                                                     "message_type": "outgoing",
                                                     "private": False
-                                                }
+                                                },
+                                                files=files_payload
                                             )
-                                            logger.info(f"✅ Successfully auto-triggered new agent {new_agent_id} and posted reply to conversation {real_conversation_id}")
+                                            logger.info(f"✅ Successfully auto-triggered new agent {new_agent_id} and posted reply (attachments: {bool(files_payload)}) to conversation {real_conversation_id}")
                                         else:
                                             logger.warning(f"⚠️ Auto-triggered new agent {new_agent_id} but it returned empty response")
                                     finally:

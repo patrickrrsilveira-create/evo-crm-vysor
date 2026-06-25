@@ -64,6 +64,7 @@ class EvoCrmClient:
         endpoint: str,
         params: Optional[Dict[str, Any]] = None,
         json_data: Optional[Dict[str, Any]] = None,
+        files: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """Make an authenticated HTTP request to the CRM API.
 
@@ -73,6 +74,7 @@ class EvoCrmClient:
                      Examples: "/api/v1/contacts/{id}", "/api/v1/conversations/{id}/messages"
             params: Optional query parameters
             json_data: Optional JSON body data
+            files: Optional multipart files
 
         Returns:
             Response JSON data as dictionary
@@ -101,21 +103,37 @@ class EvoCrmClient:
 
         headers = self._get_headers()
 
+        if files and headers.get("Content-Type"):
+            del headers["Content-Type"]
+
         logger.info(
             f"Making {method} request to CRM API: {full_url}"
             + (f" with params: {params}" if params else "")
-            + (f" with body: {json_data}" if json_data else "")
+            + (f" with body/data: {json_data}" if json_data else "")
+            + (f" with files: {list(files.keys())}" if files else "")
         )
         
         try:
             async with httpx.AsyncClient(timeout=self.timeout) as client:
-                response = await client.request(
-                    method=method,
-                    url=full_url,
-                    headers=headers,
-                    params=params,
-                    json=json_data,
-                )
+                if files:
+                    # Convert json_data dict to data (form fields) since we are sending multipart
+                    form_data = json_data if json_data else None
+                    response = await client.request(
+                        method=method,
+                        url=full_url,
+                        headers=headers,
+                        params=params,
+                        data=form_data,
+                        files=files,
+                    )
+                else:
+                    response = await client.request(
+                        method=method,
+                        url=full_url,
+                        headers=headers,
+                        params=params,
+                        json=json_data,
+                    )
                 
                 logger.info(
                     f"CRM API response: {response.status_code} - {response.text[:200]}"
@@ -151,6 +169,7 @@ class EvoCrmClient:
         endpoint: str,
         json_data: Optional[Dict[str, Any]] = None,
         params: Optional[Dict[str, Any]] = None,
+        files: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """Make a POST request to the CRM API.
 
@@ -158,11 +177,12 @@ class EvoCrmClient:
             endpoint: API endpoint
             json_data: JSON body data
             params: Optional query parameters
+            files: Optional multipart files
 
         Returns:
             Response JSON data
         """
-        return await self._make_request("POST", endpoint, params, json_data)
+        return await self._make_request("POST", endpoint, params, json_data, files)
 
     async def get(
         self,
