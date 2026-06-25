@@ -542,6 +542,22 @@ class StandardRunner:
 
             # Note: We no longer save the entire session to memory at the end
             # Events are saved individually during execution (FIFO)
+            
+            # Save final response to the ADK session state so the agent remembers it
+            if final_response_text and final_response_text != "No response captured.":
+                from google.adk.events import Event
+                from google.genai.types import Content, Part
+                import time
+                import uuid
+                
+                assistant_event = Event(
+                    invocation_id=f"assistant_{int(time.time())}_{uuid.uuid4().hex[:8]}",
+                    author="model",
+                    content=Content(role="model", parts=[Part(text=final_response_text)]),
+                    timestamp=time.time(),
+                )
+                await session_service.append_event(session, assistant_event)
+                logger.debug("Appended assistant response to ADK session")
 
             logger.info("Agent execution completed successfully")
             return {

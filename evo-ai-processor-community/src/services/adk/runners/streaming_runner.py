@@ -404,6 +404,7 @@ class StreamingRunner:
                     new_message=content,
                 )
 
+                final_response_text = ""
                 # Stream events
                 async for event in events_async:
                     try:
@@ -440,6 +441,8 @@ class StreamingRunner:
                                     event_text = event_text.strip()
                                     
                                     if event_text:
+                                        final_response_text = event_text
+                                        
                                         # Get agent from database to check if load_memory is enabled
                                         from src.services.agent_service import get_agent
                                         agent = await get_agent(self.db, agent_id)
@@ -521,6 +524,23 @@ class StreamingRunner:
 
                 # Note: We no longer save the entire session to memory at the end
                 # Events are saved individually during execution (FIFO)
+                
+                # Save final response to the ADK session state so the agent remembers it
+                if final_response_text and final_response_text != "":
+                    from google.adk.events import Event
+                    from google.genai.types import Content, Part
+                    import time
+                    import uuid
+                    
+                    assistant_event = Event(
+                        invocation_id=f"assistant_{int(time.time())}_{uuid.uuid4().hex[:8]}",
+                        author="model",
+                        content=Content(role="model", parts=[Part(text=final_response_text)]),
+                        timestamp=time.time(),
+                    )
+                    await session_service.append_event(session, assistant_event)
+                    logger.debug("Appended assistant response to ADK session")
+
                 logger.info("Agent streaming execution completed successfully")
 
             except (GeneratorExit, asyncio.CancelledError):
