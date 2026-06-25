@@ -1270,7 +1270,7 @@ async def handle_message_send(
                                     background_db = SessionLocal()
                                     try:
                                         system_message = "[SISTEMA] O usuário foi transferido para você pelo atendente anterior. Apresente-se e continue o atendimento com base no histórico."
-                                        from src.models.agent_bot import AgentBot
+                                        from src.models.models import AgentBot
                                         new_agent = background_db.query(AgentBot).filter(AgentBot.id == new_agent_id).first()
                                         new_agent_audio_always = False
                                         if new_agent:
