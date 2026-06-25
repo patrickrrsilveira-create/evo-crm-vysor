@@ -156,6 +156,13 @@ async def transfer_conversation(
                 else:
                     available = [a['name'] for a in agents]
                     raise HandoffError(f"Agent with name '{to_agent_id}' not found in database. Available agents: {available}")
+            
+            # Resolve evo_core_agents ID to agent_bots ID
+            query_bot = "SELECT id FROM agent_bots WHERE outgoing_url LIKE '%' || $1"
+            bot_row = await connection.fetchrow(query_bot, to_agent_id)
+            if not bot_row:
+                raise HandoffError(f"Agent {to_agent_id} is not linked to any agent_bot.")
+            bot_id = str(bot_row['id'])
 
             # 1. Fetch current conversation state
             query_conv = """
@@ -185,7 +192,7 @@ async def transfer_conversation(
             """
             updated = await connection.fetchrow(
                 update_conv, 
-                uuid.UUID(to_agent_id), 
+                uuid.UUID(bot_id), 
                 uuid.UUID(conversation_id), 
                 current_version
             )
@@ -204,7 +211,7 @@ async def transfer_conversation(
                 transfer_id,
                 uuid.UUID(conversation_id),
                 current_agent_id,
-                uuid.UUID(to_agent_id),
+                uuid.UUID(bot_id),
                 reason
             )
 
