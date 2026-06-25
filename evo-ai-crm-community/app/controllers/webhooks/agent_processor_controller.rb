@@ -10,7 +10,7 @@ class Webhooks::AgentProcessorController < ActionController::API
       return
     end
 
-    conversation = Conversation.find_by(display_id: conversation_id)
+    conversation = Conversation.find_by(id: conversation_id)
     unless conversation
       render json: { error: 'Conversation not found' }, status: :not_found
       return

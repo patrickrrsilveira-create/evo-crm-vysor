@@ -37,7 +37,7 @@ class EventService:
             logger.info(f"Published handoff event for conversation {conversation_id} to Redis")
             
             # 2. Trigger Rails Webhook for UI/ActionCable Update
-            webhook_url = f"{os.getenv('EVO_AI_CRM_URL', 'http://localhost:3000')}/api/v1/webhooks/agent_processor/handoff"
+            webhook_url = f"{os.getenv('EVO_AI_CRM_URL', 'http://localhost:3000')}/webhooks/agent_processor/handoff"
             headers = {
                 "Authorization": f"Bearer {os.getenv('EVOAI_CRM_API_TOKEN', '')}",
                 "Content-Type": "application/json"

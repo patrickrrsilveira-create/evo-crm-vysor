@@ -322,9 +322,6 @@ Rails.application.routes.draw do
 
           # Gmail webhooks
           post 'gmail/pubsub', to: 'webhooks/gmail#pubsub'
-          
-          # AI Processor Webhooks
-          post 'agent_processor/handoff', to: 'webhooks/agent_processor#handoff'
         end
       end
 
@@ -726,6 +723,9 @@ Rails.application.routes.draw do
   post 'webhooks/whatsapp/evolution_go', to: 'webhooks/whatsapp#process_evolution_go_payload'
   post 'webhooks/whatsapp/zapi', to: 'webhooks/whatsapp#process_payload'
   post 'webhooks/evolution_hub', to: 'webhooks/evolution_hub#create'
+  
+  # AI Processor Webhooks
+  post 'webhooks/agent_processor/handoff', to: 'webhooks/agent_processor#handoff'
 
   # Bot Runtime postback
   post 'webhooks/bot_runtime/postback/:conversation_display_id', to: 'webhooks/bot_runtime#postback'
