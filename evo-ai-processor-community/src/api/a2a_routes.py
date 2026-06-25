@@ -1207,6 +1207,15 @@ async def handle_message_send(
         # HACK: NLP Tag Fallback. If LLM appends [TRANSFER_TO: Name], we manually execute handoff.
         # This completely bypasses any LiteLlm tool parsing issues with GPT-4.
         import re
+        
+        real_conversation_id = context_id
+        if metadata and "evoai_crm_data" in metadata:
+            crm_data = metadata["evoai_crm_data"]
+            if "conversation" in crm_data and isinstance(crm_data["conversation"], dict):
+                real_conversation_id = crm_data["conversation"].get("id", context_id)
+            else:
+                real_conversation_id = crm_data.get("conversation_id", context_id)
+
         transfer_pattern = r'\[TRANSFER_TO:\s*(.+?)\]'
         match = re.search(transfer_pattern, final_response, re.IGNORECASE)
         if match:
@@ -1214,9 +1223,6 @@ async def handle_message_send(
             logger.info(f"🔄 Intercepted TRANSFER_TO tag for agent: {target_agent_id}")
             try:
                 from src.services.handoff_service import transfer_conversation as atomic_transfer
-                real_conversation_id = context_id
-                if metadata and "evoai_crm_data" in metadata:
-                    real_conversation_id = metadata["evoai_crm_data"].get("conversation_id", context_id)
                     
                 transfer_result = await atomic_transfer(
                     conversation_id=real_conversation_id,
@@ -1268,7 +1274,7 @@ async def handle_message_send(
                 try:
                     from src.services.handoff_service import transfer_conversation as atomic_transfer
                     transfer_result = await atomic_transfer(
-                        conversation_id=context_id,
+                        conversation_id=real_conversation_id,
                         to_agent_id=target_agent_id,
                         reason=reason
                     )
