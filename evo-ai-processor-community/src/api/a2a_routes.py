@@ -1260,7 +1260,11 @@ async def handle_message_send(
                                         result = await runner.run_agent(
                                             agent_id=new_agent_id,
                                             external_id=context_id,
-                                            message=system_message
+                                            message=system_message,
+                                            session_service=session_service,
+                                            artifacts_service=artifacts_service,
+                                            memory_service=memory_service,
+                                            session_id=f"{context_id}_{new_agent_id}"
                                         )
                                         
                                         final_text = result.get("final_response", "")
@@ -1357,7 +1361,11 @@ async def handle_message_send(
                                             result = await runner.run_agent(
                                                 agent_id=new_agent_id,
                                                 external_id=context_id,
-                                                message=system_message
+                                                message=system_message,
+                                                session_service=session_service,
+                                                artifacts_service=artifacts_service,
+                                                memory_service=memory_service,
+                                                session_id=f"{context_id}_{new_agent_id}"
                                             )
                                             
                                             final_text = result.get("final_response", "")
