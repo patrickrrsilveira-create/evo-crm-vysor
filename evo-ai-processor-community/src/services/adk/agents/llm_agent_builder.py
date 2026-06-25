@@ -820,10 +820,13 @@ class LlmAgentBuilder:
         else:
             crm_tools_instructions.append(
                 "Transfer Conversation Tool (A2A Handoff): Available. "
-                "To transfer the conversation to another specialized AI agent (like 'Especialista Ganader'), "
-                "you must use the `transfer_conversation` function. "
-                "If you do not know the target agent's UUID, you can pass their exact name as the `target_agent_id` argument."
+                "If the user asks for a specific agent (like 'Especialista Ganader') or you need to transfer them, "
+                "you MUST invoke the `transfer_conversation` tool. "
+                "You can pass the EXACT NAME of the agent as the `target_agent_id` argument. "
+                "Invoke the tool natively; do NOT write pseudo-XML like <tool_call> in your response. "
+                "If you say you are transferring, you MUST actually call the tool."
             )
+
 
         # Build a <product-catalog> block from the products attached to this agent.
         # The CRM populates `assigned_products` in agent.config via the
