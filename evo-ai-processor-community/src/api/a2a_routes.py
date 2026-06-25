@@ -1497,7 +1497,6 @@ async def handle_message_send(
             
             # If it's a UUID, decrypt it using the DB
             if api_key and db:
-                import uuid
                 from src.services.apikey_service import get_decrypted_api_key
                 try:
                     key_uuid = uuid.UUID(api_key)
@@ -1737,7 +1736,6 @@ async def handle_message_stream(
             
             # If it's a UUID, decrypt it using the DB
             if api_key and db:
-                import uuid
                 from src.services.apikey_service import get_decrypted_api_key
                 try:
                     key_uuid = uuid.UUID(api_key)
