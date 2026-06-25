@@ -3,9 +3,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Button } from '@evoapi/design-system/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@evoapi/design-system/select';
 import { Label } from '@evoapi/design-system/label';
-import AgentBotsService from '@/services/channels/agentBotsService';
 import { toast } from 'sonner';
-import api from "@/services/core/api";
+import { knowledgeBasesService } from '@/services/knowledgeBases';
+import agentsService from '@/services/agents/agentService';
 
 interface LinkAgentModalProps {
   isOpen: boolean;
@@ -34,8 +34,9 @@ export const LinkAgentModal: React.FC<LinkAgentModalProps> = ({
   const fetchAgents = async () => {
     setIsFetching(true);
     try {
-      const response = await AgentBotsService.getAll();
-      setAgents((response as any).data || response);
+      const response = await agentsService.listAgents(1, 200);
+      const list = (response as any)?.data || (response as any)?.agents || response || [];
+      setAgents(Array.isArray(list) ? list : []);
     } catch (error) {
       toast.error('Erro ao carregar agentes');
     } finally {
@@ -49,9 +50,7 @@ export const LinkAgentModal: React.FC<LinkAgentModalProps> = ({
 
     setIsLoading(true);
     try {
-      await api.post(`/knowledge_bases/${knowledgeBaseId}/agent_bots`, {
-        agent_bot_id: selectedAgentId
-      });
+      await knowledgeBasesService.linkAgentBot(knowledgeBaseId, selectedAgentId);
       toast.success('Agente vinculado com sucesso!');
       onSuccess();
       onClose();
@@ -74,7 +73,7 @@ export const LinkAgentModal: React.FC<LinkAgentModalProps> = ({
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
           <div className="space-y-2">
-            <Label htmlFor="agent">Agente (Bot)</Label>
+            <Label htmlFor="agent">Agente de IA</Label>
             <Select value={selectedAgentId} onValueChange={setSelectedAgentId} disabled={isFetching || isLoading}>
               <SelectTrigger>
                 <SelectValue placeholder={isFetching ? "Carregando..." : "Selecione um agente"} />

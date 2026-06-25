@@ -41,28 +41,34 @@ export const knowledgeBasesService = {
     return response.data;
   },
 
+  // ---- Legacy: knowledge page lists bots linked via agent_bots (CRM legacy bots) ----
   getAgentBots: async (id: number | string): Promise<any> => {
     const response = await api.get(`/knowledge_bases/${id}/agent_bots`);
     return response.data;
   },
 
+  // ---- New: linking evo_core AI agents to knowledge bases ----
+
+  // Get all knowledge bases linked to an evo_core agent
   getAgentLinkedBases: async (agentId: number | string): Promise<KnowledgeBase[]> => {
     try {
-      const response = await api.get(`/agent_bots/${agentId}`);
-      return response.data?.payload?.knowledge_bases || response.data?.knowledge_bases || [];
+      const response = await api.get(`/ai_agents/${agentId}/knowledge_bases`);
+      return (response.data as any)?.data || response.data || [];
     } catch (e) {
       console.error('Error fetching linked bases:', e);
       return [];
     }
   },
 
+  // Link an evo_core agent to a knowledge base
   linkAgentBot: async (baseId: number | string, agentId: number | string): Promise<any> => {
-    const response = await api.post(`/knowledge_bases/${baseId}/agent_bots`, { agent_bot_id: agentId });
+    const response = await api.post(`/ai_agents/${agentId}/knowledge_bases`, { knowledge_base_id: baseId });
     return response.data;
   },
 
+  // Unlink an evo_core agent from a knowledge base
   unlinkAgentBot: async (baseId: number | string, agentId: number | string): Promise<any> => {
-    const response = await api.delete(`/knowledge_bases/${baseId}/agent_bots/${agentId}`);
+    const response = await api.delete(`/ai_agents/${agentId}/knowledge_bases/${baseId}`);
     return response.data;
   },
 
