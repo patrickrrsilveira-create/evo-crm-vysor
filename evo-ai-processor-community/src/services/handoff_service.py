@@ -138,13 +138,24 @@ async def transfer_conversation(
                 uuid.UUID(to_agent_id)
             except ValueError:
                 logger.info(f"to_agent_id '{to_agent_id}' is not a UUID, attempting name resolution.")
-                query_agent = "SELECT id FROM evo_core_agents WHERE name ILIKE $1 LIMIT 1"
-                agent_row = await connection.fetchrow(query_agent, f"%{to_agent_id}%")
-                if agent_row:
-                    to_agent_id = str(agent_row['id'])
-                    logger.info(f"Resolved agent name to UUID: {to_agent_id}")
+                query_agents = "SELECT id, name FROM evo_core_agents"
+                agents = await connection.fetch(query_agents)
+                
+                import re
+                matched_id = None
+                target_clean = re.sub(r'[^a-z0-9]', '', to_agent_id.lower())
+                for agent in agents:
+                    db_name_clean = re.sub(r'[^a-z0-9]', '', agent['name'].lower())
+                    if db_name_clean in target_clean or target_clean in db_name_clean:
+                        matched_id = str(agent['id'])
+                        logger.info(f"Fuzzy matched agent name '{agent['name']}' to UUID: {matched_id}")
+                        break
+                        
+                if matched_id:
+                    to_agent_id = matched_id
                 else:
-                    raise HandoffError(f"Agent with name '{to_agent_id}' not found in database.")
+                    available = [a['name'] for a in agents]
+                    raise HandoffError(f"Agent with name '{to_agent_id}' not found in database. Available agents: {available}")
 
             # 1. Fetch current conversation state
             query_conv = """
