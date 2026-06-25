@@ -1129,7 +1129,7 @@ async def handle_message_send(
             params["metadata"] = metadata
         
         if respond_in_audio == "always" or (respond_in_audio == "when_client_asks" and has_audio):
-            text += "\n\n[SYSTEM DIRECTIVE]: You must call the `text_to_speech` tool using the exact text of your response to generate the audio. Format the text exactly inside SSML tags to increase speed: <speak><prosody rate=\"1.2\">YOUR TEXT HERE</prosody></speak>. Do not just reply with text, you MUST execute the tool call."
+            text += "\n\n[SYSTEM DIRECTIVE]: You must call the `text_to_speech` tool using the exact text of your response to generate the audio. Format the text exactly inside SSML tags to increase speed: <speak><prosody rate=\"1.3\">YOUR TEXT HERE</prosody></speak>. Do not just reply with text, you MUST execute the tool call."
             logger.info("🔊 Appended TTS tool directive because user sent audio or agent is configured to always respond in audio")
 
     logger.info(f"📝 Extracted text: {text}")
@@ -1269,7 +1269,7 @@ async def handle_message_send(
                                     
                                     system_message = "[SISTEMA] O usuário foi transferido para você pelo atendente anterior. Apresente-se e continue o atendimento com base no histórico."
                                     if has_audio:
-                                        system_message += "\n\n[SYSTEM DIRECTIVE]: You must call the `text_to_speech` tool using the exact text of your response to generate the audio. Format the text exactly inside SSML tags to increase speed: <speak><prosody rate=\"1.2\">YOUR TEXT HERE</prosody></speak>. Do not just reply with text, you MUST execute the tool call."
+                                        system_message += "\n\n[SYSTEM DIRECTIVE]: You must call the `text_to_speech` tool using the exact text of your response to generate the audio. Format the text exactly inside SSML tags to increase speed: <speak><prosody rate=\"1.3\">YOUR TEXT HERE</prosody></speak>. Do not just reply with text, you MUST execute the tool call."
                                     background_db = SessionLocal()
                                     try:
                                         runner = StandardRunner(db=background_db)
@@ -1333,6 +1333,38 @@ async def handle_message_send(
                                                         files_payload = {"attachments[]": (name, file_bytes, mime_type)}
                                                 except Exception as e:
                                                     logger.error(f"Failed to decode artifact in auto-trigger: {e}")
+                                            
+                                            if not filename and final_text and has_audio:
+                                                try:
+                                                    from src.models.agent_bot import AgentBot
+                                                    new_agent = background_db.query(AgentBot).filter(AgentBot.id == new_agent_id).first()
+                                                    if new_agent:
+                                                        tts_config = (new_agent.config or {}).get("integrations", {}).get("tts") or (new_agent.config or {}).get("integrations", {}).get("elevenlabs")
+                                                        if tts_config:
+                                                            api_key = str(tts_config.get("apiKey") or "").strip()
+                                                            if api_key:
+                                                                from src.services.apikey_service import get_decrypted_api_key
+                                                                import uuid
+                                                                try:
+                                                                    key_uuid = uuid.UUID(api_key)
+                                                                    decrypted = get_decrypted_api_key(background_db, key_uuid)
+                                                                    if decrypted: api_key = decrypted
+                                                                except ValueError: pass
+                                                                
+                                                            if api_key and api_key.lower() not in ("null", "none", "undefined", "false", "0"):
+                                                                from src.services.adk.tts.factory import get_tts_provider
+                                                                from src.services.adk.tools.text_to_speech import _convert_to_ogg_opus, _clean_text_for_tts
+                                                                provider_name = tts_config.get("provider", "elevenlabs")
+                                                                provider = get_tts_provider(provider_name)
+                                                                cleaned_text = _clean_text_for_tts(final_text)
+                                                                audio_bytes = await provider.generate_speech(cleaned_text, tts_config)
+                                                                audio_bytes = _convert_to_ogg_opus(audio_bytes)
+                                                                import time
+                                                                name = f"audio_fallback_{int(time.time())}.ogg"
+                                                                files_payload = {"attachments[]": (name, audio_bytes, "audio/ogg")}
+                                                                final_text = "" # limpa texto no handoff pra não mandar duplicado
+                                                except Exception as e:
+                                                    logger.error(f"Error generating fallback audio for handoff: {e}")
 
                                         if final_text or files_payload:
                                             crm_client = EvoCrmClient()
@@ -1830,7 +1862,7 @@ async def handle_message_stream(
                 has_audio = metadata.get("has_audio", False) or has_audio_in_files
             
             if respond_in_audio == "always" or (respond_in_audio == "when_client_asks" and has_audio):
-                text += "\n\n[SYSTEM DIRECTIVE]: You must call the `text_to_speech` tool using the exact text of your response to generate the audio. Format the text exactly inside SSML tags to increase speed: <speak><prosody rate=\"1.2\">YOUR TEXT HERE</prosody></speak>. Do not just reply with text, you MUST execute the tool call."
+                text += "\n\n[SYSTEM DIRECTIVE]: You must call the `text_to_speech` tool using the exact text of your response to generate the audio. Format the text exactly inside SSML tags to increase speed: <speak><prosody rate=\"1.3\">YOUR TEXT HERE</prosody></speak>. Do not just reply with text, you MUST execute the tool call."
                 logger.info("🔊 Appended TTS tool directive in stream because user sent audio or agent is configured to always respond in audio")
 
     # Extract and combine conversation history
