@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@evoapi/design-system/label';
 import { toast } from 'sonner';
 import { knowledgeBasesService } from '@/services/knowledgeBases';
-import agentsService from '@/services/agents/agentService';
+import { agentsService } from '@/services/agents/agentService';
 
 interface LinkAgentModalProps {
   isOpen: boolean;

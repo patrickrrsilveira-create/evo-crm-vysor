@@ -32,8 +32,11 @@ export const availableModels = [
   { value: 'openai/gpt-4-32k', label: 'GPT-4 32K', provider: 'openai' },
   { value: 'openai/gpt-3.5-turbo', label: 'GPT-3.5 Turbo', provider: 'openai' },
   { value: 'openai/gpt-3.5-turbo-16k', label: 'GPT-3.5 Turbo 16K', provider: 'openai' },
-  { value: 'gemini/gemini-2.5-pro-preview-05-06', label: 'Gemini 2.5 Pro (Preview)', provider: 'gemini' },
-  { value: 'gemini/gemini-2.5-flash-preview-04-17', label: 'Gemini 2.5 Flash (Preview)', provider: 'gemini' },
+  { value: 'gemini/gemini-2.5-pro', label: 'Gemini 2.5 Pro', provider: 'gemini' },
+  { value: 'gemini/gemini-2.5-flash', label: 'Gemini 2.5 Flash', provider: 'gemini' },
+  { value: 'gemini/gemini-2.5-flash-lite', label: 'Gemini 2.5 Flash Lite', provider: 'gemini' },
+  { value: 'gemini/gemini-2.5-pro-preview-05-06', label: 'Gemini 2.5 Pro (Preview 05-06)', provider: 'gemini' },
+  { value: 'gemini/gemini-2.5-flash-preview-04-17', label: 'Gemini 2.5 Flash (Preview 04-17)', provider: 'gemini' },
   { value: 'gemini/gemini-2.0-flash', label: 'Gemini 2.0 Flash', provider: 'gemini' },
   { value: 'gemini/gemini-2.0-flash-lite', label: 'Gemini 2.0 Flash-Lite', provider: 'gemini' },
   { value: 'gemini/gemini-2.0-flash-exp', label: 'Gemini 2.0 Flash Exp', provider: 'gemini' },
@@ -41,6 +44,10 @@ export const availableModels = [
   { value: 'gemini/gemini-1.5-pro', label: 'Gemini 1.5 Pro', provider: 'gemini' },
   { value: 'gemini/gemini-1.5-flash', label: 'Gemini 1.5 Flash', provider: 'gemini' },
   { value: 'gemini/gemini-1.5-flash-8b', label: 'Gemini 1.5 Flash-8B', provider: 'gemini' },
+  { value: 'anthropic/claude-opus-4-5', label: 'Claude Opus 4.5', provider: 'anthropic' },
+  { value: 'anthropic/claude-sonnet-4-5', label: 'Claude Sonnet 4.5', provider: 'anthropic' },
+  { value: 'anthropic/claude-opus-4-0', label: 'Claude Opus 4', provider: 'anthropic' },
+  { value: 'anthropic/claude-sonnet-4-0', label: 'Claude Sonnet 4', provider: 'anthropic' },
   { value: 'anthropic/claude-3-7-sonnet-20250219', label: 'Claude 3.7 Sonnet', provider: 'anthropic' },
   { value: 'anthropic/claude-3-5-sonnet-20241022', label: 'Claude 3.5 Sonnet v2', provider: 'anthropic' },
   { value: 'anthropic/claude-3-5-sonnet-20240620', label: 'Claude 3.5 Sonnet', provider: 'anthropic' },
@@ -48,22 +55,43 @@ export const availableModels = [
   { value: 'anthropic/claude-3-opus-20240229', label: 'Claude 3 Opus', provider: 'anthropic' },
   { value: 'anthropic/claude-3-sonnet-20240229', label: 'Claude 3 Sonnet', provider: 'anthropic' },
   { value: 'anthropic/claude-3-haiku-20240307', label: 'Claude 3 Haiku', provider: 'anthropic' },
-  { value: 'openrouter/meta-llama/llama-3.3-70b-instruct', label: 'Llama 3.3 70B Instruct', provider: 'openrouter' },
-  { value: 'openrouter/meta-llama/llama-3.3-70b-instruct:free', label: 'Llama 3.3 70B (Free)', provider: 'openrouter' },
-  { value: 'openrouter/meta-llama/llama-4-maverick', label: 'Llama 4 Maverick', provider: 'openrouter' },
-  { value: 'openrouter/qwen/qwen-2.5-72b-instruct', label: 'Qwen 2.5 72B Instruct', provider: 'openrouter' },
-  { value: 'openrouter/qwen/qwen-2.5-32b-instruct', label: 'Qwen 2.5 32B Instruct', provider: 'openrouter' },
-  { value: 'openrouter/qwen/qwen-2.5-7b-instruct', label: 'Qwen 2.5 7B Instruct', provider: 'openrouter' },
-  { value: 'openrouter/deepseek/deepseek-r1-distill-llama-70b', label: 'DeepSeek R1 Distill Llama 70B', provider: 'openrouter' },
-  { value: 'openrouter/deepseek/deepseek-r1-distill-qwen-32b', label: 'DeepSeek R1 Distill Qwen 32B', provider: 'openrouter' },
+  { value: 'openrouter/google/gemini-2.5-pro', label: 'Gemini 2.5 Pro (OpenRouter)', provider: 'openrouter' },
+  { value: 'openrouter/google/gemini-2.5-flash', label: 'Gemini 2.5 Flash (OpenRouter)', provider: 'openrouter' },
+  { value: 'openrouter/google/gemini-2.5-flash-lite', label: 'Gemini 2.5 Flash Lite (OpenRouter)', provider: 'openrouter' },
+  { value: 'openrouter/google/gemini-2.0-flash-exp', label: 'Gemini 2.0 Flash (OpenRouter)', provider: 'openrouter' },
+  { value: 'openrouter/openai/gpt-4.1', label: 'GPT-4.1 (OpenRouter)', provider: 'openrouter' },
+  { value: 'openrouter/openai/gpt-4.1-mini', label: 'GPT-4.1 Mini (OpenRouter)', provider: 'openrouter' },
+  { value: 'openrouter/openai/gpt-4.1-nano', label: 'GPT-4.1 Nano (OpenRouter)', provider: 'openrouter' },
   { value: 'openrouter/openai/gpt-4o', label: 'GPT-4o (OpenRouter)', provider: 'openrouter' },
   { value: 'openrouter/openai/gpt-4o-mini', label: 'GPT-4o Mini (OpenRouter)', provider: 'openrouter' },
+  { value: 'openrouter/anthropic/claude-sonnet-4-5', label: 'Claude Sonnet 4.5 (OpenRouter)', provider: 'openrouter' },
+  { value: 'openrouter/anthropic/claude-opus-4-5', label: 'Claude Opus 4.5 (OpenRouter)', provider: 'openrouter' },
+  { value: 'openrouter/anthropic/claude-3-7-sonnet', label: 'Claude 3.7 Sonnet (OpenRouter)', provider: 'openrouter' },
   { value: 'openrouter/anthropic/claude-3-5-sonnet', label: 'Claude 3.5 Sonnet (OpenRouter)', provider: 'openrouter' },
   { value: 'openrouter/anthropic/claude-3-5-haiku', label: 'Claude 3.5 Haiku (OpenRouter)', provider: 'openrouter' },
-  { value: 'openrouter/google/gemini-2.0-flash-exp', label: 'Gemini 2.0 Flash (OpenRouter)', provider: 'openrouter' },
-  { value: 'deepseek/deepseek-chat', label: 'DeepSeek Chat', provider: 'deepseek' },
+  { value: 'openrouter/meta-llama/llama-4-maverick', label: 'Llama 4 Maverick (OpenRouter)', provider: 'openrouter' },
+  { value: 'openrouter/meta-llama/llama-4-scout', label: 'Llama 4 Scout (OpenRouter)', provider: 'openrouter' },
+  { value: 'openrouter/meta-llama/llama-3.3-70b-instruct', label: 'Llama 3.3 70B Instruct (OpenRouter)', provider: 'openrouter' },
+  { value: 'openrouter/meta-llama/llama-3.3-70b-instruct:free', label: 'Llama 3.3 70B Free (OpenRouter)', provider: 'openrouter' },
+  { value: 'openrouter/deepseek/deepseek-r1', label: 'DeepSeek R1 (OpenRouter)', provider: 'openrouter' },
+  { value: 'openrouter/deepseek/deepseek-chat-v3-0324', label: 'DeepSeek V3 (OpenRouter)', provider: 'openrouter' },
+  { value: 'openrouter/deepseek/deepseek-r1-distill-llama-70b', label: 'DeepSeek R1 Distill Llama 70B (OpenRouter)', provider: 'openrouter' },
+  { value: 'openrouter/qwen/qwen-2.5-72b-instruct', label: 'Qwen 2.5 72B Instruct (OpenRouter)', provider: 'openrouter' },
+  { value: 'openrouter/qwen/qwq-32b', label: 'QwQ 32B (OpenRouter)', provider: 'openrouter' },
+  { value: 'openrouter/x-ai/grok-3', label: 'Grok 3 (OpenRouter)', provider: 'openrouter' },
+  { value: 'openrouter/x-ai/grok-3-mini', label: 'Grok 3 Mini (OpenRouter)', provider: 'openrouter' },
+  { value: 'openrouter/mistralai/mistral-large', label: 'Mistral Large (OpenRouter)', provider: 'openrouter' },
+  { value: 'deepseek/deepseek-chat', label: 'DeepSeek Chat (V3)', provider: 'deepseek' },
+  { value: 'deepseek/deepseek-chat-v3-0324', label: 'DeepSeek V3-0324', provider: 'deepseek' },
   { value: 'deepseek/deepseek-coder', label: 'DeepSeek Coder', provider: 'deepseek' },
-  { value: 'deepseek/deepseek-reasoner', label: 'DeepSeek Reasoner (R1)', provider: 'deepseek' },
+  { value: 'deepseek/deepseek-reasoner', label: 'DeepSeek R1 (Reasoner)', provider: 'deepseek' },
+  { value: 'xai/grok-3', label: 'Grok 3', provider: 'xai' },
+  { value: 'xai/grok-3-mini', label: 'Grok 3 Mini', provider: 'xai' },
+  { value: 'xai/grok-2-1212', label: 'Grok 2', provider: 'xai' },
+  { value: 'mistral/mistral-large-latest', label: 'Mistral Large Latest', provider: 'mistral' },
+  { value: 'mistral/mistral-medium-latest', label: 'Mistral Medium Latest', provider: 'mistral' },
+  { value: 'mistral/mistral-small-latest', label: 'Mistral Small Latest', provider: 'mistral' },
+  { value: 'mistral/codestral-latest', label: 'Codestral Latest', provider: 'mistral' },
   { value: 'together_ai/meta-llama/Meta-Llama-3.3-70B-Instruct-Turbo', label: 'Llama 3.3 70B Instruct Turbo', provider: 'together_ai' },
   { value: 'together_ai/togethercomputer/llama-2-70b-chat', label: 'Llama 2 70B Chat', provider: 'together_ai' },
   { value: 'together_ai/togethercomputer/Llama-2-7B-32K-Instruct', label: 'Llama 2 7B 32K Instruct', provider: 'together_ai' },
@@ -317,12 +345,21 @@ const ModelSelector = ({
           )}
 
           {(isCustomMode || customProviderSelected) && (
-            <Input
-              value={value}
-              onChange={e => onChange(e.target.value)}
-              placeholder={customProviderSelected ? 'model' : 'provider/model'}
-              className={`${className} ${!customProviderSelected ? 'mt-2' : ''}`}
-            />
+            <div className="space-y-1">
+              <Input
+                autoFocus
+                value={value}
+                onChange={e => onChange(e.target.value)}
+                placeholder={customProviderSelected ? 'model-name' : 'provider/model-name (ex: openrouter/google/gemini-2.5-pro)'}
+                className={`${className} ${!customProviderSelected ? 'mt-2' : ''}`}
+              />
+              {!customProviderSelected && (
+                <p className="text-xs text-muted-foreground">
+                  Digite no formato <strong>provider/model</strong>. Ex: <code>openrouter/google/gemini-2.5-pro</code>.
+                  {' '}<button type="button" className="text-primary underline" onClick={() => { setIsCustomMode(false); onChange(''); }}>Voltar à lista</button>
+                </p>
+              )}
+            </div>
           )}
         </>
       )}
