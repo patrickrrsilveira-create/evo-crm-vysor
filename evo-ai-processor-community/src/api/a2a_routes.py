@@ -1231,7 +1231,6 @@ async def handle_message_send(
                 )
                 if transfer_result.get("success"):
                     logger.info(f"✅ Handoff manual concluído para {target_agent_id}")
-                    # 2. Publish Handoff Event to notify the CRM and other services
                     try:
                         from src.services.event_service import get_event_service
                         event_service = get_event_service()
@@ -1240,6 +1239,49 @@ async def handle_message_send(
                             payload=transfer_result
                         )
                         logger.info(f"📢 Handoff event published successfully for {real_conversation_id}")
+                        
+                        # 3. Trigger new agent in background
+                        new_agent_id = transfer_result.get("to_agent_id")
+                        if new_agent_id:
+                            async def trigger_new_agent():
+                                try:
+                                    import asyncio
+                                    from src.services.adk.runners.standard_runner import StandardRunner
+                                    from src.services.adk.tools.evo_crm.base import EvoCrmClient
+                                    
+                                    await asyncio.sleep(2) # Give CRM time to process
+                                    
+                                    system_message = "[SISTEMA] O usuário foi transferido para você pelo atendente anterior. Apresente-se e continue o atendimento com base no histórico."
+                                    runner = StandardRunner()
+                                    
+                                    # We use context_id for the external_id to keep the same session lineage if possible
+                                    logger.info(f"🤖 Auto-triggering new agent {new_agent_id} after handoff")
+                                    result = await runner.run_agent(
+                                        agent_id=new_agent_id,
+                                        external_id=context_id,
+                                        message=system_message
+                                    )
+                                    
+                                    final_text = result.get("final_response", "")
+                                    if final_text:
+                                        crm_client = EvoCrmClient()
+                                        await crm_client.post(
+                                            f"/api/v1/conversations/{real_conversation_id}/messages",
+                                            json_data={
+                                                "content": final_text,
+                                                "message_type": "outgoing",
+                                                "private": False
+                                            }
+                                        )
+                                        logger.info(f"✅ Successfully auto-triggered new agent {new_agent_id} and posted reply to conversation {real_conversation_id}")
+                                    else:
+                                        logger.warning(f"⚠️ Auto-triggered new agent {new_agent_id} but it returned empty response")
+                                except Exception as inner_e:
+                                    logger.error(f"❌ Error auto-triggering new agent: {inner_e}")
+                            
+                            import asyncio
+                            asyncio.create_task(trigger_new_agent())
+                            
                     except Exception as ev_err:
                         logger.error(f"⚠️ Failed to publish handoff event: {ev_err}")
                 else:
@@ -1280,6 +1322,58 @@ async def handle_message_send(
                     )
                     if transfer_result.get("success"):
                         logger.info(f"✅ Handoff manual concluído para {target_agent_id}")
+                        try:
+                            from src.services.event_service import get_event_service
+                            event_service = get_event_service()
+                            event_service.publish_handoff_event(
+                                conversation_id=real_conversation_id,
+                                payload=transfer_result
+                            )
+                            logger.info(f"📢 Handoff event published successfully for {real_conversation_id}")
+                            
+                            # 3. Trigger new agent in background
+                            new_agent_id = transfer_result.get("to_agent_id")
+                            if new_agent_id:
+                                async def trigger_new_agent_tool():
+                                    try:
+                                        import asyncio
+                                        from src.services.adk.runners.standard_runner import StandardRunner
+                                        from src.services.adk.tools.evo_crm.base import EvoCrmClient
+                                        
+                                        await asyncio.sleep(2) # Give CRM time to process
+                                        
+                                        system_message = "[SISTEMA] O usuário foi transferido para você pelo atendente anterior. Apresente-se e continue o atendimento com base no histórico."
+                                        runner = StandardRunner()
+                                        
+                                        logger.info(f"🤖 Auto-triggering new agent {new_agent_id} after handoff")
+                                        result = await runner.run_agent(
+                                            agent_id=new_agent_id,
+                                            external_id=context_id,
+                                            message=system_message
+                                        )
+                                        
+                                        final_text = result.get("final_response", "")
+                                        if final_text:
+                                            crm_client = EvoCrmClient()
+                                            await crm_client.post(
+                                                f"/api/v1/conversations/{real_conversation_id}/messages",
+                                                json_data={
+                                                    "content": final_text,
+                                                    "message_type": "outgoing",
+                                                    "private": False
+                                                }
+                                            )
+                                            logger.info(f"✅ Successfully auto-triggered new agent {new_agent_id} and posted reply to conversation {real_conversation_id}")
+                                        else:
+                                            logger.warning(f"⚠️ Auto-triggered new agent {new_agent_id} but it returned empty response")
+                                    except Exception as inner_e:
+                                        logger.error(f"❌ Error auto-triggering new agent: {inner_e}")
+                                
+                                import asyncio
+                                asyncio.create_task(trigger_new_agent_tool())
+                                
+                        except Exception as ev_err:
+                            logger.error(f"⚠️ Failed to publish handoff event: {ev_err}")
                     else:
                         logger.error(f"❌ Falha no handoff manual: {transfer_result.get('error')}")
                 except Exception as e:
