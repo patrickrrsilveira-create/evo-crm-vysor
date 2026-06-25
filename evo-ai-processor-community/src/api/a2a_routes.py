@@ -1203,6 +1203,48 @@ async def handle_message_send(
         )
 
         final_response = result.get("final_response", "No response")
+        
+        # HACK: Some LLMs (like GPT-4 via LiteLlm/OpenRouter) return the tool call as raw text instead of executing it natively.
+        # We manually intercept <tool_call:transfer_conversation{...}> here to ensure A2A handoff works perfectly.
+        import re
+        pattern = r'<tool_call:transfer_conversation\{(.*?)\}>'
+        match = re.search(pattern, final_response)
+        if match:
+            args_str = match.group(1)
+            args = {}
+            arg_pattern = r'(\w+):<\|"\|>(.*?)<\|"\|>'
+            for arg_match in re.finditer(arg_pattern, args_str):
+                args[arg_match.group(1)] = arg_match.group(2)
+            
+            # Fallback for standard quotes
+            if not args:
+                arg_pattern2 = r'(\w+):"(.*?)"'
+                for arg_match in re.finditer(arg_pattern2, args_str):
+                    args[arg_match.group(1)] = arg_match.group(2)
+            
+            target_agent_id = args.get("target_agent_id")
+            reason = args.get("reason", "Transferência solicitada pelo LLM.")
+            
+            if target_agent_id:
+                logger.info(f"🔄 Intercepted raw tool call for transfer_conversation to {target_agent_id}")
+                try:
+                    from src.services.handoff_service import transfer_conversation as atomic_transfer
+                    transfer_result = await atomic_transfer(
+                        conversation_id=context_id,
+                        to_agent_id=target_agent_id,
+                        reason=reason
+                    )
+                    if transfer_result.get("success"):
+                        logger.info(f"✅ Handoff manual concluído para {target_agent_id}")
+                    else:
+                        logger.error(f"❌ Falha no handoff manual: {transfer_result.get('error')}")
+                except Exception as e:
+                    logger.error(f"❌ Erro ao executar handoff manual: {e}")
+                    
+            # Clean up the response to show to the user
+            final_response = re.sub(pattern, '', final_response).strip()
+            result["final_response"] = final_response
+
         logger.info(f"✅ Agent response: {final_response}")
 
         # Log what we're about to send to create_task_response
