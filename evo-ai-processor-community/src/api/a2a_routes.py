@@ -1265,9 +1265,11 @@ async def handle_message_send(
                                     from src.services.adk.tools.evo_crm.base import EvoCrmClient
                                     from src.config.database import SessionLocal
                                     
-                                    await asyncio.sleep(2) # Give CRM time to process
+                                    await asyncio.sleep(8) # Give CRM time to process and send the first agent's message
                                     
                                     system_message = "[SISTEMA] O usuário foi transferido para você pelo atendente anterior. Apresente-se e continue o atendimento com base no histórico."
+                                    if has_audio:
+                                        system_message += "\n\n[SYSTEM DIRECTIVE]: You must call the `text_to_speech` tool using the exact text of your response to generate the audio. Do not just reply with text, you MUST execute the tool call."
                                     background_db = SessionLocal()
                                     try:
                                         runner = StandardRunner(db=background_db)
