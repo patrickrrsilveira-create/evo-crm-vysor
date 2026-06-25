@@ -804,24 +804,24 @@ class LlmAgentBuilder:
                     name = rule.get("name") or rule.get("agentName") or "Unknown"
                     agent_id_val = rule.get("agentId")
                     instructions = rule.get("instructions", "")
-                    line = f"- '{name}' (target_agent_id: {agent_id_val})"
+                    line = f"- {name}"
                     if instructions:
                         line += f" — {instructions}"
                     a2a_agent_lines.append(line)
 
         if a2a_agent_lines:
             crm_tools_instructions.append(
-                "Transfer Conversation Tool (A2A Handoff): Available. "
-                "You MUST use the transfer_conversation tool to transfer the conversation to a specialized AI agent when the user's request matches one of the agents below. "
-                "Do NOT just say you will transfer — you MUST call the transfer_conversation tool with the correct target_agent_id UUID.\n"
+                "Transferring Conversations: If you need to transfer the customer to another specialized AI agent, "
+                "you MUST append the exact string [TRANSFER_TO: <Agent Name>] at the very end of your response. "
+                "Do NOT just say you will transfer — you MUST include the tag.\n"
                 "Available agents:\n" + "\n".join(a2a_agent_lines) + "\n"
-                "When the user mentions a topic that matches an agent, call transfer_conversation immediately with the target_agent_id and a reason."
+                "For example: 'Vou encaminhar você para o Roberto. [TRANSFER_TO: roberto]'"
             )
         else:
             crm_tools_instructions.append(
-                "Transferring Conversations: If you need to transfer the customer to another specialized AI agent (like 'Especialista Ganader'), "
+                "Transferring Conversations: If you need to transfer the customer to another specialized AI agent, "
                 "you MUST append the exact string [TRANSFER_TO: <Agent Name>] at the very end of your response. "
-                "For example: 'Vou encaminhar você para o Especialista Ganader. [TRANSFER_TO: Especialista Ganader]'"
+                "For example: 'Vou encaminhar você para o Roberto. [TRANSFER_TO: roberto]'"
             )
 
 
