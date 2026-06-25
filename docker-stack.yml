@@ -2,7 +2,7 @@ version: "3.8"
 
 services:
   evo_gateway:
-    image: ghcr.io/patrickrsilveira/evo-crm-vysor-evo-crm-gateway:latest
+    image: ghcr.io/patrickrrsilveira-create/evo-crm-vysor-evo-crm-gateway:latest
     networks:
       - minha_rede
     deploy:
@@ -23,7 +23,7 @@ services:
         - traefik.http.services.evo_gateway.loadbalancer.passHostHeader=true
 
   evo_auth:
-    image: ghcr.io/patrickrsilveira/evo-crm-vysor-evo-auth-service-community:latest
+    image: ghcr.io/patrickrrsilveira-create/evo-crm-vysor-evo-auth-service-community:latest
     command: bash -c "bundle exec rails db:migrate 2>&1 || echo 'Migration had errors, continuing...'; bundle exec rails s -p 3001 -b 0.0.0.0"
     environment:
       RAILS_ENV: production
@@ -58,7 +58,7 @@ services:
         condition: any
 
   evo_auth_sidekiq:
-    image: ghcr.io/patrickrsilveira/evo-crm-vysor-evo-auth-service-community:latest
+    image: ghcr.io/patrickrrsilveira-create/evo-crm-vysor-evo-auth-service-community:latest
     command: ["bundle", "exec", "sidekiq", "-C", "config/sidekiq.yml"]
     healthcheck:
       disable: true
@@ -92,7 +92,7 @@ services:
         condition: any
 
   evo_crm:
-    image: ghcr.io/patrickrsilveira/evo-crm-vysor-evo-ai-crm-community:latest
+    image: ghcr.io/patrickrrsilveira-create/evo-crm-vysor-evo-ai-crm-community:latest
     command: sh -c "until wget -qO- http://evo_auth:3001/health >/dev/null 2>&1; do echo 'Waiting for auth...'; sleep 5; done; bundle exec rails db:migrate 2>&1 || echo 'Migration had errors, continuing...'; bundle exec rails s -p 3000 -b 0.0.0.0"
     environment:
       RAILS_ENV: production
@@ -134,7 +134,7 @@ services:
         condition: any
 
   evo_crm_sidekiq:
-    image: ghcr.io/patrickrsilveira/evo-crm-vysor-evo-ai-crm-community:latest
+    image: ghcr.io/patrickrrsilveira-create/evo-crm-vysor-evo-ai-crm-community:latest
     command: ["bundle", "exec", "sidekiq", "-C", "config/sidekiq.yml"]
     environment:
       RAILS_ENV: production
@@ -169,7 +169,7 @@ services:
         condition: any
 
   evo_core:
-    image: ghcr.io/patrickrsilveira/evo-crm-vysor-evo-ai-core-service-community:latest
+    image: ghcr.io/patrickrrsilveira-create/evo-crm-vysor-evo-ai-core-service-community:latest
     environment:
       DB_HOST: postgres
       DB_PORT: 5432
@@ -204,7 +204,7 @@ services:
   # Python AI Processor (branch atual em produção)
   # ─────────────────────────────────────────────────────────────────────────────
   evo_processor:
-    image: ghcr.io/patrickrsilveira/evo-crm-vysor-evo-ai-processor-community:latest
+    image: ghcr.io/patrickrrsilveira-create/evo-crm-vysor-evo-ai-processor-community:latest
     command: sh -c "alembic upgrade head 2>&1 || echo 'Alembic migration had errors, continuing...'; python -m scripts.run_seeders; uvicorn src.main:app --host $$HOST --port $$PORT"
     environment:
       POSTGRES_CONNECTION_STRING: postgresql://postgres:e2zaFkFxxIfX04QxP55LEvX2ZNW6XKFb@postgres:5432/evo_community
@@ -252,7 +252,7 @@ services:
 
 
   evo_bot_runtime:
-    image: ghcr.io/patrickrsilveira/evo-crm-vysor-evo-bot-runtime:latest
+    image: ghcr.io/patrickrrsilveira-create/evo-crm-vysor-evo-bot-runtime:latest
     environment:
       LISTEN_ADDR: 0.0.0.0:8080
       REDIS_URL: redis://:e2zaFkFxxIfX04QxP55LEvX2ZNW6XKFb@redis:6379/5
@@ -270,7 +270,7 @@ services:
         condition: any
 
   evo_frontend:
-    image: ghcr.io/patrickrsilveira/evo-crm-vysor-evo-ai-frontend-community:latest
+    image: ghcr.io/patrickrrsilveira-create/evo-crm-vysor-evo-ai-frontend-community:latest
     environment:
       VITE_APP_ENV: production
       VITE_API_URL: https://api-crm.vysortech.app.br
