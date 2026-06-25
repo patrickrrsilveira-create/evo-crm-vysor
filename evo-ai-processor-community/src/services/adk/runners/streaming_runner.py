@@ -530,7 +530,6 @@ class StreamingRunner:
                     from google.adk.events import Event
                     from google.genai.types import Content, Part
                     import time
-                    import uuid
                     
                     assistant_event = Event(
                         invocation_id=f"assistant_{int(time.time())}_{uuid.uuid4().hex[:8]}",
@@ -538,8 +537,18 @@ class StreamingRunner:
                         content=Content(role="model", parts=[Part(text=final_response_text)]),
                         timestamp=time.time(),
                     )
-                    await session_service.append_event(session, assistant_event)
-                    logger.debug("Appended assistant response to ADK session")
+                    
+                    # Reload session to ensure we have the latest last_update_time
+                    fresh_session = await session_service.get_session(
+                        app_name=agent_id,
+                        user_id=effective_user_id,
+                        session_id=adk_session_id,
+                    )
+                    if fresh_session:
+                        await session_service.append_event(fresh_session, assistant_event)
+                        logger.debug("Appended assistant response to ADK session")
+                    else:
+                        logger.warning("Could not reload session to append assistant response")
 
                 logger.info("Agent streaming execution completed successfully")
 
