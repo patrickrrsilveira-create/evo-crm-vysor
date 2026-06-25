@@ -1129,7 +1129,7 @@ async def handle_message_send(
             params["metadata"] = metadata
         
         if respond_in_audio == "always" or (respond_in_audio == "when_client_asks" and has_audio):
-            text += "\n\n[SYSTEM DIRECTIVE]: You must call the `text_to_speech` tool using the exact text of your response to generate the audio. Format the text exactly inside SSML tags to increase speed: <speak><prosody rate=\"1.3\">YOUR TEXT HERE</prosody></speak>. Do not just reply with text, you MUST execute the tool call."
+            text += "\n\n[SYSTEM DIRECTIVE]: You must call the `text_to_speech` tool using the exact text of your response to generate the audio. Do not just reply with text, you MUST execute the tool call."
             logger.info("🔊 Appended TTS tool directive because user sent audio or agent is configured to always respond in audio")
 
     logger.info(f"📝 Extracted text: {text}")
@@ -1267,11 +1267,20 @@ async def handle_message_send(
                                     
                                     await asyncio.sleep(8) # Give CRM time to process and send the first agent's message
                                     
-                                    system_message = "[SISTEMA] O usuário foi transferido para você pelo atendente anterior. Apresente-se e continue o atendimento com base no histórico."
-                                    if has_audio:
-                                        system_message += "\n\n[SYSTEM DIRECTIVE]: You must call the `text_to_speech` tool using the exact text of your response to generate the audio. Format the text exactly inside SSML tags to increase speed: <speak><prosody rate=\"1.3\">YOUR TEXT HERE</prosody></speak>. Do not just reply with text, you MUST execute the tool call."
                                     background_db = SessionLocal()
                                     try:
+                                        system_message = "[SISTEMA] O usuário foi transferido para você pelo atendente anterior. Apresente-se e continue o atendimento com base no histórico."
+                                        from src.models.agent_bot import AgentBot
+                                        new_agent = background_db.query(AgentBot).filter(AgentBot.id == new_agent_id).first()
+                                        new_agent_audio_always = False
+                                        if new_agent:
+                                            tts_cfg = (new_agent.config or {}).get("integrations", {}).get("tts") or (new_agent.config or {}).get("integrations", {}).get("elevenlabs")
+                                            if tts_cfg:
+                                                new_agent_audio_always = tts_cfg.get("respondInAudio") == "always"
+                                        
+                                        if has_audio or new_agent_audio_always:
+                                            system_message += "\n\n[SYSTEM DIRECTIVE]: You must call the `text_to_speech` tool using the exact text of your response to generate the audio. Do not just reply with text, you MUST execute the tool call."
+                                        
                                         runner = StandardRunner(db=background_db)
                                         logger.info(f"🤖 Auto-triggering new agent {new_agent_id} after handoff")
                                         result = await runner.run_agent(
@@ -1334,10 +1343,8 @@ async def handle_message_send(
                                                 except Exception as e:
                                                     logger.error(f"Failed to decode artifact in auto-trigger: {e}")
                                             
-                                            if not filename and final_text and has_audio:
+                                            if not filename and final_text and (has_audio or new_agent_audio_always):
                                                 try:
-                                                    from src.models.agent_bot import AgentBot
-                                                    new_agent = background_db.query(AgentBot).filter(AgentBot.id == new_agent_id).first()
                                                     if new_agent:
                                                         tts_config = (new_agent.config or {}).get("integrations", {}).get("tts") or (new_agent.config or {}).get("integrations", {}).get("elevenlabs")
                                                         if tts_config:
@@ -1862,7 +1869,7 @@ async def handle_message_stream(
                 has_audio = metadata.get("has_audio", False) or has_audio_in_files
             
             if respond_in_audio == "always" or (respond_in_audio == "when_client_asks" and has_audio):
-                text += "\n\n[SYSTEM DIRECTIVE]: You must call the `text_to_speech` tool using the exact text of your response to generate the audio. Format the text exactly inside SSML tags to increase speed: <speak><prosody rate=\"1.3\">YOUR TEXT HERE</prosody></speak>. Do not just reply with text, you MUST execute the tool call."
+                text += "\n\n[SYSTEM DIRECTIVE]: You must call the `text_to_speech` tool using the exact text of your response to generate the audio. Do not just reply with text, you MUST execute the tool call."
                 logger.info("🔊 Appended TTS tool directive in stream because user sent audio or agent is configured to always respond in audio")
 
     # Extract and combine conversation history

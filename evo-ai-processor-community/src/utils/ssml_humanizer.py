@@ -61,7 +61,7 @@ def humanize_text_to_ssml(text: str) -> str:
         # volume="+0dB": Baseline volume.
         ssml = (
             '<speak>\n'
-            '  <prosody rate="93%" pitch="-2%">\n'
+            '  <prosody rate="140%" pitch="-2%">\n'
             f'    {processed}\n'
             '  </prosody>\n'
             '</speak>'
