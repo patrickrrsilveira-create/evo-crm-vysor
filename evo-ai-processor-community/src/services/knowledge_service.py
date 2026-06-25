@@ -1,5 +1,6 @@
 import logging
 import io
+import base64
 import tiktoken
 from typing import List, Dict, Any, Optional
 from pypdf import PdfReader
@@ -51,6 +52,83 @@ class KnowledgeService:
         except Exception as e:
             logger.error(f"Error extracting PDF: {e}\\n{traceback.format_exc()}")
             raise ValueError(f"Failed to parse PDF file: {str(e)}")
+
+    def extract_text_from_docx(self, file_content: bytes) -> str:
+        """Extract text from a Word (.docx) file."""
+        try:
+            from docx import Document
+            doc = Document(io.BytesIO(file_content))
+            paragraphs = []
+            for para in doc.paragraphs:
+                if para.text.strip():
+                    paragraphs.append(para.text)
+            # Also extract tables
+            for table in doc.tables:
+                for row in table.rows:
+                    row_text = " | ".join(cell.text.strip() for cell in row.cells if cell.text.strip())
+                    if row_text:
+                        paragraphs.append(row_text)
+            return "\n".join(paragraphs)
+        except Exception as e:
+            logger.error(f"Error extracting DOCX: {e}\\n{traceback.format_exc()}")
+            raise ValueError(f"Failed to parse Word file: {str(e)}")
+
+    def extract_text_from_xlsx(self, file_content: bytes) -> str:
+        """Extract text from an Excel (.xlsx) file."""
+        try:
+            import openpyxl
+            wb = openpyxl.load_workbook(io.BytesIO(file_content), read_only=True, data_only=True)
+            lines = []
+            for sheet in wb.worksheets:
+                lines.append(f"=== Sheet: {sheet.title} ===")
+                for row in sheet.iter_rows(values_only=True):
+                    row_vals = [str(c) for c in row if c is not None and str(c).strip()]
+                    if row_vals:
+                        lines.append(" | ".join(row_vals))
+            return "\n".join(lines)
+        except Exception as e:
+            logger.error(f"Error extracting XLSX: {e}\\n{traceback.format_exc()}")
+            raise ValueError(f"Failed to parse Excel file: {str(e)}")
+
+    def extract_text_from_pptx(self, file_content: bytes) -> str:
+        """Extract text from a PowerPoint (.pptx) file."""
+        try:
+            from pptx import Presentation
+            prs = Presentation(io.BytesIO(file_content))
+            lines = []
+            for i, slide in enumerate(prs.slides):
+                lines.append(f"--- Slide {i + 1} ---")
+                for shape in slide.shapes:
+                    if hasattr(shape, "text") and shape.text.strip():
+                        lines.append(shape.text.strip())
+            return "\n".join(lines)
+        except Exception as e:
+            logger.error(f"Error extracting PPTX: {e}\\n{traceback.format_exc()}")
+            raise ValueError(f"Failed to parse PowerPoint file: {str(e)}")
+
+    async def extract_text_from_image(self, file_content: bytes, content_type: str = "image/jpeg") -> str:
+        """Extract text from an image using OpenAI Vision."""
+        try:
+            client = await self.get_openai_client()
+            b64 = base64.b64encode(file_content).decode("utf-8")
+            resp = await client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": "Extract and transcribe ALL text visible in this image. If it is a diagram or chart, describe it in detail. Output only the extracted content, no extra commentary."},
+                            {"type": "image_url", "image_url": {"url": f"data:{content_type};base64,{b64}"}},
+                        ],
+                    }
+                ],
+                max_tokens=4096,
+            )
+            return resp.choices[0].message.content or ""
+        except Exception as e:
+            logger.error(f"Error extracting text from image: {e}\\n{traceback.format_exc()}")
+            raise ValueError(f"Failed to extract text from image: {str(e)}")
+
 
     async def extract_text_from_url(self, url: str) -> str:
         """Fetch and extract visible text from a URL."""

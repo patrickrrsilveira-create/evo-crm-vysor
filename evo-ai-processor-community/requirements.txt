@@ -360,3 +360,8 @@ zipp==3.23.0
 zstandard==0.24.0
 apscheduler==3.10.4
 emoji==2.11.1
+python-docx>=1.1.2
+openpyxl>=3.1.2
+Pillow>=10.0.0
+pytesseract>=0.3.13
+python-pptx>=1.0.0

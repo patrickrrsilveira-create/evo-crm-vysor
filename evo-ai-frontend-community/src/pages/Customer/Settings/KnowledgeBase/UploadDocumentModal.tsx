@@ -98,7 +98,7 @@ export const UploadDocumentModal: React.FC<UploadDocumentModalProps> = ({
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="file" className="gap-2">
               <Upload className="h-4 w-4" />
-              Arquivo (PDF/TXT)
+              Arquivo
             </TabsTrigger>
             <TabsTrigger value="url" className="gap-2">
               <LinkIcon className="h-4 w-4" />
@@ -125,12 +125,16 @@ export const UploadDocumentModal: React.FC<UploadDocumentModalProps> = ({
                 <Input
                   id="file"
                   type="file"
-                  accept=".pdf,.txt"
+                  accept=".pdf,.txt,.docx,.doc,.xlsx,.xls,.pptx,.ppt,.jpg,.jpeg,.png,.webp,.gif,.bmp"
                   onChange={(e) => setFile(e.target.files?.[0] || null)}
                   disabled={isLoading}
                   className="cursor-pointer"
                 />
-                <p className="text-xs text-muted-foreground">Tamanho máximo: 10MB. Formatos: PDF, TXT.</p>
+                <p className="text-xs text-muted-foreground">
+                  Tamanho máximo: 25MB.<br />
+                  <strong>Documentos:</strong> PDF, TXT, Word (.docx), Excel (.xlsx), PowerPoint (.pptx)<br />
+                  <strong>Imagens:</strong> JPG, PNG, WEBP, GIF (texto extraído por IA Vision)
+                </p>
               </div>
             </TabsContent>
             
