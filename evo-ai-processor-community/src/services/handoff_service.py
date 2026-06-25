@@ -132,6 +132,20 @@ async def transfer_conversation(
     
     async with pool.acquire() as connection:
         async with connection.transaction():
+            # Resolve to_agent_id if it's not a valid UUID
+            try:
+                import uuid
+                uuid.UUID(to_agent_id)
+            except ValueError:
+                logger.info(f"to_agent_id '{to_agent_id}' is not a UUID, attempting name resolution.")
+                query_agent = "SELECT id FROM evo_core_agents WHERE name ILIKE $1 LIMIT 1"
+                agent_row = await connection.fetchrow(query_agent, f"%{to_agent_id}%")
+                if agent_row:
+                    to_agent_id = str(agent_row['id'])
+                    logger.info(f"Resolved agent name to UUID: {to_agent_id}")
+                else:
+                    raise HandoffError(f"Agent with name '{to_agent_id}' not found in database.")
+
             # 1. Fetch current conversation state
             query_conv = """
                 SELECT id, active_agent_id, state_version 

@@ -97,14 +97,11 @@ def create_transfer_conversation_tool(
         "Use this tool when the current conversation needs to be handled by "
         "a different, specialized AI agent (e.g. Sales, Finance, Support).\n\n"
         f"{agents_doc}\n\n"
+        "If the agent you want to transfer to is NOT listed above, you can still transfer to them by passing their EXACT name as the target_agent_id.\n\n"
         "Args:\n"
-        "    target_agent_id: The UUID of the destination agent to transfer to. "
-        "MUST be a valid UUID from the available agents list above.\n"
-        "    reason: Explanation of why the transfer is happening.\n"
-        "    conversation_id: Auto-extracted conversation ID (do not provide).\n"
-        "    tool_context: Auto-provided by the system (do not provide).\n\n"
-        "Returns:\n"
-        "    Dictionary with transfer status."
+        "    target_agent_id: The UUID or EXACT NAME of the agent to transfer to.\n"
+        "    reason: A brief explanation of why the conversation is being transferred.\n"
+        "    conversation_id: Auto-extracted conversation ID (do not provide)."
     )
     transfer_conversation.__name__ = "transfer_conversation"
     

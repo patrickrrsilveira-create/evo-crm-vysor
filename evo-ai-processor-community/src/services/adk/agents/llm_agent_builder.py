@@ -816,6 +816,12 @@ class LlmAgentBuilder:
                 "Available agents:\n" + "\n".join(a2a_agent_lines) + "\n"
                 "When the user mentions a topic that matches an agent, call transfer_conversation immediately with the target_agent_id and a reason."
             )
+        else:
+            crm_tools_instructions.append(
+                "Transfer Conversation Tool (A2A Handoff): Available. "
+                "You can transfer the conversation to another specialized AI agent (like 'Especialista Ganader') using the transfer_conversation tool. "
+                "Pass the EXACT NAME of the agent as the target_agent_id if you do not know the UUID."
+            )
 
         # Build a <product-catalog> block from the products attached to this agent.
         # The CRM populates `assigned_products` in agent.config via the
