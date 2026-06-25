@@ -1129,7 +1129,7 @@ async def handle_message_send(
             params["metadata"] = metadata
         
         if respond_in_audio == "always" or (respond_in_audio == "when_client_asks" and has_audio):
-            text += "\n\n[SYSTEM DIRECTIVE]: You must call the `text_to_speech` tool using the exact text of your response to generate the audio. Do not just reply with text, you MUST execute the tool call."
+            text += "\n\n[SYSTEM DIRECTIVE]: You must call the `text_to_speech` tool using the exact text of your response to generate the audio. Format the text exactly inside SSML tags to increase speed: <speak><prosody rate=\"1.2\">YOUR TEXT HERE</prosody></speak>. Do not just reply with text, you MUST execute the tool call."
             logger.info("🔊 Appended TTS tool directive because user sent audio or agent is configured to always respond in audio")
 
     logger.info(f"📝 Extracted text: {text}")
@@ -1269,7 +1269,7 @@ async def handle_message_send(
                                     
                                     system_message = "[SISTEMA] O usuário foi transferido para você pelo atendente anterior. Apresente-se e continue o atendimento com base no histórico."
                                     if has_audio:
-                                        system_message += "\n\n[SYSTEM DIRECTIVE]: You must call the `text_to_speech` tool using the exact text of your response to generate the audio. Do not just reply with text, you MUST execute the tool call."
+                                        system_message += "\n\n[SYSTEM DIRECTIVE]: You must call the `text_to_speech` tool using the exact text of your response to generate the audio. Format the text exactly inside SSML tags to increase speed: <speak><prosody rate=\"1.2\">YOUR TEXT HERE</prosody></speak>. Do not just reply with text, you MUST execute the tool call."
                                     background_db = SessionLocal()
                                     try:
                                         runner = StandardRunner(db=background_db)
@@ -1830,7 +1830,7 @@ async def handle_message_stream(
                 has_audio = metadata.get("has_audio", False) or has_audio_in_files
             
             if respond_in_audio == "always" or (respond_in_audio == "when_client_asks" and has_audio):
-                text += "\n\n[SYSTEM DIRECTIVE]: You must call the `text_to_speech` tool using the exact text of your response to generate the audio. Do not just reply with text, you MUST execute the tool call."
+                text += "\n\n[SYSTEM DIRECTIVE]: You must call the `text_to_speech` tool using the exact text of your response to generate the audio. Format the text exactly inside SSML tags to increase speed: <speak><prosody rate=\"1.2\">YOUR TEXT HERE</prosody></speak>. Do not just reply with text, you MUST execute the tool call."
                 logger.info("🔊 Appended TTS tool directive in stream because user sent audio or agent is configured to always respond in audio")
 
     # Extract and combine conversation history
