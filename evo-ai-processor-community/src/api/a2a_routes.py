@@ -1289,26 +1289,50 @@ async def handle_message_send(
                                         
                                         files_payload = None
                                         if artifacts_service:
-                                            db_artifacts = await artifacts_service.list_artifacts(
-                                                app_name=new_agent_id, session_id=f"{context_id}_{new_agent_id}", limit=1
-                                            )
-                                            if db_artifacts:
-                                                latest_artifact = db_artifacts[0]
+                                            message_history = result.get("message_history", [])
+                                            filename = None
+                                            for event in reversed(message_history):
+                                                role = event.get("role")
+                                                content = event.get("content")
+                                                parts = event.get("parts", [])
+                                                if not parts and isinstance(content, dict):
+                                                    parts = content.get("parts", [])
+                                                elif not parts and isinstance(content, list):
+                                                    parts = content
+                                                
+                                                if any(isinstance(p, dict) and "functionResponse" in p for p in parts):
+                                                    for part in parts:
+                                                        if isinstance(part, dict) and "functionResponse" in part:
+                                                            fr = part["functionResponse"]
+                                                            if fr.get("name") == "text_to_speech":
+                                                                filename = fr.get("response", {}).get("filename")
+                                                elif role == "tool" and event.get("name") == "text_to_speech":
+                                                    try:
+                                                        import json
+                                                        resp = json.loads(content) if isinstance(content, str) else content
+                                                        if isinstance(resp, dict):
+                                                            filename = resp.get("filename")
+                                                    except Exception:
+                                                        pass
+                                                if filename:
+                                                    break
+                                            
+                                            if filename:
                                                 try:
-                                                    import base64
-                                                    import time
-                                                    artifact_content = latest_artifact.content
-                                                    if "," in artifact_content:
-                                                        _, base64_data = artifact_content.split(",", 1)
-                                                    else:
-                                                        base64_data = artifact_content
-                                                    file_bytes = base64.b64decode(base64_data)
-                                                    filename = f"audio_{int(time.time())}.ogg"
-                                                    if "pdf" in latest_artifact.content_type:
-                                                        filename = f"document_{int(time.time())}.pdf"
-                                                    files_payload = {"attachments[]": (filename, file_bytes, latest_artifact.content_type)}
+                                                    art = await artifacts_service.load_artifact(
+                                                        app_name=str(new_agent_id),
+                                                        user_id=str(user_id),
+                                                        filename=filename,
+                                                        session_id=f"{context_id}_{new_agent_id}"
+                                                    )
+                                                    if art and hasattr(art, "inline_data") and art.inline_data and art.inline_data.data:
+                                                        import time
+                                                        file_bytes = art.inline_data.data
+                                                        mime_type = art.inline_data.mime_type or "audio/ogg"
+                                                        name = f"audio_{int(time.time())}.ogg"
+                                                        files_payload = {"attachments[]": (name, file_bytes, mime_type)}
                                                 except Exception as e:
-                                                    logger.error(f"Failed to decode artifact: {e}")
+                                                    logger.error(f"Failed to decode artifact in auto-trigger: {e}")
 
                                         if final_text or files_payload:
                                             crm_client = EvoCrmClient()
