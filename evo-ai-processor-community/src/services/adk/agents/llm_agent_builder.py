@@ -396,7 +396,7 @@ class LlmAgentBuilder:
         self.mcp_service = MCPService()
 
     async def _agent_tools_builder(
-        self, agent: Agent, processed_agents: set = None
+        self, agent: Agent, processed_agents: Optional[set] = None
     ) -> List[AgentTool]:
         """Build agent tools from the agent configuration."""
         agent_tools_ids = agent.config.get("agent_tools")
@@ -443,7 +443,7 @@ class LlmAgentBuilder:
         return agent_tools
 
     async def _create_llm_agent(
-        self, agent: Agent, processed_agents: set = None, enabled_tools: List[str] = []
+        self, agent: Agent, processed_agents: Optional[set] = None, enabled_tools: List[str] = []
     ) -> Tuple[LlmAgent, Optional[List[str]]]:
         """Create an LLM agent from the agent data."""
         # Merge integrations from the dedicated `agent_integrations` table into
@@ -635,6 +635,7 @@ class LlmAgentBuilder:
 
         # Use safe string formatting that handles missing placeholders
         formatted_prompt = agent.instruction
+        sanitized_instruction = agent.instruction
         try:
             # First sanitize the instruction for safe formatting
             sanitized_instruction = sanitize_for_formatting(agent.instruction)
@@ -1139,7 +1140,7 @@ class LlmAgentBuilder:
                             logger.warning("[ContactInfo] ⚠️ Could not update agent instruction - instruction may be read-only")
                             logger.info(f"[ContactInfo] System data that should be in prompt ({len(system_data)} chars): {system_data[:300]}...")
                     elif agent_instruction:
-                        logger.debug(f"[ContactInfo] Instruction found but no placeholder '{_system_data}' present")
+                        logger.debug(f"[ContactInfo] Instruction found but no placeholder '{{system_data}}' present")
                         logger.debug(f"[ContactInfo] Instruction preview: {agent_instruction[:200]}...")
                     else:
                         logger.debug("[ContactInfo] No instruction found in agent object")
@@ -1238,7 +1239,7 @@ class LlmAgentBuilder:
     async def build_llm_agent(
         self,
         root_agent: Agent,
-        processed_agents: set = None,
+        processed_agents: Optional[set] = None,
         enabled_tools: List[str] = [],
     ) -> Tuple[LlmAgent, Optional[List[str]]]:
         """Build an LLM agent with its sub-agents."""
