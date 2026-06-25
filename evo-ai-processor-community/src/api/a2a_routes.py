@@ -1270,8 +1270,8 @@ async def handle_message_send(
                                     background_db = SessionLocal()
                                     try:
                                         system_message = "[SISTEMA] O usuário foi transferido para você pelo atendente anterior. Apresente-se e continue o atendimento com base no histórico."
-                                        from src.models.models import AgentBot
-                                        new_agent = background_db.query(AgentBot).filter(AgentBot.id == new_agent_id).first()
+                                        from src.models.models import Agent
+                                        new_agent = background_db.query(Agent).filter(Agent.id == new_agent_id).first()
                                         new_agent_audio_always = False
                                         if new_agent:
                                             tts_cfg = (new_agent.config or {}).get("integrations", {}).get("tts") or (new_agent.config or {}).get("integrations", {}).get("elevenlabs")
