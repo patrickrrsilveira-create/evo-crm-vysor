@@ -1138,8 +1138,24 @@ async def handle_message_send(
     # Generate IDs
     task_id = str(uuid.uuid4())
     context_id = params.get("contextId", str(uuid.uuid4()))
-
+    
     try:
+        metadata = extract_metadata_from_request(params)
+        logger.info(f"📋 Extracted metadata: {metadata}")
+        
+        # Override context_id with the real conversation_id from CRM to ensure stable session IDs
+        if metadata and "evoai_crm_data" in metadata:
+            crm_data = metadata["evoai_crm_data"]
+            real_conv_id = None
+            if isinstance(crm_data.get("conversation"), dict) and crm_data["conversation"].get("id"):
+                real_conv_id = crm_data["conversation"]["id"]
+            elif crm_data.get("conversation_id"):
+                real_conv_id = crm_data.get("conversation_id")
+                
+            if real_conv_id and real_conv_id != context_id:
+                logger.info(f"🔄 Overriding context_id '{context_id}' with real conversation_id '{real_conv_id}'")
+                context_id = real_conv_id
+
         # Extract conversation history for context
         logger.info(
             f"🔍 Attempting to extract conversation history for agent {agent_id}, context {context_id}"
@@ -1171,8 +1187,7 @@ async def handle_message_send(
             f"📚 ADK will provide session context automatically ({len(combined_history)} previous messages available)"
         )
 
-        metadata = extract_metadata_from_request(params)
-        logger.info(f"📋 Extracted metadata: {metadata}")
+
         
         # Extract userId from params (contact_id sent from Rails)
         # contextId is the conversation UUID, but userId should be the contact UUID
