@@ -54,60 +54,36 @@ async def ingest_file(
     content_type = (file.content_type or "").lower()
     knowledge_service = KnowledgeService(db)
 
-    # Route extraction based on file type
-    try:
-        if filename_lower.endswith(".pdf") or "pdf" in content_type:
-            text_content = knowledge_service.extract_text_from_pdf(content)
-
-        elif filename_lower.endswith(".docx") or "wordprocessingml" in content_type or "msword" in content_type:
-            text_content = knowledge_service.extract_text_from_docx(content)
-
-        elif filename_lower.endswith(".xlsx") or filename_lower.endswith(".xls") or "spreadsheetml" in content_type or "excel" in content_type:
-            text_content = knowledge_service.extract_text_from_xlsx(content)
-
-        elif filename_lower.endswith(".pptx") or filename_lower.endswith(".ppt") or "presentationml" in content_type or "powerpoint" in content_type:
-            text_content = knowledge_service.extract_text_from_pptx(content)
-
-        elif any(filename_lower.endswith(ext) for ext in (".jpg", ".jpeg", ".png", ".webp", ".gif", ".bmp")) \
-                or content_type.startswith("image/"):
-            img_type = content_type if content_type.startswith("image/") else "image/jpeg"
-            text_content = await knowledge_service.extract_text_from_image(content, img_type)
-
-        elif filename_lower.endswith(".txt") or "text/plain" in content_type:
-            try:
-                text_content = content.decode("utf-8")
-            except Exception:
-                raise HTTPException(status_code=400, detail="Invalid text encoding. Please use UTF-8.")
-
-        else:
-            raise HTTPException(
-                status_code=400,
-                detail=(
-                    "Unsupported file type. Supported: PDF, TXT, DOCX (Word), "
-                    "XLSX (Excel), PPTX (PowerPoint), JPEG, PNG, WEBP, GIF (images)."
-                )
+    # Basic file type validation before starting background task
+    supported_extensions = (".pdf", ".docx", ".xlsx", ".xls", ".pptx", ".ppt", ".txt", ".jpg", ".jpeg", ".png", ".webp", ".gif", ".bmp")
+    if not (any(filename_lower.endswith(ext) for ext in supported_extensions) or 
+            "wordprocessingml" in content_type or "msword" in content_type or 
+            "spreadsheetml" in content_type or "excel" in content_type or 
+            "presentationml" in content_type or "powerpoint" in content_type or 
+            "text/plain" in content_type or content_type.startswith("image/")):
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "Unsupported file type. Supported: PDF, TXT, DOCX (Word), "
+                "XLSX (Excel), PPTX (PowerPoint), JPEG, PNG, WEBP, GIF (images)."
             )
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        )
 
-    if not text_content or not text_content.strip():
-        raise HTTPException(status_code=400, detail="Could not extract any text from the file. Please check the file content.")
-
-    # Save the document metadata
+    # Save the document metadata (starts empty, gets populated in background)
     doc_id_row = await db.fetch_one(
         "INSERT INTO knowledge_documents (knowledge_base_id, title, file_url, content_type, created_at, updated_at) VALUES ($1::uuid, $2, $3, $4, NOW(), NOW()) RETURNING id",
         knowledge_base_id, title, file.filename, file.content_type
     )
     document_id = doc_id_row["id"]
 
-    # Process chunks and embeddings in background
+    # Process extraction, chunks and embeddings in background
     background_tasks.add_task(
-        knowledge_service.process_and_store_document,
+        knowledge_service.extract_process_and_store_document,
         knowledge_base_id=knowledge_base_id,
         document_id=document_id,
-        text_content=text_content
+        content=content,
+        filename_lower=filename_lower,
+        content_type=content_type
     )
 
     return {"status": "success", "message": "File ingested successfully, processing started", "document_id": document_id}

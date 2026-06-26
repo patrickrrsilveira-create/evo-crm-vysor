@@ -228,6 +228,38 @@ class KnowledgeService:
                     
         logger.info(f"Successfully stored {len(chunks)} embedded chunks for document {document_id}")
 
+    async def extract_process_and_store_document(self, knowledge_base_id: str, document_id: str, content: bytes, filename_lower: str, content_type: str):
+        from starlette.concurrency import run_in_threadpool
+        try:
+            text_content = ""
+            if filename_lower.endswith(".pdf") or "pdf" in content_type:
+                text_content = await run_in_threadpool(self.extract_text_from_pdf, content)
+
+            elif filename_lower.endswith(".docx") or "wordprocessingml" in content_type or "msword" in content_type:
+                text_content = await run_in_threadpool(self.extract_text_from_docx, content)
+
+            elif filename_lower.endswith(".xlsx") or filename_lower.endswith(".xls") or "spreadsheetml" in content_type or "excel" in content_type:
+                text_content = await run_in_threadpool(self.extract_text_from_xlsx, content)
+
+            elif filename_lower.endswith(".pptx") or filename_lower.endswith(".ppt") or "presentationml" in content_type or "powerpoint" in content_type:
+                text_content = await run_in_threadpool(self.extract_text_from_pptx, content)
+
+            elif any(filename_lower.endswith(ext) for ext in (".jpg", ".jpeg", ".png", ".webp", ".gif", ".bmp")) \
+                    or content_type.startswith("image/"):
+                img_type = content_type if content_type.startswith("image/") else "image/jpeg"
+                text_content = await self.extract_text_from_image(content, img_type)
+
+            elif filename_lower.endswith(".txt") or "text/plain" in content_type:
+                text_content = content.decode("utf-8")
+                
+            if not text_content or not text_content.strip():
+                logger.warning(f"No text extracted for document {document_id}")
+                return
+                
+            await self.process_and_store_document(knowledge_base_id, document_id, text_content)
+        except Exception as e:
+            logger.error(f"Error processing background document {document_id}: {e}\\n{traceback.format_exc()}")
+
     async def retrieve_knowledge(self, query: str, knowledge_base_ids: List[str], limit: int = 5) -> str:
         """Search for relevant chunks across given knowledge bases."""
         if not knowledge_base_ids:
