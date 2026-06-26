@@ -48,8 +48,10 @@ Features:
 - API key authentication
 """
 
-import uuid
+import os
 import json
+import logging
+import uuid
 import base64
 import httpx
 from datetime import datetime
@@ -1810,18 +1812,6 @@ async def handle_message_send(
                 },
             }
         )
-        return JSONResponse(
-            content={
-                "jsonrpc": "2.0",
-                "id": request_id,
-                "error": {
-                    "code": -32603,
-                    "message": "Agent execution failed",
-                    "data": {"error": str(e)},
-                },
-            }
-        )
-
 
 async def handle_message_stream(
     agent_id: uuid.UUID, params: Dict[str, Any], request_id: str, request: Request, db: Session
@@ -1917,9 +1907,9 @@ async def handle_message_stream(
                 metadata = params.get("metadata", {})
                 has_audio = metadata.get("has_audio", False) or has_audio_in_files
             
-            if respond_in_audio == "always" or (respond_in_audio == "when_client_asks" and has_audio):
-                text += "\n\n[SYSTEM DIRECTIVE]: You must call the `text_to_speech` tool using the exact text of your response to generate the audio. Do not just reply with text, you MUST execute the tool call."
-                logger.info("🔊 Appended TTS tool directive in stream because user sent audio or agent is configured to always respond in audio")
+                if respond_in_audio == "always" or (respond_in_audio == "when_client_asks" and has_audio):
+                    text += "\n\n[SYSTEM DIRECTIVE]: You must call the `text_to_speech` tool using the exact text of your response to generate the audio. Do not just reply with text, you MUST execute the tool call."
+                    logger.info("🔊 Appended TTS tool directive in stream because user sent audio or agent is configured to always respond in audio")
 
     # Extract and combine conversation history
     conversation_history = await extract_conversation_history(str(agent_id), context_id, db=db)
