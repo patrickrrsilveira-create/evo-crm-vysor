@@ -11,8 +11,8 @@ class CreateConversationHandoffArchitecture < ActiveRecord::Migration[7.0]
 
     # 2. Tabela agent_sessions
     create_table :agent_sessions, id: :uuid do |t|
-      t.references :conversation, type: :uuid, null: false, foreign_key: true
-      t.references :agent_bot, type: :uuid, null: false, foreign_key: true
+      t.references :conversation, type: :uuid, null: false, foreign_key: { on_delete: :cascade }
+      t.references :agent_bot, type: :uuid, null: false, foreign_key: { on_delete: :cascade }
       t.text :summary
       t.jsonb :entities, default: {}
       t.string :state, default: 'ACTIVE', null: false
@@ -23,9 +23,9 @@ class CreateConversationHandoffArchitecture < ActiveRecord::Migration[7.0]
 
     # 3. Tabela conversation_transfers
     create_table :conversation_transfers, id: :uuid do |t|
-      t.references :conversation, type: :uuid, null: false, foreign_key: true
-      t.references :from_agent, type: :uuid, foreign_key: { to_table: :agent_bots }
-      t.references :to_agent, type: :uuid, foreign_key: { to_table: :agent_bots }
+      t.references :conversation, type: :uuid, null: false, foreign_key: { on_delete: :cascade }
+      t.references :from_agent, type: :uuid, foreign_key: { to_table: :agent_bots, on_delete: :cascade }
+      t.references :to_agent, type: :uuid, foreign_key: { to_table: :agent_bots, on_delete: :cascade }
       t.text :reason
       t.string :status, default: 'pending', null: false
       t.datetime :completed_at
@@ -35,7 +35,7 @@ class CreateConversationHandoffArchitecture < ActiveRecord::Migration[7.0]
 
     # 4. Tabela conversation_contexts
     create_table :conversation_contexts, id: :uuid do |t|
-      t.references :conversation, type: :uuid, null: false, foreign_key: true
+      t.references :conversation, type: :uuid, null: false, foreign_key: { on_delete: :cascade }
       t.jsonb :customer_data, default: {}
       t.jsonb :lead_data, default: {}
       t.jsonb :intent_data, default: {}

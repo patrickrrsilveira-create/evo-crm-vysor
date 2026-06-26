@@ -245,6 +245,7 @@ Rails.application.routes.draw do
       resources :knowledge_bases, only: [:index, :create, :show, :update, :destroy] do
         resources :knowledge_documents, only: [:index, :create, :show, :update, :destroy]
         resources :agent_bots, controller: 'knowledge_bases/agent_bots', only: [:index, :create, :destroy]
+        resources :ai_agents, controller: 'knowledge_bases/ai_agents', only: [:index]
       end
 
       scope 'knowledge' do
@@ -262,6 +263,7 @@ Rails.application.routes.draw do
       # Ai::AgentProductSyncService).
       resources :ai_agents, only: [] do
         resources :products, controller: 'ai_agents/products', only: [:index, :create, :destroy]
+        resources :knowledge_bases, controller: 'ai_agents/knowledge_bases', only: [:index, :create, :destroy]
       end
 
       resources :macros, only: [:index, :create, :show, :update, :destroy], controller: 'macros' do
@@ -322,9 +324,6 @@ Rails.application.routes.draw do
 
           # Gmail webhooks
           post 'gmail/pubsub', to: 'webhooks/gmail#pubsub'
-          
-          # AI Processor Webhooks
-          post 'agent_processor/handoff', to: 'webhooks/agent_processor#handoff'
         end
       end
 
@@ -726,6 +725,9 @@ Rails.application.routes.draw do
   post 'webhooks/whatsapp/evolution_go', to: 'webhooks/whatsapp#process_evolution_go_payload'
   post 'webhooks/whatsapp/zapi', to: 'webhooks/whatsapp#process_payload'
   post 'webhooks/evolution_hub', to: 'webhooks/evolution_hub#create'
+  
+  # AI Processor Webhooks
+  post 'webhooks/agent_processor/handoff', to: 'webhooks/agent_processor#handoff'
 
   # Bot Runtime postback
   post 'webhooks/bot_runtime/postback/:conversation_display_id', to: 'webhooks/bot_runtime#postback'
