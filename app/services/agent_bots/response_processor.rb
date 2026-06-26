@@ -64,6 +64,7 @@ class AgentBots::ResponseProcessor
         base64_data = nil
         mime_type = file_info['mimeType'] || 'application/octet-stream'
         filename = file_info['name'] || "attachment_#{SecureRandom.hex(4)}"
+        downloaded_io = nil
 
         if file_info['bytes'].present?
           base64_data = file_info['bytes']
@@ -80,9 +81,23 @@ class AgentBots::ResponseProcessor
               filename = "#{filename}.#{ext}"
             end
           end
+        elsif file_info['url'].to_s.match?(/^https?:\/\//)
+          begin
+            require 'open-uri'
+            downloaded_io = URI.open(file_info['url'])
+          rescue StandardError => e
+            Rails.logger.error "[AgentBot HTTP] Error downloading file from URL: #{e.message}"
+          end
         end
 
-        if base64_data.present?
+        if downloaded_io.present?
+          attachments << {
+            io: downloaded_io,
+            filename: filename,
+            content_type: mime_type
+          }
+          Rails.logger.info "[AgentBot HTTP] Successfully extracted attachment from URL: #{filename} (#{mime_type})"
+        elsif base64_data.present?
           begin
             decoded_bytes = Base64.decode64(base64_data)
             io = StringIO.new(decoded_bytes)
@@ -97,7 +112,7 @@ class AgentBots::ResponseProcessor
             Rails.logger.error "[AgentBot HTTP] Error decoding file bytes: #{e.message}"
           end
         else
-          Rails.logger.warn "[AgentBot HTTP] Could not extract base64 data from file_info"
+          Rails.logger.warn "[AgentBot HTTP] Could not extract base64 data or download from file_info"
         end
       end
     end
