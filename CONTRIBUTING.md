@@ -1,6 +1,6 @@
-# Contributing to Evo CRM Community
+# Contributing to Evo CRM Agent Processor
 
-Thanks for your interest in contributing to Evo CRM Community! This document
+Thanks for your interest in contributing to Evo CRM Agent Processor! This document
 outlines how to contribute effectively.
 
 ## Code of Conduct
@@ -12,7 +12,7 @@ Harassment, discrimination, or abusive behavior will not be tolerated.
 
 ### Reporting Bugs
 
-1. Check existing [issues](https://github.com/evolution-foundation/evo-crm-community/issues)
+1. Check existing [issues](https://github.com/evolution-foundation/evo-ai-processor-community/issues)
    to avoid duplicates
 2. Open a new issue with:
    - Clear, descriptive title
@@ -81,7 +81,7 @@ governed separately by [TRADEMARKS.md](./TRADEMARKS.md).
 - **Documentation**: [docs.evolutionfoundation.com.br](https://docs.evolutionfoundation.com.br)
 - **Email**: suporte@evofoundation.com.br
 
-Thanks for helping make Evo CRM Community better!
+Thanks for helping make Evo CRM Agent Processor better!
 
 ---
 

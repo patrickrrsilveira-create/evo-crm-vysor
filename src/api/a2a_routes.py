@@ -467,15 +467,33 @@ def create_task_response(
                 final_response = final_response.replace(match.group(0), '').strip()
                 
         for url in extracted_urls:
+            # Download the video and encode as base64 to ensure CRM compatibility
+            import urllib.request
+            import base64
+            
+            b64_data = ""
+            try:
+                req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+                with urllib.request.urlopen(req, timeout=15) as response:
+                    video_bytes = response.read()
+                    b64_data = base64.b64encode(video_bytes).decode('utf-8')
+                    logger.info(f"🎥 Downloaded and encoded video from {url} ({len(video_bytes)} bytes)")
+            except Exception as e:
+                logger.error(f"❌ Failed to download video from {url}: {e}")
+                
+            file_obj = {
+                "url": url,
+                "mimeType": "video/mp4",
+                "name": "video.mp4"
+            }
+            if b64_data:
+                file_obj["bytes"] = b64_data
+                
             artifacts.append({
                 "artifactId": str(uuid.uuid4()),
                 "parts": [{
                     "type": "file",
-                    "file": {
-                        "url": url,
-                        "mimeType": "video/mp4",
-                        "name": "video.mp4"
-                    }
+                    "file": file_obj
                 }]
             })
             logger.info(f"🎥 Extracted video link into file artifact: {url}")
