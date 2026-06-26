@@ -1,0 +1,72 @@
+# frozen_string_literal: true
+
+class Api::V1::GlobalConfigController < Api::BaseController
+  # Public, read-only config: expose only non-sensitive keys used by frontend SDKs/feature gating
+  skip_before_action :authenticate_request!
+
+  def show
+    render json: public_config
+  end
+
+  private
+
+  def public_config
+    {
+      fbAppId: GlobalConfigService.load('FB_APP_ID', ''),
+      fbApiVersion: GlobalConfigService.load('FACEBOOK_API_VERSION', 'v17.0'),
+      wpAppId: GlobalConfigService.load('WP_APP_ID', ''),
+      wpApiVersion: GlobalConfigService.load('WP_API_VERSION', 'v23.0'),
+      wpWhatsappConfigId: GlobalConfigService.load('WP_WHATSAPP_CONFIG_ID', ''),
+      instagramAppId: GlobalConfigService.load('INSTAGRAM_APP_ID', nil),
+      googleOAuthClientId: GlobalConfigService.load('GOOGLE_OAUTH_CLIENT_ID', nil),
+      azureAppId: GlobalConfigService.load('AZURE_APP_ID', nil),
+      # 🔒 SECURITY: Don't expose sensitive API URLs to frontend
+      # Frontend only needs to know IF config exists, not the actual values
+      hasFacebookConfig: IntegrationRequirements.configured?('facebook'),
+      hasWhatsappConfig: IntegrationRequirements.configured?('whatsapp'),
+      hasInstagramConfig: IntegrationRequirements.configured?('instagram'),
+      hasEvolutionConfig: IntegrationRequirements.configured?('evolution'),
+      hasEvolutionGoConfig: IntegrationRequirements.configured?('evolution_go'),
+      hasEvolutionHubConfig: IntegrationRequirements.configured?('evolution_hub'),
+      evolutionHubEnabled: evolution_hub_active?,
+      hasTwitterConfig: IntegrationRequirements.configured?('twitter'),
+      openaiConfigured: openai_configured?,
+      enableAccountSignup: enable_account_signup?,
+      recaptchaSiteKey: GlobalConfigService.load('RECAPTCHA_SITE_KEY', nil),
+      clarityProjectId: GlobalConfigService.load('CLARITY_PROJECT_ID', nil),
+      appLogoUrl: GlobalConfigService.load('APP_LOGO_URL', nil),
+      appPrimaryColor: GlobalConfigService.load('APP_PRIMARY_COLOR', nil),
+      companyName: GlobalConfigService.load('COMPANY_NAME', nil),
+      appLogoWidth: GlobalConfigService.load('APP_LOGO_WIDTH', nil),
+      appLogoHeight: GlobalConfigService.load('APP_LOGO_HEIGHT', nil),
+      appLoginLogoUrl: GlobalConfigService.load('APP_LOGIN_LOGO_URL', nil),
+      appLoginLogoWidth: GlobalConfigService.load('APP_LOGIN_LOGO_WIDTH', nil),
+      appLoginLogoHeight: GlobalConfigService.load('APP_LOGIN_LOGO_HEIGHT', nil),
+      sidebarCopyrightText: GlobalConfigService.load('SIDEBAR_COPYRIGHT_TEXT', nil),
+      supportLink: GlobalConfigService.load('SUPPORT_LINK', nil),
+      docsLink: GlobalConfigService.load('DOCS_LINK', nil),
+    }
+  end
+
+  def enable_account_signup?
+    value = GlobalConfigService.load('ENABLE_ACCOUNT_SIGNUP', 'false')
+    normalized_value = value.to_s.strip.downcase
+    normalized_value == 'true'
+  end
+
+  def openai_configured?
+    api_url = GlobalConfigService.load('OPENAI_API_URL', '').to_s.strip
+    api_key = GlobalConfigService.load('OPENAI_API_SECRET', '').to_s.strip
+    model = GlobalConfigService.load('OPENAI_MODEL', '').to_s.strip
+
+    api_url.present? && api_key.present? && model.present?
+  end
+
+  # Evolution Hub is "active" when both the toggle is on AND the required
+  # config keys are populated. The frontend uses this single boolean to
+  # decide whether to render OAuth-direct or Hub-relayed Inbox flows.
+  def evolution_hub_active?
+    enabled = GlobalConfigService.load('EVOLUTION_HUB_ENABLED', 'false').to_s
+    ActiveModel::Type::Boolean.new.cast(enabled) && IntegrationRequirements.configured?('evolution_hub')
+  end
+end

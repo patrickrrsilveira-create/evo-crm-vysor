@@ -1,0 +1,16 @@
+.venv/
+.git/
+.env
+__pycache__/
+*.pyc
+dashboard/data/
+workspace/
+ADWs/logs/
+ADWs/__pycache__/
+.claude/agent-memory/
+.claude/.env
+etus-boilerplate-agentic-engineer/
+social-media-skills/
+node_modules/
+.DS_Store
+*.zip

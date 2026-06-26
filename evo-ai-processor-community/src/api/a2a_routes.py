@@ -449,6 +449,37 @@ def create_task_response(
     if artifacts is None:
         artifacts = []
         
+    # Extract Google Drive video links from final_response to send as media
+    if final_response:
+        import re
+        import uuid
+        # Find raw drive links or [VIDEO_LINK: url]
+        link_pattern = r'\[?VIDEO_LINK:\s*(https?://[^\s\]]+)\]?|(https://drive\.google\.com/uc\?export=download&id=[a-zA-Z0-9_-]+)'
+        
+        matches = list(re.finditer(link_pattern, final_response))
+        extracted_urls = []
+        
+        for match in matches:
+            url = match.group(1) if match.group(1) else match.group(2)
+            if url:
+                extracted_urls.append(url)
+                # Remove the exact match from the text
+                final_response = final_response.replace(match.group(0), '').strip()
+                
+        for url in extracted_urls:
+            artifacts.append({
+                "artifactId": str(uuid.uuid4()),
+                "parts": [{
+                    "type": "file",
+                    "file": {
+                        "url": url,
+                        "mimeType": "video/mp4",
+                        "name": "video.mp4"
+                    }
+                }]
+            })
+            logger.info(f"🎥 Extracted video link into file artifact: {url}")
+
     # Always include the text response as an artifact if it's not empty
     if final_response and final_response.strip():
         # Check if we already have a text artifact to avoid duplication

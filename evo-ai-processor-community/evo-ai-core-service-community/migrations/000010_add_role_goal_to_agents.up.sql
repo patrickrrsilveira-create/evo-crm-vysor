@@ -1,0 +1,2 @@
+ALTER TABLE evo_core_agents ADD COLUMN IF NOT EXISTS role TEXT;
+ALTER TABLE evo_core_agents ADD COLUMN IF NOT EXISTS goal TEXT;
