@@ -62,3 +62,16 @@ type KnowledgeBaseAgentBot struct {
 func (KnowledgeBaseAgentBot) TableName() string {
 	return "knowledge_base_agent_bots"
 }
+
+// KnowledgeBaseAiAgent é a tabela de junção que atrela Bases aos Agentes de IA (EvoCore)
+type KnowledgeBaseAiAgent struct {
+	ID              string    `gorm:"type:uuid;primaryKey;default:uuid_generate_v4()" json:"id"`
+	KnowledgeBaseID string    `json:"knowledge_base_id"`
+	AiAgentID       uuid.UUID `gorm:"type:uuid" json:"ai_agent_id"`
+	CreatedAt       time.Time `json:"created_at"`
+	UpdatedAt       time.Time `json:"updated_at"`
+}
+
+func (KnowledgeBaseAiAgent) TableName() string {
+	return "knowledge_base_ai_agents"
+}

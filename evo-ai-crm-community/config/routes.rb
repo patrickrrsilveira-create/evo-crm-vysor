@@ -245,6 +245,7 @@ Rails.application.routes.draw do
       resources :knowledge_bases, only: [:index, :create, :show, :update, :destroy] do
         resources :knowledge_documents, only: [:index, :create, :show, :update, :destroy]
         resources :agent_bots, controller: 'knowledge_bases/agent_bots', only: [:index, :create, :destroy]
+        resources :ai_agents, controller: 'knowledge_bases/ai_agents', only: [:index]
       end
 
       scope 'knowledge' do

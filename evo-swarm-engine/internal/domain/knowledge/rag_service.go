@@ -33,8 +33,8 @@ func (s *RAGService) RetrieveContext(ctx context.Context, agentBotID uuid.UUID, 
 	}
 
 	// 1. Descobrir quais Bases de Conhecimento estão amarradas a este agente
-	var kbLinks []models.KnowledgeBaseAgentBot
-	if err := s.db.Where("agent_bot_id = ?", agentBotID).Find(&kbLinks).Error; err != nil {
+	var kbLinks []models.KnowledgeBaseAiAgent
+	if err := s.db.Where("ai_agent_id = ?", agentBotID).Find(&kbLinks).Error; err != nil {
 		return "", fmt.Errorf("falha ao buscar bases atreladas ao agente: %w", err)
 	}
 
