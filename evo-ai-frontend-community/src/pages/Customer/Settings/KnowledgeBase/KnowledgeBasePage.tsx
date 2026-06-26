@@ -5,6 +5,7 @@ import { Button } from '@evoapi/design-system/button';
 import { FileText, Link, Bot, Plus, BookOpen, Upload, Trash2 } from 'lucide-react';
 
 import { KnowledgeBase, knowledgeBasesService } from '@/services/knowledgeBases';
+import { agentsService } from '@/services/agents/agentService';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { CreateKnowledgeBaseModal } from './CreateKnowledgeBaseModal';
@@ -48,12 +49,26 @@ const KnowledgeBasePage = () => {
   const fetchBaseDetails = async (baseId: number) => {
     setIsFetchingDetails(true);
     try {
-      const [docsResponse, agentsResponse] = await Promise.all([
+      const [docsResponse, agentsLinksResponse, allAgentsResponse] = await Promise.all([
         knowledgeBasesService.getDocuments(baseId),
-        knowledgeBasesService.getAgentBots(baseId)
+        knowledgeBasesService.getAiAgents(baseId),
+        agentsService.listAgents(1, 200)
       ]);
       setDocuments((docsResponse as any).data || docsResponse);
-      setAgentBots((agentsResponse as any).data || agentsResponse);
+      
+      const linkedIds = (agentsLinksResponse as any).data || agentsLinksResponse || [];
+      const allAgents = (allAgentsResponse as any).data || (allAgentsResponse as any).agents || [];
+      
+      const linkedAgents = linkedIds.map((link: any) => {
+        const agentId = link.ai_agent_id || link.id;
+        const agent = allAgents.find((a: any) => a.id.toString() === agentId?.toString());
+        return {
+          id: agentId,
+          name: agent ? agent.name : 'Agente Desconhecido',
+        };
+      });
+      
+      setAgentBots(linkedAgents);
     } catch (error) {
       toast.error('Erro ao carregar detalhes da base');
     } finally {

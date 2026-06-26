@@ -47,6 +47,11 @@ export const knowledgeBasesService = {
     return response.data;
   },
 
+  getAiAgents: async (id: number | string): Promise<any> => {
+    const response = await api.get(`/knowledge_bases/${id}/ai_agents`);
+    return response.data;
+  },
+
   // ---- New: linking evo_core AI agents to knowledge bases ----
 
   // Get all knowledge bases linked to an evo_core agent
