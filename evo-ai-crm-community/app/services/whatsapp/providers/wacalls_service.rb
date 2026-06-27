@@ -141,7 +141,7 @@ class Whatsapp::Providers::WacallsService < Whatsapp::Providers::BaseService
       'Content-Type' => 'application/json',
       'Accept' => 'application/json'
     }
-    headers['X-Client-Id'] = client_id if client_id.present?
+    headers['X-API-Key'] = client_id if client_id.present?
     headers
   end
 
@@ -188,5 +188,40 @@ class Whatsapp::Providers::WacallsService < Whatsapp::Providers::BaseService
 
   def error_message
     "Error in WaCalls service"
+  end
+
+  def subscribe_to_webhooks
+    webhook_url = "#{ENV.fetch('FRONTEND_URL', ENV.fetch('EVOAI_URL', ''))}/webhooks/whatsapp/#{whatsapp_channel.phone_number}"
+    
+    response = HTTParty.post(
+      "#{api_base_path}/api/sessions/#{instance_name}/webhook",
+      headers: api_headers,
+      body: { url: webhook_url }.to_json,
+      timeout: 30
+    )
+    
+    if response.success?
+      Rails.logger.info "[WaCalls] Successfully subscribed to webhooks for #{instance_name} at #{webhook_url}"
+    else
+      Rails.logger.error "[WaCalls] Error subscribing to webhooks: #{response.body}"
+    end
+  rescue StandardError => e
+    Rails.logger.error "[WaCalls] Error subscribing to webhooks: #{e.message}"
+  end
+
+  def unsubscribe_from_webhooks
+    response = HTTParty.delete(
+      "#{api_base_path}/api/sessions/#{instance_name}/webhook",
+      headers: api_headers,
+      timeout: 30
+    )
+    
+    if response.success?
+      Rails.logger.info "[WaCalls] Successfully unsubscribed from webhooks for #{instance_name}"
+    else
+      Rails.logger.error "[WaCalls] Error unsubscribing from webhooks: #{response.body}"
+    end
+  rescue StandardError => e
+    Rails.logger.error "[WaCalls] Error unsubscribing from webhooks: #{e.message}"
   end
 end
