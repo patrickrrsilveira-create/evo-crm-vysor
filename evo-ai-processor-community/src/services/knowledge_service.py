@@ -314,10 +314,14 @@ class KnowledgeService:
         """Search for relevant chunks across all knowledge bases attached to an agent bot."""
         from sqlalchemy import text
         
-        # Get all knowledge_base_ids for this agent_bot_id
-        query_sql = text("SELECT knowledge_base_id FROM knowledge_base_agent_bots WHERE agent_bot_id = :agent_bot_id")
+        # Get all knowledge_base_ids for this agent_bot_id or ai_agent_id
+        query_sql = text("""
+            SELECT knowledge_base_id FROM knowledge_base_agent_bots WHERE agent_bot_id = :agent_id
+            UNION
+            SELECT knowledge_base_id FROM knowledge_base_ai_agents WHERE ai_agent_id = :agent_id
+        """)
         try:
-            records = self.db.execute(query_sql, {"agent_bot_id": agent_bot_id}).fetchall()
+            records = self.db.execute(query_sql, {"agent_id": agent_bot_id}).fetchall()
             knowledge_base_ids = [str(record[0]) for record in records]
             
             if not knowledge_base_ids:
