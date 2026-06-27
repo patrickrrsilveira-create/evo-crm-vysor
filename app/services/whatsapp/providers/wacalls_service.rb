@@ -179,7 +179,7 @@ class Whatsapp::Providers::WacallsService < Whatsapp::Providers::BaseService
     text
   end
 
-  def validate_provider_config
+  def validate_provider_config?
     true
   end
 

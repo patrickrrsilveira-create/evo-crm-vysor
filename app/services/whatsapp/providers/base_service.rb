@@ -23,7 +23,7 @@ class Whatsapp::Providers::BaseService
     raise 'Overwrite this method in child class'
   end
 
-  def validate_provider_config
+  def validate_provider_config?
     raise 'Overwrite this method in child class'
   end
 
