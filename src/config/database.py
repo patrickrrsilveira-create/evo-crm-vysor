@@ -34,7 +34,7 @@ from src.config.settings import settings
 
 POSTGRES_CONNECTION_STRING = settings.POSTGRES_CONNECTION_STRING
 
-engine = create_engine(POSTGRES_CONNECTION_STRING)
+engine = create_engine(POSTGRES_CONNECTION_STRING, pool_pre_ping=True, pool_recycle=3600)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
