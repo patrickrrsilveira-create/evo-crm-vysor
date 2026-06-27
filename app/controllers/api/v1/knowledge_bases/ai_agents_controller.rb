@@ -16,6 +16,7 @@ class Api::V1::KnowledgeBases::AiAgentsController < Api::V1::BaseController
   private
 
   def set_knowledge_base
-    @knowledge_base = KnowledgeBase.find(params[:knowledge_base_id])
+    # Note: Rails inflector maps resources :knowledge_bases to params[:knowledge_basis_id]
+    @knowledge_base = KnowledgeBase.find(params[:knowledge_basis_id] || params[:knowledge_base_id])
   end
 end
