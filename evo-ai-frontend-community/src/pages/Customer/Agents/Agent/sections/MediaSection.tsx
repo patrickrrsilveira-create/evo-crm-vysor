@@ -3,7 +3,7 @@ import { Image as ImageIcon, Plus, Loader2, Trash2, UploadCloud, Copy } from 'lu
 import { Button } from '@evoapi/design-system/button';
 import { toast } from 'sonner';
 import { agentMediaService, AgentMedia } from '@/services/agentMedia';
-import { formatBytes } from '@/utils/formatters';
+import { formatFileSize } from '@/utils/fileUtils';
 
 interface MediaSectionProps {
   agentId: string;
