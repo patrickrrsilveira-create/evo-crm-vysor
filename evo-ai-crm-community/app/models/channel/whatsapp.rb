@@ -103,10 +103,11 @@ class Channel::Whatsapp < ApplicationRecord
   end
 
   def provider_connection_data
-    data = { connection: provider_connection['connection'] }
+    conn = provider_connection || {}
+    data = { connection: conn['connection'] }
     if Current.user&.role == 'administrator'
-      data[:qr_data_url] = provider_connection['qr_data_url']
-      data[:error] = provider_connection['error']
+      data[:qr_data_url] = conn['qr_data_url']
+      data[:error] = conn['error']
     end
     data
   end
@@ -208,7 +209,10 @@ class Channel::Whatsapp < ApplicationRecord
   end
 
   def ensure_webhook_verify_token
-    provider_config['webhook_verify_token'] ||= SecureRandom.hex(16) if provider.in?(%w[whatsapp_cloud baileys notificame])
+    return unless provider.in?(%w[whatsapp_cloud baileys notificame])
+
+    self.provider_config ||= {}
+    provider_config['webhook_verify_token'] ||= SecureRandom.hex(16)
   end
 
   def merge_evolution_go_global_config

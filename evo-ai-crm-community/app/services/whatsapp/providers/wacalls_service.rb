@@ -129,12 +129,14 @@ class Whatsapp::Providers::WacallsService < Whatsapp::Providers::BaseService
   private
 
   def api_base_path
-    base_url = whatsapp_channel.provider_config['api_url'].presence || ENV['WACALLS_API_URL'] || 'https://waha.vysortech.app.br'
+    config = whatsapp_channel.provider_config || {}
+    base_url = config['api_url'].presence || ENV['WACALLS_API_URL'] || 'https://waha.vysortech.app.br'
     base_url.chomp('/')
   end
 
   def api_headers
-    client_id = whatsapp_channel.provider_config['api_key'].presence || ENV['WACALLS_API_KEY'] || 'evo-crm'
+    config = whatsapp_channel.provider_config || {}
+    client_id = config['api_key'].presence || ENV['WACALLS_API_KEY'] || 'evo-crm'
     headers = {
       'Content-Type' => 'application/json',
       'Accept' => 'application/json'
@@ -144,7 +146,8 @@ class Whatsapp::Providers::WacallsService < Whatsapp::Providers::BaseService
   end
 
   def instance_name
-    whatsapp_channel.provider_config['instance_name'].presence || whatsapp_channel.name
+    config = whatsapp_channel.provider_config || {}
+    config['instance_name'].presence || whatsapp_channel.name
   end
 
   def process_wacalls_response(response)

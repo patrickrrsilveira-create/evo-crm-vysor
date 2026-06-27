@@ -311,30 +311,24 @@ class KnowledgeService:
         query_embedding = query_embeddings[0]
         embedding_str = f"[{','.join(map(str, query_embedding))}]"
         
-        from sqlalchemy import text
-        
         # The vector operator <-> is L2 distance, <=> is cosine distance, <#> is inner product.
-        query_sql = text("""
-            SELECT c.content, c.embedding <=> :embedding::vector AS distance
+        query_sql = """
+            SELECT c.content, c.embedding <=> $1::vector AS distance
             FROM knowledge_document_chunks c
             JOIN knowledge_documents d ON c.knowledge_document_id = d.id
-            WHERE d.knowledge_base_id = ANY(:kb_ids::uuid[])
-            ORDER BY c.embedding <=> :embedding::vector
-            LIMIT :limit
-        """)
+            WHERE d.knowledge_base_id = ANY($2::uuid[])
+            ORDER BY c.embedding <=> $1::vector
+            LIMIT $3
+        """
         
         try:
-            results = self.db.execute(query_sql, {
-                "embedding": embedding_str,
-                "kb_ids": knowledge_base_ids,
-                "limit": limit
-            }).fetchall()
+            results = await self.db.fetch_all(query_sql, embedding_str, knowledge_base_ids, limit)
             
             if not results:
                 return ""
                 
-            # Combine the content into a single string (row[0] is content)
-            combined_text = "\n\n---\n\n".join([row[0] for row in results])
+            # Combine the content into a single string
+            combined_text = "\n\n---\n\n".join([row['content'] for row in results])
             return combined_text
         except Exception as e:
             logger.error(f"Error retrieving knowledge from DB: {e}")
@@ -342,17 +336,15 @@ class KnowledgeService:
 
     async def search_agent_knowledge(self, agent_bot_id: str, query: str, limit: int = 5) -> str:
         """Search for relevant chunks across all knowledge bases attached to an agent bot."""
-        from sqlalchemy import text
-        
         # Get all knowledge_base_ids for this agent_bot_id or ai_agent_id
-        query_sql = text("""
-            SELECT knowledge_base_id FROM knowledge_base_agent_bots WHERE agent_bot_id = :agent_id
+        query_sql = """
+            SELECT knowledge_base_id FROM knowledge_base_agent_bots WHERE agent_bot_id = $1::uuid
             UNION
-            SELECT knowledge_base_id FROM knowledge_base_ai_agents WHERE ai_agent_id = :agent_id
-        """)
+            SELECT knowledge_base_id FROM knowledge_base_ai_agents WHERE ai_agent_id = $1::uuid
+        """
         try:
-            records = self.db.execute(query_sql, {"agent_id": agent_bot_id}).fetchall()
-            knowledge_base_ids = [str(record[0]) for record in records]
+            records = await self.db.fetch_all(query_sql, agent_bot_id)
+            knowledge_base_ids = [str(record['knowledge_base_id']) for record in records]
             
             if not knowledge_base_ids:
                 return ""
