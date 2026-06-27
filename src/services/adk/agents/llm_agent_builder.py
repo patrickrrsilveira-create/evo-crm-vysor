@@ -628,19 +628,16 @@ class LlmAgentBuilder:
         # Add the native media sending tool
         try:
             from src.services.adk.tools.send_agent_media import create_send_agent_media_tool
-            if not any(t.name == "send_agent_media" for t in all_tools):
-                media_tool = create_send_agent_media_tool(agent_id=str(agent.id))
-                all_tools.append(media_tool)
+            media_tool = create_send_agent_media_tool(agent_id=str(agent.id))
+            all_tools.append(media_tool)
         except Exception as e:
-            logger.error(f"Failed to load send_agent_media tool: {e}")
+            logger.error(f"Failed to load SendAgentMediaTool: {e}")
 
         logger.info(f"Total tools after combining: {len(all_tools)}")
 
         if enabled_tools:
             if "send_agent_media" not in enabled_tools:
                 enabled_tools.append("send_agent_media")
-            if "search_knowledge" not in enabled_tools:
-                enabled_tools.append("search_knowledge")
             all_tools = [tool for tool in all_tools if tool.name in enabled_tools]
             logger.debug(
                 f"Filtered tools by enabled list. Total tools: {len(all_tools)}"

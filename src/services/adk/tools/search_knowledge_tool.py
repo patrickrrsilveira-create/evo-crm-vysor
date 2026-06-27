@@ -4,7 +4,9 @@ from google.adk.tools import FunctionTool
 
 logger = logging.getLogger(__name__)
 
-def create_search_knowledge_tool(agent_id: str, db) -> FunctionTool:
+from src.services.database_service import DatabaseService
+
+def create_search_knowledge_tool(agent_id: str, db: DatabaseService) -> FunctionTool:
     """Create a tool to search the agent's native knowledge bases."""
     
     async def search_knowledge(query: str, limit: int = 5) -> str:
