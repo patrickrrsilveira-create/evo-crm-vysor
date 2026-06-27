@@ -501,9 +501,11 @@ class ToolBuilder:
         # Process Native CRM Knowledge Base
         try:
             effective_agent_id = agent_id or agent_config.get("id") or agent_config.get("agent_id")
-            if effective_agent_id and db:
+            if effective_agent_id:
                 from src.services.adk.tools.search_knowledge_tool import create_search_knowledge_tool
-                self.tools.append(create_search_knowledge_tool(agent_id=effective_agent_id, db=db))
+                from src.services.database_service import get_database_service
+                db_service = get_database_service()
+                self.tools.append(create_search_knowledge_tool(agent_id=effective_agent_id, db=db_service))
                 logger.info(f"Added search_knowledge tool for native CRM knowledge bases for agent {effective_agent_id}")
         except Exception as e:
             logger.error(f"Error adding native search_knowledge tool: {e}")
