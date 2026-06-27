@@ -339,11 +339,10 @@ export default function NewChannel() {
     );
   };
 
-  const shouldShowTestConnection = (): boolean => {
-    return !!(
-      selectedChannel?.type === 'whatsapp' &&
-      selectedProvider &&
-      ['twilio', 'notificame', 'evolution', 'evolution_go', 'wacalls'].includes(selectedProvider.id)
+  const shouldShowTestConnection = () => {
+    if (selectedChannel?.type !== 'whatsapp' && selectedChannel?.type !== 'sms') return false;
+    return ['evolution', 'evolution_go', 'twilio', 'notificame'].includes(
+      selectedProvider?.id || '',
     );
   };
 
