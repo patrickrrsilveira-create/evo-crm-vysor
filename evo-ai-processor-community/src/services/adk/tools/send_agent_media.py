@@ -12,10 +12,12 @@ def create_send_agent_media_tool(agent_id: str) -> FunctionTool:
     
     async def send_agent_media(filename: str, tool_context: ToolContext = None) -> str:
         """
-        Send a media file (video, image, document) to the user. Use this tool when you need to send a file to the user and you know its filename.
+        CRITICAL: Use this tool to send a media file (video, image, document) to the user. 
+        You MUST execute this function whenever the user requests a file, video, or media. 
+        DO NOT generate raw text URLs or markdown links. You MUST trigger this function call.
         
         Parameters:
-        filename: The name of the media file to send (e.g. video.mp4, image.jpg, etc.)
+        filename: The exact name of the media file to send (e.g. Ganader_Brasil.mp4)
         """
         try:
             if not agent_id:
