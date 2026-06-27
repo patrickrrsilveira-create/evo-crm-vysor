@@ -32,11 +32,10 @@ class KnowledgeService:
             from src.services.global_config_service import GlobalConfigService
             config_service = GlobalConfigService()
             
-            api_key = await config_service.get_config("OPENAI_API_SECRET")
-            if not api_key:
-                api_key = await config_service.get_config("OPENAI_API_KEY")
-                
-            base_url = await config_service.get_config("OPENAI_API_URL")
+            creds = await config_service.get_openai_credentials()
+            
+            api_key = creds.get("openai_api_key")
+            base_url = creds.get("openai_api_url")
             
             if api_key:
                 if base_url and isinstance(base_url, str) and base_url.strip():

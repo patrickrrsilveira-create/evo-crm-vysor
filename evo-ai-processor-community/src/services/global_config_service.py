@@ -19,7 +19,7 @@ class GlobalConfigService:
     def __init__(self):
         """Initialize global config service."""
         self.crm_base_url = os.getenv("EVO_AI_CRM_URL", "http://localhost:3000")
-        self.api_token = os.getenv("EVOAI_CRM_API_TOKEN")
+        self.api_token = os.getenv("EVOAI_CRM_API_TOKEN", "")
         self._config_cache: Optional[Dict[str, Any]] = None
 
         if not self.api_token:
@@ -96,6 +96,67 @@ class GlobalConfigService:
             logger.warning(f"Global config key '{key}' not found in CRM")
 
         return value
+
+    async def get_openai_credentials(self) -> Dict[str, Optional[str]]:
+        """
+        Fetch OpenAI credentials from CRM's service-authenticated endpoint.
+
+        Returns:
+            Dictionary with openai_api_key, openai_api_url, and openai_model
+        """
+        try:
+            url = f"{self.crm_base_url}/api/v1/integrations/openai/credentials"
+
+            headers = {
+                "X-Service-Token": self.api_token,
+                "Content-Type": "application/json"
+            }
+
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                response = await client.get(url, headers=headers)
+
+                if response.status_code == 200:
+                    data = response.json()
+                    # The response data structure usually wraps the actual data under 'data' key or returns it directly
+                    payload = data.get("data", data) if isinstance(data, dict) else data
+                    
+                    api_key = payload.get("openai_api_key")
+                    api_url = payload.get("openai_api_url")
+                    model = payload.get("openai_model")
+
+                    if not api_key:
+                        logger.warning("Missing OpenAI API key in global config")
+
+                    return {
+                        "openai_api_key": api_key,
+                        "openai_api_url": api_url,
+                        "openai_model": model
+                    }
+                else:
+                    logger.error(
+                        f"Error fetching OpenAI credentials: "
+                        f"status={response.status_code}, body={response.text}"
+                    )
+                    return {
+                        "openai_api_key": None,
+                        "openai_api_url": None,
+                        "openai_model": None
+                    }
+
+        except httpx.TimeoutException:
+            logger.error("Timeout fetching OpenAI credentials from CRM")
+            return {
+                "openai_api_key": None,
+                "openai_api_url": None,
+                "openai_model": None
+            }
+        except Exception as e:
+            logger.error(f"Error fetching OpenAI credentials: {e}")
+            return {
+                "openai_api_key": None,
+                "openai_api_url": None,
+                "openai_model": None
+            }
 
     async def get_google_calendar_credentials(self) -> Dict[str, Optional[str]]:
         """
