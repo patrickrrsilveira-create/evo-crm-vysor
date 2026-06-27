@@ -1,4 +1,4 @@
-import { User, Wrench, Plug, Server, Users, ListChecks, Settings, Package, BookOpen } from 'lucide-react';
+import { User, Wrench, Plug, Server, Users, ListChecks, Settings, Package, BookOpen, Image } from 'lucide-react';
 import { useLanguage } from '@/hooks/useLanguage';
 import { Agent } from '@/types/agents';
 import { usePermissions } from '@/contexts/PermissionsContext';
@@ -9,6 +9,7 @@ type SidebarMenu =
   | 'subAgents'
   | 'configuration'
   | 'knowledge'
+  | 'media'
   | 'tools'
   | 'integrations'
   | 'mcpServers'
@@ -70,6 +71,12 @@ const AgentEditSidebar = ({
         label: t('edit.menu.knowledge') || 'Base de Conhecimento',
         icon: BookOpen,
         show: !isOrchestratorType && !isExternalType && can('knowledge_bases', 'read'),
+      },
+      {
+        id: 'media',
+        label: t('edit.menu.media') || 'Mídias',
+        icon: Image,
+        show: !isOrchestratorType && !isExternalType,
       },
       {
         id: 'tools',
