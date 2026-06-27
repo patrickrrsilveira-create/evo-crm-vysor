@@ -1,4 +1,3 @@
-import React from 'react';
 import { FormField } from '../../shared/FormField';
 import { FormData } from '@/hooks/channels/useChannelForm';
 import { sanitizeInboxName } from '@/utils/sanitizeName';
