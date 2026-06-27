@@ -363,10 +363,18 @@ class EvoAuthMiddleware(BaseHTTPMiddleware):
         token_agent_id = self._get_token_agent_id(auth_response)
         return token_agent_id and str(token_agent_id) == str(requested_agent_id)
     
+    def _get_cors_headers(self) -> dict:
+        return {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "*",
+            "Access-Control-Allow-Headers": "*"
+        }
+
     def _unauthorized_response(self, message: str) -> JSONResponse:
         """Return consistent 401 response"""
         return JSONResponse(
             status_code=401,
+            headers=self._get_cors_headers(),
             content={
                 "error": "Unauthorized",
                 "code": "ERR_UNAUTHORIZED",
@@ -378,6 +386,7 @@ class EvoAuthMiddleware(BaseHTTPMiddleware):
         """Return 403 response for permission denied"""
         return JSONResponse(
             status_code=403,
+            headers=self._get_cors_headers(),
             content={
                 "error": "Forbidden",
                 "code": "ERR_FORBIDDEN",
@@ -389,6 +398,7 @@ class EvoAuthMiddleware(BaseHTTPMiddleware):
         """Return 503 when auth service is down"""
         return JSONResponse(
             status_code=503,
+            headers=self._get_cors_headers(),
             content={
                 "error": "Service Unavailable",
                 "code": "ERR_SERVICE_UNAVAILABLE",
