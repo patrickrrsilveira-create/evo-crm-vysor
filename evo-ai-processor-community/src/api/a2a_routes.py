@@ -472,7 +472,7 @@ def create_task_response(
             # Substitui links do Google Drive pelo arquivo estático da VPS
             actual_url = url
             if "drive.google.com" in url:
-                processor_url = os.environ.get("AI_PROCESSOR_URL", "http://evo-processor:8000")
+                processor_url = os.environ.get("APP_URL", "http://evo_processor:8000").rstrip('/')
                 actual_url = f"{processor_url}/static/pesagem_ganader.mp4"
                 logger.info(f"🔄 Replacing Google Drive URL with local static URL: {actual_url}")
                 
