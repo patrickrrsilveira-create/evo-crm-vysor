@@ -48,19 +48,24 @@ class KnowledgeService:
             
             if api_key:
                 import json
-                try:
-                    if isinstance(api_key, str):
-                        # Ruby serialization usually wraps strings in quotes
-                        if api_key.startswith('"') and api_key.endswith('"'):
-                            api_key = json.loads(api_key)
-                    if isinstance(base_url, str):
-                        if base_url.startswith('"') and base_url.endswith('"'):
-                            base_url = json.loads(base_url)
-                except Exception:
-                    pass
                 
-                if base_url and base_url.strip():
-                    # Ensure base_url has a protocol
+                def extract_val(val):
+                    if isinstance(val, str):
+                        try:
+                            parsed = json.loads(val)
+                            if isinstance(parsed, dict) and 'value' in parsed:
+                                return parsed['value']
+                            return parsed
+                        except Exception:
+                            return val
+                    elif isinstance(val, dict) and 'value' in val:
+                        return val['value']
+                    return val
+
+                api_key = extract_val(api_key)
+                base_url = extract_val(base_url)
+                
+                if base_url and isinstance(base_url, str) and base_url.strip():
                     if not base_url.startswith('http://') and not base_url.startswith('https://'):
                         base_url = 'https://' + base_url
                     return AsyncOpenAI(api_key=api_key, base_url=base_url)
