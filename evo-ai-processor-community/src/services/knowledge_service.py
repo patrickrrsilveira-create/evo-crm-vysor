@@ -27,16 +27,46 @@ class KnowledgeService:
             self.tokenizer = tiktoken.get_encoding("r50k_base")
 
     async def get_openai_client(self) -> AsyncOpenAI:
-        """Initialize the OpenAI async client using the global configuration API key."""
-        api_key = await self.config_service.get_config("OPENAI_API_SECRET")
-        if not api_key:
-            # Fallback to OPENAI_API_KEY
-            api_key = await self.config_service.get_config("OPENAI_API_KEY")
+        """Initialize the OpenAI async client using the global configuration API key from database."""
+        try:
+            # The global config API hides sensitive keys, so we must query the database directly
+            query = """
+                SELECT name, serialized_value FROM installation_configs 
+                WHERE name IN ('OPENAI_API_SECRET', 'OPENAI_API_KEY', 'OPENAI_API_URL')
+            """
+            results = await self.db.fetch_all(query)
             
-        if not api_key:
-            raise ValueError("OpenAI API key is not configured in Global Configs.")
+            api_key = None
+            base_url = None
+            for row in results:
+                if row.get('name') == 'OPENAI_API_SECRET':
+                    api_key = row.get('serialized_value')
+                elif row.get('name') == 'OPENAI_API_KEY' and not api_key:
+                    api_key = row.get('serialized_value')
+                elif row.get('name') == 'OPENAI_API_URL':
+                    base_url = row.get('serialized_value')
             
-        return AsyncOpenAI(api_key=api_key)
+            if api_key:
+                import json
+                try:
+                    if isinstance(api_key, str):
+                        # Ruby serialization usually wraps strings in quotes
+                        if api_key.startswith('"') and api_key.endswith('"'):
+                            api_key = json.loads(api_key)
+                    if isinstance(base_url, str):
+                        if base_url.startswith('"') and base_url.endswith('"'):
+                            base_url = json.loads(base_url)
+                except Exception:
+                    pass
+                
+                if base_url and base_url.strip():
+                    return AsyncOpenAI(api_key=api_key, base_url=base_url)
+                return AsyncOpenAI(api_key=api_key)
+                
+        except Exception as e:
+            logger.error(f"Error fetching OpenAI key from DB: {e}")
+            
+        raise ValueError("OpenAI API key is not configured in Global Configs.")
 
     def extract_text_from_pdf(self, file_content: bytes) -> str:
         """Extract text from a PDF file."""
