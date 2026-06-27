@@ -43,6 +43,7 @@ type SidebarMenu =
   | 'subAgents'
   | 'configuration'
   | 'knowledge'
+  | 'media'
   | 'tools'
   | 'integrations'
   | 'mcpServers'

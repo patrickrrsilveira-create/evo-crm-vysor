@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Image as ImageIcon, Plus, Loader2, Trash2, UploadCloud, Copy } from 'lucide-react';
+import { Image as ImageIcon, Loader2, Trash2, UploadCloud, Copy } from 'lucide-react';
 import { Button } from '@evoapi/design-system/button';
 import { toast } from 'sonner';
 import { agentMediaService, AgentMedia } from '@/services/agentMedia';
@@ -146,7 +146,7 @@ const MediaSection = ({ agentId }: MediaSectionProps) => {
                       {media.filename}
                     </h4>
                     <p className="text-xs text-muted-foreground mt-1">
-                      Tamanho: {formatBytes(media.size)}
+                      Tamanho: {formatFileSize(media.size)}
                     </p>
                   </div>
                   <Button
