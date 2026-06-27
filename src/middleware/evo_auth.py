@@ -371,7 +371,8 @@ class EvoAuthMiddleware(BaseHTTPMiddleware):
                 "error": "Unauthorized",
                 "code": "ERR_UNAUTHORIZED",
                 "message": message
-            }
+            },
+            headers={"Access-Control-Allow-Origin": "*"}
         )
     
     def _forbidden_response(self, message: str) -> JSONResponse:
@@ -382,7 +383,8 @@ class EvoAuthMiddleware(BaseHTTPMiddleware):
                 "error": "Forbidden",
                 "code": "ERR_FORBIDDEN",
                 "message": message
-            }
+            },
+            headers={"Access-Control-Allow-Origin": "*"}
         )
     
     def _service_unavailable_response(self, message: str) -> JSONResponse:
@@ -393,5 +395,6 @@ class EvoAuthMiddleware(BaseHTTPMiddleware):
                 "error": "Service Unavailable",
                 "code": "ERR_SERVICE_UNAVAILABLE",
                 "message": message
-            }
+            },
+            headers={"Access-Control-Allow-Origin": "*"}
         )
