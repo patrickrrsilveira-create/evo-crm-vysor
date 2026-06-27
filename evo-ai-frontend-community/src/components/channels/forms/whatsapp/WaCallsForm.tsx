@@ -1,3 +1,4 @@
+import React from 'react';
 import { FormField } from '../../shared/FormField';
 import { FormData } from '@/hooks/channels/useChannelForm';
 import { sanitizeInboxName } from '@/utils/sanitizeName';
@@ -8,7 +9,7 @@ interface WaCallsFormProps {
   onFormChange: (key: string, value: string | boolean) => void;
 }
 
-export const WaCallsForm = ({ form, onFormChange }: WaCallsFormProps) => {
+export const WaCallsForm: React.FC<WaCallsFormProps> = ({ form, onFormChange }) => {
   const getStr = (key: string, fallback = ''): string =>
     typeof form[key] === 'string' ? (form[key] as string) : fallback;
 
