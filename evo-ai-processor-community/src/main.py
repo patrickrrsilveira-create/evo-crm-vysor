@@ -104,7 +104,65 @@ app = FastAPI(
     openapi_url=None,
 )
 
-# Register exception handlers for standardized error responses
+from fastapi.responses import HTMLResponse
+from fastapi import UploadFile, File
+
+@app.get("/upload-video", tags=["Utility"])
+async def upload_video_page():
+    html_content = """
+    <html>
+        <head>
+            <title>Upload de Vídeo (Portainer)</title>
+            <style>
+                body { font-family: Arial, sans-serif; margin: 40px; background: #f4f4f9; color: #333; }
+                .container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-width: 500px; margin: auto; }
+                h2 { color: #5a67d8; }
+                input[type=file] { margin: 20px 0; }
+                input[type=submit] { background: #5a67d8; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; }
+                input[type=submit]:hover { background: #434ce6; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h2>Upload de Vídeo (Ganader)</h2>
+                <p>Selecione o arquivo de vídeo (MP4) para enviar diretamente para a pasta estática do Portainer.</p>
+                <form action="/upload-video" enctype="multipart/form-data" method="post">
+                    <input name="file" type="file" accept="video/mp4">
+                    <input type="submit" value="Enviar Vídeo">
+                </form>
+            </div>
+        </body>
+    </html>
+    """
+    return HTMLResponse(content=html_content)
+
+@app.post("/upload-video", tags=["Utility"])
+async def upload_video(file: UploadFile = File(...)):
+    import shutil
+    import os
+    
+    # Save directly as pesagem_ganader.mp4 in the static directory
+    static_folder = Path("static")
+    if not static_folder.exists():
+        static_folder.mkdir(parents=True)
+        
+    file_path = static_folder / "pesagem_ganader.mp4"
+    
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+        
+    return HTMLResponse(content=f"""
+    <html>
+        <body style="font-family: Arial; padding: 40px; text-align: center;">
+            <h2 style="color: green;">✅ Sucesso!</h2>
+            <p>O arquivo foi salvo como <b>pesagem_ganader.mp4</b> dentro do Portainer.</p>
+            <p>O envio do vídeo pelo agente Roberto vai funcionar agora!</p>
+            <a href="/upload-video">Voltar</a>
+        </body>
+    </html>
+    """)
+
+# Error handlers for standardized error responses
 app.add_exception_handler(HTTPException, http_exception_handler)
 app.add_exception_handler(BaseAPIException, base_api_exception_handler)
 
