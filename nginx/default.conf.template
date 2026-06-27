@@ -366,8 +366,8 @@ server {
         proxy_set_header Connection "upgrade";
     }
 
-    # Other Processor endpoints (sessions, tools, clients)
-    location ~ ^/api/v1/(sessions|tools|clients) {
+    # Other Processor endpoints (sessions, tools, clients, adk)
+    location ~ ^/api/v1/(sessions|tools|clients|adk) {
         proxy_pass $processor_service$request_uri;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;

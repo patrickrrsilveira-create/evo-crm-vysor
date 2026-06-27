@@ -1,43 +1,48 @@
-from typing import Dict, Any, Type, Optional
-from pydantic import BaseModel, Field
-import os
-from pathlib import Path
+import json
+import logging
 import mimetypes
-
-from src.services.adk.tools.base import BaseTool
+from pathlib import Path
+from google.adk.tools import FunctionTool, ToolContext
 from src.config.settings import settings
 
-class SendAgentMediaInput(BaseModel):
-    filename: str = Field(..., description="The name of the media file to send (e.g. video.mp4, image.jpg, etc.)")
+logger = logging.getLogger(__name__)
 
-class SendAgentMediaTool(BaseTool):
-    name = "send_agent_media"
-    description = "Send a media file (video, image, document) to the user. Use this tool when you need to send a file to the user and you know its filename."
-    args_schema: Type[BaseModel] = SendAgentMediaInput
-    agent_id: Optional[str] = None
+def create_send_agent_media_tool(agent_id: str) -> FunctionTool:
+    """Create a tool to send agent media files to the user."""
     
-    def __init__(self, agent_id: Optional[str] = None):
-        self.agent_id = agent_id
+    async def send_agent_media(filename: str, tool_context: ToolContext = None) -> str:
+        """
+        Send a media file (video, image, document) to the user. Use this tool when you need to send a file to the user and you know its filename.
         
-    async def _run(self, filename: str) -> Dict[str, Any]:
-        if not self.agent_id:
-            return {"status": "error", "message": "Agent ID not provided"}
+        Parameters:
+        filename: The name of the media file to send (e.g. video.mp4, image.jpg, etc.)
+        """
+        try:
+            if not agent_id:
+                return json.dumps({"status": "error", "message": "Agent ID not provided"})
+                
+            static_folder = Path("static") / "agents" / agent_id
+            file_path = static_folder / filename
             
-        static_folder = Path("static") / "agents" / self.agent_id
-        file_path = static_folder / filename
-        
-        if not file_path.exists():
-            return {"status": "error", "message": f"File '{filename}' not found in agent's media folder"}
-            
-        url = f"{settings.APP_URL}/static/agents/{self.agent_id}/{filename}"
-        mime_type, _ = mimetypes.guess_type(filename)
-        if not mime_type:
-            mime_type = "application/octet-stream"
-            
-        return {
-            "status": "success",
-            "message": f"Media '{filename}' attached successfully.",
-            "url": url,
-            "mimeType": mime_type,
-            "filename": filename
-        }
+            if not file_path.exists():
+                return json.dumps({"status": "error", "message": f"File '{filename}' not found in agent's media folder"})
+                
+            url = f"{settings.APP_URL}/static/agents/{agent_id}/{filename}"
+            mime_type, _ = mimetypes.guess_type(filename)
+            if not mime_type:
+                mime_type = "application/octet-stream"
+                
+            return json.dumps({
+                "status": "success",
+                "message": f"Media '{filename}' attached successfully.",
+                "url": url,
+                "mimeType": mime_type,
+                "filename": filename
+            })
+        except Exception as e:
+            logger.error(f"Error in send_agent_media tool: {e}")
+            return json.dumps({"status": "error", "message": str(e)})
+
+    send_agent_media.__name__ = "send_agent_media"
+    return FunctionTool(func=send_agent_media)
+

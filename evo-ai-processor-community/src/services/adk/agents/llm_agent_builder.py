@@ -601,6 +601,23 @@ class LlmAgentBuilder:
         # Get agent tools
         agent_tools = await self._agent_tools_builder(agent, processed_agents)
 
+        # 6. Add send_agent_media tool if enabled or present in config
+        if agent.config and agent.config.get("enable_agent_media", False):
+            try:
+                from src.services.adk.tools.send_agent_media import create_send_agent_media_tool
+                
+                # Check if it was manually enabled in UI
+                if "send_agent_media" not in enabled_tools:
+                    enabled_tools.append("send_agent_media")
+                    
+                # The factory will handle instantiation if it's in enabled_tools
+                # Or we can just append it directly here if it's not handled by tool_builder
+                send_media_tool = create_send_agent_media_tool(agent_id=str(agent.id))
+                agent_tools.append(send_media_tool)
+                logger.info("Added send_agent_media tool")
+            except Exception as e:
+                logger.error(f"Failed to load send_agent_media tool: {e}")
+
         # Combine all tools
         logger.info(
             f"Combining tools: custom={len(custom_tools)}, mcp={len(mcp_tools)}, "
