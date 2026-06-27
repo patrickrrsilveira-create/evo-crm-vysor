@@ -1,4 +1,3 @@
-import { useLanguage } from '@/hooks/useLanguage';
 import { FormField } from '../../shared/FormField';
 import { FormData } from '@/hooks/channels/useChannelForm';
 import { sanitizeInboxName } from '@/utils/sanitizeName';
@@ -10,7 +9,6 @@ interface WaCallsFormProps {
 }
 
 export const WaCallsForm = ({ form, onFormChange }: WaCallsFormProps) => {
-  const { t } = useLanguage('whatsapp');
   const getStr = (key: string, fallback = ''): string =>
     typeof form[key] === 'string' ? (form[key] as string) : fallback;
 
