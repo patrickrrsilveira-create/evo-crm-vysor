@@ -464,6 +464,15 @@ Rails.application.routes.draw do
         end
       end
 
+      scope path: 'wacalls', as: 'wacalls' do
+        resources :qrcodes, only: [:show], controller: 'wacalls/qrcodes'
+        resources :sessions, only: [], controller: 'wacalls/sessions' do
+          member do
+            delete :logout
+          end
+        end
+      end
+
       namespace :oauth do
         resources :applications do
           member do

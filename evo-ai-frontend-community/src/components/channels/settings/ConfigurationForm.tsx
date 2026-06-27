@@ -32,7 +32,7 @@ import {
   QrCode,
   Info,
 } from 'lucide-react';
-import { EvolutionApiService, ZapiService } from '@/services/channels/channelConfigurationService';
+import { EvolutionApiService, ZapiService, WaCallsApiService } from '@/services/channels/channelConfigurationService';
 import InboxesService from '@/services/channels/inboxesService';
 import { useGlobalConfig } from '@/contexts/GlobalConfigContext';
 
@@ -2643,6 +2643,163 @@ const EmailChannelConfig: React.FC<{
   );
 };
 
+const WaCallsWhatsAppConfig: React.FC<{
+  inbox: any;
+}> = ({ inbox }) => {
+  const [qrCode, setQrCode] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [showQrModal, setShowQrModal] = useState(false);
+  const eventSourceRef = useRef<EventSource | null>(null);
+
+  const sessionId = inbox?.provider_config?.instance_name || inbox?.name || null;
+  const apiUrl = inbox?.provider_config?.api_url || 'https://waha.vysortech.app.br';
+  const clientId = inbox?.provider_config?.api_key || 'evo-crm';
+
+  // Cleanup SSE on unmount or close
+  useEffect(() => {
+    return () => {
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+      }
+    };
+  }, []);
+
+  const handleGetQRCode = async () => {
+    if (!sessionId) {
+      toast.error('Session ID not found');
+      return;
+    }
+    setIsLoading(true);
+    setQrCode(null);
+    try {
+      const response = await WaCallsApiService.getQRCode(sessionId);
+      if (response && response.success) {
+        setShowQrModal(true);
+        toast.success('Pareamento iniciado. Aguardando QR Code...');
+        
+        // Conectar ao SSE do WaCalls
+        if (eventSourceRef.current) {
+          eventSourceRef.current.close();
+        }
+        
+        const sseUrl = `${apiUrl.replace(/\/$/, '')}/api/events?clientId=${encodeURIComponent(clientId)}`;
+        const eventSource = new EventSource(sseUrl);
+        eventSourceRef.current = eventSource;
+
+        eventSource.addEventListener('session-qr', (e: any) => {
+          try {
+            const data = JSON.parse(e.data);
+            if (data.session === sessionId && data.qr) {
+               setQrCode(data.qr);
+            }
+          } catch(err) {
+            console.error('Failed to parse session-qr event', err);
+          }
+        });
+
+        eventSource.addEventListener('auth-state', (e: any) => {
+          try {
+            const data = JSON.parse(e.data);
+            if (data.session === sessionId && data.state === 'open') {
+               toast.success('Connected successfully!');
+               setShowQrModal(false);
+               eventSource.close();
+            }
+          } catch(err) {
+            console.error('Failed to parse auth-state event', err);
+          }
+        });
+
+      } else {
+        toast.error('Failed to start pairing');
+      }
+    } catch (error) {
+      console.error('Error starting pairing:', error);
+      toast.error('Failed to start pairing');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    if (!sessionId) return;
+    setIsLoading(true);
+    try {
+      await WaCallsApiService.logout(sessionId);
+      toast.success('Disconnected successfully');
+      setQrCode(null);
+      setShowQrModal(false);
+    } catch (error) {
+      console.error('Error disconnecting:', error);
+      toast.error('Failed to disconnect');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex items-start gap-4">
+            <Smartphone className="w-5 h-5 text-green-600 mt-1" />
+            <div className="flex-1">
+              <h3 className="font-semibold text-slate-900 dark:text-slate-100">
+                WaCalls API Connection
+              </h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
+                Manage your WaCalls WhatsApp connection
+              </p>
+
+              <div className="mt-6 flex flex-wrap gap-3">
+                <Button onClick={handleGetQRCode} disabled={isLoading} variant="outline">
+                  <QrCode className="w-4 h-4 mr-2" />
+                  Generate QR Code
+                </Button>
+                <Button onClick={handleLogout} disabled={isLoading} variant="destructive">
+                  Disconnect
+                </Button>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Dialog open={showQrModal} onOpenChange={(open) => {
+        setShowQrModal(open);
+        if (!open && eventSourceRef.current) {
+          eventSourceRef.current.close();
+        }
+      }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Scan QR Code</DialogTitle>
+            <DialogDescription>
+              Open WhatsApp on your phone, go to Linked Devices, and scan this QR code.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col items-center justify-center p-6 space-y-4">
+            {qrCode ? (
+              <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                <img
+                  src={qrCode.startsWith('data:') ? qrCode : `data:image/png;base64,${qrCode}`}
+                  alt="QR Code"
+                  className="w-64 h-64"
+                />
+              </div>
+            ) : (
+              <div className="w-64 h-64 flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-900 rounded-xl border border-dashed border-slate-300 dark:border-slate-700">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                <p className="text-sm text-slate-500 mt-4">Waiting for QR Code from SSE...</p>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+};
+
 const ConfigurationForm: React.FC<ConfigurationFormProps> = ({ inbox, onUpdate }) => {
   const { t } = useLanguage('channels');
 
@@ -2662,6 +2819,7 @@ const ConfigurationForm: React.FC<ConfigurationFormProps> = ({ inbox, onUpdate }
   const isEvolutionChannel = inbox.provider === 'evolution';
   const isEvolutionGoChannel = inbox.provider === 'evolution_go';
   const isZapiChannel = inbox.provider === 'zapi';
+  const isWaCallsChannel = inbox.provider === 'wacalls';
   const isEmailChannel = channelType === 'Channel::Email';
   const isTwilioChannel = channelType === 'Channel::TwilioSms';
 
@@ -2692,6 +2850,11 @@ const ConfigurationForm: React.FC<ConfigurationFormProps> = ({ inbox, onUpdate }
   // WhatsApp Z-API
   if (isWhatsAppChannel && isZapiChannel) {
     return <ZapiWhatsAppConfig inbox={inbox} onUpdate={handleUpdate} />;
+  }
+
+  // WhatsApp WaCalls
+  if (isWhatsAppChannel && isWaCallsChannel) {
+    return <WaCallsWhatsAppConfig inbox={inbox} />;
   }
 
   // WhatsApp (Cloud, Twilio, etc.)

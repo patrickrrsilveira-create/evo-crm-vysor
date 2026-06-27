@@ -202,6 +202,8 @@ function useInbox(inbox: Inbox | null): InboxHook {
       channelType === INBOX_TYPES.WHATSAPP && provider === WHATSAPP_PROVIDERS.EVOLUTION_GO;
     const isAWhatsAppZapiChannel =
       channelType === INBOX_TYPES.WHATSAPP && provider === WHATSAPP_PROVIDERS.ZAPI;
+    const isAWhatsAppWaCallsChannel =
+      channelType === INBOX_TYPES.WHATSAPP && provider === 'wacalls';
     const isAWhatsAppChannel = channelType === INBOX_TYPES.WHATSAPP || isATwilioWhatsAppChannel;
     const isAnInstagramChannel = channelType === INBOX_TYPES.INSTAGRAM;
     const isAMicrosoftInbox = isAnEmailChannel && provider === 'microsoft';
@@ -215,6 +217,7 @@ function useInbox(inbox: Inbox | null): InboxHook {
     else if (isAWhatsAppBaileysChannel) whatsAppAPIProviderName = 'Baileys';
     else if (isAWhatsAppEvolutionChannel) whatsAppAPIProviderName = 'Evolution';
     else if (isAWhatsAppEvolutionGoChannel) whatsAppAPIProviderName = 'Evolution Go';
+    else if (isAWhatsAppWaCallsChannel) whatsAppAPIProviderName = 'WaCalls API';
     else if (isAWhatsAppZapiChannel) whatsAppAPIProviderName = 'Z-API';
 
     // Can lock to single conversation
@@ -261,6 +264,7 @@ function useInbox(inbox: Inbox | null): InboxHook {
       isAWhatsAppBaileysChannel,
       isAWhatsAppEvolutionChannel,
       isAWhatsAppEvolutionGoChannel,
+      isAWhatsAppWaCallsChannel,
       isAWhatsAppZapiChannel,
       isAWhatsAppChannel,
       isAnInstagramChannel,

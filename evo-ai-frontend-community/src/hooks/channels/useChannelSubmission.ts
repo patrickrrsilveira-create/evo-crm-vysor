@@ -668,6 +668,20 @@ export const useChannelSubmission = (form?: FormData) => {
                 },
               },
             } as WhatsappZapiPayload;
+          } else if (selectedProvider.id === 'wacalls') {
+            payload = {
+              name: getStr(form, 'name') || 'WhatsApp WaCalls',
+              display_name: getStr(form, 'display_name') || getStr(form, 'name') || 'WhatsApp WaCalls',
+              channel: {
+                type: 'whatsapp',
+                phone_number: getStr(form, 'phone_number'),
+                provider: 'wacalls',
+                provider_config: {
+                  api_url: getStr(form, 'api_url'),
+                  api_key: getStr(form, 'api_key'),
+                },
+              },
+            } as any; // Cast as any because the type might not be fully exported in this file, though we added WhatsappWacallsPayload
           } else {
             throw new Error(`Provedor WhatsApp '${selectedProvider.id}' não implementado`);
           }

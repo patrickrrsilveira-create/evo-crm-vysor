@@ -34,6 +34,12 @@ export const getChannelTypes = (): ChannelType[] => [
         popular: true,
       },
       {
+        id: 'wacalls',
+        name: 'WaCalls API',
+        description: 'API WhatsApp WaCalls - alta estabilidade',
+        popular: false,
+      },
+      {
         id: 'notificame',
         name: i18n.t('channels:newChannel.providers.notificame.name'),
         description: i18n.t('channels:newChannel.providers.notificame.description'),

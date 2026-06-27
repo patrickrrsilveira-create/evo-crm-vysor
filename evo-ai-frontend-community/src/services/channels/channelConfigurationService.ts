@@ -799,4 +799,35 @@ export const ZapiService = {
   },
 };
 
+/**
+ * WaCalls API Service (specific for WaCalls WhatsApp provider)
+ */
+export const WaCallsApiService = {
+  /**
+   * Get QR Code for WaCalls session
+   */
+  async getQRCode(sessionId: string): Promise<any> {
+    try {
+      const { data } = await api.get(`/wacalls/qrcodes/${sessionId}`);
+      return data;
+    } catch (error) {
+      console.error('WaCallsApiService.getQRCode error:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Logout WaCalls session
+   */
+  async logout(sessionId: string): Promise<any> {
+    try {
+      const { data } = await api.delete(`/wacalls/sessions/${sessionId}/logout`);
+      return data;
+    } catch (error) {
+      console.error('WaCallsApiService.logout error:', error);
+      throw error;
+    }
+  },
+};
+
 export default ChannelConfigurationService;

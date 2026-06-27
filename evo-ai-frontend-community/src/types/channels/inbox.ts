@@ -236,6 +236,20 @@ export interface WhatsappEvolutionGoPayload {
   };
 }
 
+export interface WhatsappWacallsPayload {
+  name: string;
+  display_name?: string;
+  channel: {
+    type: 'whatsapp';
+    provider: 'wacalls';
+    phone_number: string;
+    provider_config?: {
+      api_url?: string;
+      api_key?: string;
+    };
+  };
+}
+
 export interface WhatsappTwilioPayload {
   name: string;
   display_name?: string;
@@ -324,6 +338,7 @@ export type ChannelPayload =
   | WhatsappCloudPayload
   | WhatsappEvolutionPayload
   | WhatsappEvolutionGoPayload
+  | WhatsappWacallsPayload
   | WhatsappTwilioPayload
   | WhatsappNotificamePayload
   | WhatsappZapiPayload

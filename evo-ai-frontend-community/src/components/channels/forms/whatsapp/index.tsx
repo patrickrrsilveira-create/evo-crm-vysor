@@ -5,6 +5,7 @@ import { NotificameForm } from './NotificameForm';
 import { ZapiForm } from './ZapiForm';
 import { EvolutionForm } from './EvolutionForm';
 import { EvolutionGoForm } from './EvolutionGoForm';
+import { WaCallsForm } from './WaCallsForm';
 import { FormData } from '@/hooks/channels/useChannelForm';
 import { Provider as ProviderType } from '@/components/channels/ProviderGrid';
 
@@ -58,6 +59,9 @@ export const WhatsappForms = ({
           hasEvolutionGoConfig={hasEvolutionGoConfig}
         />
       );
+
+    case 'wacalls':
+      return <WaCallsForm form={form} onFormChange={onFormChange} />;
 
     default:
       return (

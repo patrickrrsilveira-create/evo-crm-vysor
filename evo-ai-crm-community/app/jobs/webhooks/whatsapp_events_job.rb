@@ -337,6 +337,8 @@ class Webhooks::WhatsappEventsJob < ApplicationJob
       Whatsapp::IncomingMessageNotificameService.new(inbox: channel.inbox, params: params).perform
     when 'zapi'
       Whatsapp::IncomingMessageZapiService.new(inbox: channel.inbox, params: params).perform
+    when 'wacalls'
+      Whatsapp::IncomingMessageWacallsService.new(inbox: channel.inbox, params: params).perform
     else
       Whatsapp::IncomingMessageService.new(inbox: channel.inbox, params: params).perform
     end
@@ -377,6 +379,15 @@ class Webhooks::WhatsappEventsJob < ApplicationJob
       channel = find_channel_by_zapi_instance(params[:instanceId])
       if channel
         Rails.logger.info "Channel search via Z-API instanceId #{params[:instanceId]}: found #{channel.phone_number}"
+        return channel
+      end
+    end
+
+    # For WaCalls, prioritize finding by session
+    if params[:session].present?
+      channel = find_channel_by_wacalls_session(params[:session])
+      if channel
+        Rails.logger.info "Channel search via WaCalls session #{params[:session]}: found #{channel.phone_number}"
         return channel
       end
     end
@@ -481,6 +492,18 @@ class Webhooks::WhatsappEventsJob < ApplicationJob
                                .first
 
     Rails.logger.info "Evolution Go channel search: instance_uuid=#{instance_uuid} - #{channel ? "found channel #{channel.id}" : 'not found'}"
+    channel
+  end
+
+  def find_channel_by_wacalls_session(session)
+    Rails.logger.info "WaCalls channel search: Searching for session=#{session}"
+
+    channel = Channel::Whatsapp.joins(:inbox)
+                               .where(provider: 'wacalls')
+                               .where("provider_config ->> 'instance_name' = ?", session)
+                               .first
+
+    Rails.logger.info "WaCalls channel search: session=#{session} - #{channel ? "found channel #{channel.id}" : 'not found'}"
     channel
   end
 

@@ -343,7 +343,7 @@ export default function NewChannel() {
     return !!(
       selectedChannel?.type === 'whatsapp' &&
       selectedProvider &&
-      ['twilio', 'notificame', 'evolution', 'evolution_go'].includes(selectedProvider.id)
+      ['twilio', 'notificame', 'evolution', 'evolution_go', 'wacalls'].includes(selectedProvider.id)
     );
   };
 
