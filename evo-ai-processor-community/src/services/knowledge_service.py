@@ -27,44 +27,18 @@ class KnowledgeService:
             self.tokenizer = tiktoken.get_encoding("r50k_base")
 
     async def get_openai_client(self) -> AsyncOpenAI:
-        """Initialize the OpenAI async client using the global configuration API key from database."""
+        """Initialize the OpenAI async client using the global configuration API key."""
         try:
-            # The global config API hides sensitive keys, so we must query the database directly
-            query = """
-                SELECT name, serialized_value FROM installation_configs 
-                WHERE name IN ('OPENAI_API_SECRET', 'OPENAI_API_KEY', 'OPENAI_API_URL')
-            """
-            results = await self.db.fetch_all(query)
+            from src.services.global_config_service import GlobalConfigService
+            config_service = GlobalConfigService()
             
-            api_key = None
-            base_url = None
-            for row in results:
-                if row.get('name') == 'OPENAI_API_SECRET':
-                    api_key = row.get('serialized_value')
-                elif row.get('name') == 'OPENAI_API_KEY' and not api_key:
-                    api_key = row.get('serialized_value')
-                elif row.get('name') == 'OPENAI_API_URL':
-                    base_url = row.get('serialized_value')
+            api_key = await config_service.get_config("OPENAI_API_SECRET")
+            if not api_key:
+                api_key = await config_service.get_config("OPENAI_API_KEY")
+                
+            base_url = await config_service.get_config("OPENAI_API_URL")
             
             if api_key:
-                import json
-                
-                def extract_val(val):
-                    if isinstance(val, str):
-                        try:
-                            parsed = json.loads(val)
-                            if isinstance(parsed, dict) and 'value' in parsed:
-                                return parsed['value']
-                            return parsed
-                        except Exception:
-                            return val
-                    elif isinstance(val, dict) and 'value' in val:
-                        return val['value']
-                    return val
-
-                api_key = extract_val(api_key)
-                base_url = extract_val(base_url)
-                
                 if base_url and isinstance(base_url, str) and base_url.strip():
                     if not base_url.startswith('http://') and not base_url.startswith('https://'):
                         base_url = 'https://' + base_url
@@ -72,7 +46,7 @@ class KnowledgeService:
                 return AsyncOpenAI(api_key=api_key)
                 
         except Exception as e:
-            logger.error(f"Error fetching OpenAI key from DB: {e}")
+            logger.error(f"Error fetching OpenAI key from Global Config: {e}")
             
         raise ValueError("OpenAI API key is not configured in Global Configs.")
 
