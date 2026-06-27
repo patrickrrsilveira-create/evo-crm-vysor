@@ -211,22 +211,28 @@ class KnowledgeService:
         embeddings = await self.generate_embeddings(chunks)
         
         # 3. Store chunks and embeddings in database
-        pool = await self.db.get_pool()
-        
-        async with pool.acquire() as conn:
-            async with conn.transaction():
-                for chunk, embedding in zip(chunks, embeddings):
-                    # In asyncpg, inserting pgvector is natively supported if pgvector extension is created.
-                    # A standard list works. We cast the string formatted list to vector.
-                    embedding_str = f"[{','.join(map(str, embedding))}]"
-                    
-                    await conn.execute(
-                        "INSERT INTO knowledge_document_chunks (knowledge_document_id, content, embedding, created_at, updated_at) "
-                        "VALUES ($1, $2, $3::vector, NOW(), NOW())",
-                        document_id, chunk, embedding_str
-                    )
-                    
-        logger.info(f"Successfully stored {len(chunks)} embedded chunks for document {document_id}")
+        from sqlalchemy import text
+        try:
+            for chunk, embedding in zip(chunks, embeddings):
+                embedding_str = f"[{','.join(map(str, embedding))}]"
+                
+                query_sql = text("""
+                    INSERT INTO knowledge_document_chunks (knowledge_document_id, content, embedding, created_at, updated_at) 
+                    VALUES (:doc_id, :chunk, :embedding::vector, NOW(), NOW())
+                """)
+                
+                self.db.execute(query_sql, {
+                    "doc_id": document_id,
+                    "chunk": chunk,
+                    "embedding": embedding_str
+                })
+            
+            self.db.commit()
+            logger.info(f"Successfully stored {len(chunks)} embedded chunks for document {document_id}")
+        except Exception as e:
+            self.db.rollback()
+            logger.error(f"Error storing document chunks in DB: {e}")
+            raise
 
     async def extract_process_and_store_document(self, knowledge_base_id: str, document_id: str, content: bytes, filename_lower: str, content_type: str):
         from starlette.concurrency import run_in_threadpool
@@ -275,41 +281,50 @@ class KnowledgeService:
         query_embedding = query_embeddings[0]
         embedding_str = f"[{','.join(map(str, query_embedding))}]"
         
-        pool = await self.db.get_pool()
+        from sqlalchemy import text
         
         # The vector operator <-> is L2 distance, <=> is cosine distance, <#> is inner product.
-        # Since text-embedding-ada-002 is normalized, cosine distance <=> or inner product <#> work best.
-        # We use <=> for cosine distance.
-        query_sql = f"""
-            SELECT c.content, c.embedding <=> $1::vector AS distance
+        query_sql = text("""
+            SELECT c.content, c.embedding <=> :embedding::vector AS distance
             FROM knowledge_document_chunks c
             JOIN knowledge_documents d ON c.knowledge_document_id = d.id
-            WHERE d.knowledge_base_id = ANY($2::uuid[])
-            ORDER BY c.embedding <=> $1::vector
-            LIMIT $3
-        """
+            WHERE d.knowledge_base_id = ANY(:kb_ids::uuid[])
+            ORDER BY c.embedding <=> :embedding::vector
+            LIMIT :limit
+        """)
         
-        results = await pool.fetch(query_sql, embedding_str, knowledge_base_ids, limit)
-        
-        if not results:
-            return ""
+        try:
+            results = self.db.execute(query_sql, {
+                "embedding": embedding_str,
+                "kb_ids": knowledge_base_ids,
+                "limit": limit
+            }).fetchall()
             
-        # Combine the content into a single string
-        combined_text = "\n\n---\n\n".join([row["content"] for row in results])
-        return combined_text
+            if not results:
+                return ""
+                
+            # Combine the content into a single string (row[0] is content)
+            combined_text = "\n\n---\n\n".join([row[0] for row in results])
+            return combined_text
+        except Exception as e:
+            logger.error(f"Error retrieving knowledge from DB: {e}")
+            return ""
 
     async def search_agent_knowledge(self, agent_bot_id: str, query: str, limit: int = 5) -> str:
         """Search for relevant chunks across all knowledge bases attached to an agent bot."""
-        pool = await self.db.get_pool()
+        from sqlalchemy import text
         
         # Get all knowledge_base_ids for this agent_bot_id
-        query_sql = "SELECT knowledge_base_id FROM knowledge_base_agent_bots WHERE agent_bot_id = $1"
-        records = await pool.fetch(query_sql, agent_bot_id)
-        
-        knowledge_base_ids = [record['knowledge_base_id'] for record in records]
-        
-        if not knowledge_base_ids:
-            return ""
+        query_sql = text("SELECT knowledge_base_id FROM knowledge_base_agent_bots WHERE agent_bot_id = :agent_bot_id")
+        try:
+            records = self.db.execute(query_sql, {"agent_bot_id": agent_bot_id}).fetchall()
+            knowledge_base_ids = [str(record[0]) for record in records]
             
-        return await self.retrieve_knowledge(query, knowledge_base_ids, limit)
+            if not knowledge_base_ids:
+                return ""
+                
+            return await self.retrieve_knowledge(query, knowledge_base_ids, limit)
+        except Exception as e:
+            logger.error(f"Error finding knowledge bases for agent: {e}")
+            return ""
 
