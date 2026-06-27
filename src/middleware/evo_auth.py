@@ -250,7 +250,7 @@ class EvoAuthMiddleware(BaseHTTPMiddleware):
             
             logger.debug(
                 f"EvoAuth: Authenticated user: {auth_response.user.email} "
-                f"(token_type: {user_context['token_info']['type']})"
+                f"(token_type: {token_type})"
             )
             
             return await call_next(request)
@@ -293,7 +293,7 @@ class EvoAuthMiddleware(BaseHTTPMiddleware):
         
         return 'agent_id' in auth_response.metadata and auth_response.metadata['agent_id'] is not None
     
-    def _extract_agent_id_from_path(self, path: str) -> str:
+    def _extract_agent_id_from_path(self, path: str) -> str | None:
         """Extract agent_id from URL path if present"""
         # Patterns: 
         # - /api/v1/a2a/{agent_id}/...
@@ -330,7 +330,7 @@ class EvoAuthMiddleware(BaseHTTPMiddleware):
         match = re.search(r'/agents?/([^/]+)', path)
         return match.group(1) if match else None
     
-    def _extract_agent_id_from_sync_path(self, path: str) -> str:
+    def _extract_agent_id_from_sync_path(self, path: str) -> str | None:
         """Extract agent_id from /sync/{session_id} path where session_id format is {display_id}_{agent_id}"""
         import re
         # Pattern: /api/v1/sessions/sync/{session_id}
@@ -352,7 +352,7 @@ class EvoAuthMiddleware(BaseHTTPMiddleware):
                     pass
         return None
     
-    def _get_token_agent_id(self, auth_response) -> str:
+    def _get_token_agent_id(self, auth_response) -> str | None:
         """Get agent_id from token metadata"""
         if hasattr(auth_response, 'metadata') and auth_response.metadata:
             return auth_response.metadata.get('agent_id')
@@ -361,7 +361,9 @@ class EvoAuthMiddleware(BaseHTTPMiddleware):
     def _agent_id_matches(self, auth_response, requested_agent_id: str) -> bool:
         """Verify if the token's agent_id matches the requested agent_id"""
         token_agent_id = self._get_token_agent_id(auth_response)
-        return token_agent_id and str(token_agent_id) == str(requested_agent_id)
+        if not token_agent_id:
+            return False
+        return str(token_agent_id) == requested_agent_id
     
     def _unauthorized_response(self, message: str) -> JSONResponse:
         """Return consistent 401 response"""
