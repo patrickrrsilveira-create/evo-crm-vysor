@@ -498,6 +498,16 @@ class ToolBuilder:
             except Exception as e:
                 logger.error(f"Error creating knowledge_nexus_search tool: {e}")
 
+        # Process Native CRM Knowledge Base
+        try:
+            effective_agent_id = agent_id or agent_config.get("id") or agent_config.get("agent_id")
+            if effective_agent_id and db:
+                from src.services.adk.tools.search_knowledge_tool import create_search_knowledge_tool
+                self.tools.append(create_search_knowledge_tool(agent_id=effective_agent_id, db=db))
+                logger.info(f"Added search_knowledge tool for native CRM knowledge bases for agent {effective_agent_id}")
+        except Exception as e:
+            logger.error(f"Error adding native search_knowledge tool: {e}")
+
         # Process Google Calendar integration
         logger.debug(f"Checking Google Calendar integration. Integrations keys: {list(integrations.keys()) if integrations else 'None'}")
         google_calendar_config = integrations.get("google-calendar") or integrations.get("google_calendar")
