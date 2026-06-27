@@ -340,6 +340,8 @@ networks:
 volumes:
   evo_processor_logs:
     external: false
+  evo_processor_static:
+    external: false
   evo_crm_storage:
     external: false
   minio_data:
