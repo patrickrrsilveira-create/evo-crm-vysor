@@ -365,5 +365,4 @@ openpyxl>=3.1.2
 Pillow>=10.0.0
 pytesseract>=0.3.13
 python-pptx>=1.0.0
-o p e n p y x l = = 3 . 1 . 2  
- 
+openpyxl==3.1.2
