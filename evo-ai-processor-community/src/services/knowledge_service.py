@@ -60,6 +60,9 @@ class KnowledgeService:
                     pass
                 
                 if base_url and base_url.strip():
+                    # Ensure base_url has a protocol
+                    if not base_url.startswith('http://') and not base_url.startswith('https://'):
+                        base_url = 'https://' + base_url
                     return AsyncOpenAI(api_key=api_key, base_url=base_url)
                 return AsyncOpenAI(api_key=api_key)
                 
