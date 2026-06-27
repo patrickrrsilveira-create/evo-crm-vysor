@@ -638,6 +638,8 @@ class LlmAgentBuilder:
         if enabled_tools:
             if "send_agent_media" not in enabled_tools:
                 enabled_tools.append("send_agent_media")
+            if "search_knowledge" not in enabled_tools:
+                enabled_tools.append("search_knowledge")
             all_tools = [tool for tool in all_tools if tool.name in enabled_tools]
             logger.debug(
                 f"Filtered tools by enabled list. Total tools: {len(all_tools)}"
@@ -702,6 +704,10 @@ class LlmAgentBuilder:
         formatted_prompt = (
             formatted_prompt
             + "<system-data>\n{_system_data}\n</system-data>\n\n"
+            + "CRITICAL INSTRUCTIONS:\n"
+            + "1. NEVER make up excuses or fake technical problems if you can't find information.\n"
+            + "2. ALWAYS use the search_knowledge tool FIRST when asked for prices, manuals, or company information. Do NOT answer without calling the tool.\n"
+            + "3. NEVER invent names of agents for handoff. Only transfer to a human if absolutely necessary, using the appropriate tool without hallucinating names.\n\n"
         )
 
         # Add agent configuration (timezone and use_emojis) to the prompt

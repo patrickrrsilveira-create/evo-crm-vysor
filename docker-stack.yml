@@ -204,8 +204,8 @@ services:
   # Python AI Processor (branch atual em produção)
   # ─────────────────────────────────────────────────────────────────────────────
   evo_processor:
-    image: ghcr.io/patrickrrsilveira-create/evo-crm-vysor-evo-ai-processor-community:latest
-    command: sh -c "alembic upgrade head 2>&1 || echo 'Alembic migration had errors, continuing...'; python -m scripts.run_seeders; uvicorn src.main:app --host $$HOST --port $$PORT"
+    image: ghcr.io/patrickrrsilveira-create/evo-crm-vysor-evo-ai-processor-community:sha-4b4ad50
+    command: sh -c "alembic upgrade head 2>&1 || echo 'Alembic migration had errors, continuing...'; python -m scripts.run_seeders; uvicorn src.main:app --host 0.0.0.0 --port 3031 --proxy-headers"
     environment:
       POSTGRES_CONNECTION_STRING: postgresql://postgres:e2zaFkFxxIfX04QxP55LEvX2ZNW6XKFb@postgres:5432/evo_community
       REDIS_HOST: redis
@@ -240,6 +240,7 @@ services:
       ARTIFACT_SECURE: "true"
     volumes:
       - evo_processor_logs:/app/logs
+      - evo_processor_static:/app/static
     networks:
       - minha_rede
     deploy:
@@ -342,4 +343,6 @@ volumes:
   evo_crm_storage:
     external: false
   minio_data:
+    external: false
+  evo_processor_static:
     external: false
