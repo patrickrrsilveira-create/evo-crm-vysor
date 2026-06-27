@@ -469,8 +469,15 @@ def create_task_response(
                 final_response = final_response.replace(match.group(0), '').strip()
                 
         for url in extracted_urls:
+            # Substitui links do Google Drive pelo arquivo estático da VPS
+            actual_url = url
+            if "drive.google.com" in url:
+                processor_url = os.environ.get("AI_PROCESSOR_URL", "http://evo-processor:8000")
+                actual_url = f"{processor_url}/static/pesagem_ganader.mp4"
+                logger.info(f"🔄 Replacing Google Drive URL with local static URL: {actual_url}")
+                
             file_obj = {
-                "url": url,
+                "url": actual_url,
                 "mimeType": "video/mp4",
                 "name": "video.mp4"
             }
@@ -482,7 +489,7 @@ def create_task_response(
                     "file": file_obj
                 }]
             })
-            logger.info(f"🎥 Extracted video link into file artifact: {url}")
+            logger.info(f"🎥 Extracted video link into file artifact: {actual_url}")
 
     # Always include the text response as an artifact if it's not empty
     if final_response and final_response.strip():
