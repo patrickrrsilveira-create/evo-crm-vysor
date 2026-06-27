@@ -85,6 +85,7 @@ import src.api.hubspot_routes
 import src.api.paypal_routes
 import src.api.canva_routes
 import src.api.integrations_routes
+import src.api.agent_media_routes
 
 # Add the root directory to PYTHONPATH
 root_dir = Path(__file__).parent.parent
@@ -252,9 +253,15 @@ paypal_callback_router = src.api.paypal_routes.callback_router
 canva_router = src.api.canva_routes.router
 canva_callback_router = src.api.canva_routes.callback_router
 integrations_router = src.api.integrations_routes.router
+agent_media_router = src.api.agent_media_routes.router
 
 # Include routes
 app.include_router(client_router, prefix=API_PREFIX)
+app.include_router(
+    src.api.agent_media_routes.router,
+    prefix=f"{settings.API_V1_STR}/adk/agent_media",
+    tags=["Agent Media"]
+)
 app.include_router(custom_mcp_server_router, prefix=API_PREFIX)
 app.include_router(chat_router, prefix=API_PREFIX)
 app.include_router(session_router, prefix=API_PREFIX)
@@ -263,6 +270,7 @@ app.include_router(tools_router, prefix=API_PREFIX)
 app.include_router(knowledge_router, prefix=API_PREFIX)
 app.include_router(google_calendar_router, prefix=API_PREFIX)
 app.include_router(google_calendar_callback_router, prefix=API_PREFIX)
+app.include_router(agent_media_router, prefix=f"{API_PREFIX}/adk/agent_media")
 app.include_router(google_sheets_router, prefix=API_PREFIX)
 app.include_router(google_sheets_callback_router, prefix=API_PREFIX)
 app.include_router(github_router, prefix=API_PREFIX)

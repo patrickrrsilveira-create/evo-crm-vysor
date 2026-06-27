@@ -1590,6 +1590,18 @@ async def handle_message_send(
                             fr = part["functionResponse"]
                             if fr.get("name") == "text_to_speech":
                                 filename = fr.get("response", {}).get("filename")
+                            elif fr.get("name") == "send_agent_media":
+                                resp = fr.get("response", {})
+                                if resp.get("status") == "success":
+                                    artifacts.append({
+                                        "artifactId": str(uuid.uuid4()),
+                                        "parts": [{
+                                            "type": "file",
+                                            "url": resp.get("url"),
+                                            "mimeType": resp.get("mimeType", "video/mp4")
+                                        }]
+                                    })
+                                    logger.info(f"📹 Attached media artifact to response: {resp.get('url')}...")
                 
                 # Check OpenAI format
                 elif role == "tool":
@@ -1600,6 +1612,22 @@ async def handle_message_send(
                             resp = json.loads(content) if isinstance(content, str) else content
                             if isinstance(resp, dict):
                                 filename = resp.get("filename")
+                        except Exception:
+                            pass
+                    elif event.get("name") == "send_agent_media":
+                        try:
+                            import json
+                            resp = json.loads(content) if isinstance(content, str) else content
+                            if isinstance(resp, dict) and resp.get("status") == "success":
+                                artifacts.append({
+                                    "artifactId": str(uuid.uuid4()),
+                                    "parts": [{
+                                        "type": "file",
+                                        "url": resp.get("url"),
+                                        "mimeType": resp.get("mimeType", "video/mp4")
+                                    }]
+                                })
+                                logger.info(f"📹 Attached media artifact to response: {resp.get('url')}...")
                         except Exception:
                             pass
                             
