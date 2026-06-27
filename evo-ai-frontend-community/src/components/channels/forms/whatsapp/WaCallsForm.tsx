@@ -1,3 +1,4 @@
+import React from 'react';
 import { FormField } from '../../shared/FormField';
 import { FormData } from '@/hooks/channels/useChannelForm';
 import { sanitizeInboxName } from '@/utils/sanitizeName';
@@ -22,7 +23,7 @@ export const WaCallsForm = ({ form, onFormChange }: WaCallsFormProps) => {
       <FormField
         label="URL da API (WaCalls)"
         value={getStr('api_url', 'https://waha.vysortech.app.br')}
-        onChange={value => onFormChange('api_url', value)}
+        onChange={(value: string) => onFormChange('api_url', value)}
         placeholder="https://waha.vysortech.app.br"
         type="url"
         required
@@ -31,7 +32,7 @@ export const WaCallsForm = ({ form, onFormChange }: WaCallsFormProps) => {
       <FormField
         label="Token de Acesso / API Key"
         value={getStr('api_key')}
-        onChange={value => onFormChange('api_key', value)}
+        onChange={(value: string) => onFormChange('api_key', value)}
         placeholder="Insira a chave global da API"
         type="password"
         required
@@ -49,7 +50,7 @@ export const WaCallsForm = ({ form, onFormChange }: WaCallsFormProps) => {
         <FormField
           label="Nome do Canal"
           value={getStr('name')}
-          onChange={value => onFormChange('name', value)}
+          onChange={(value: string) => onFormChange('name', value)}
           placeholder="Gerado automaticamente"
           helpText="Identificador único (letras minúsculas e sem espaços)"
           required
@@ -63,7 +64,7 @@ export const WaCallsForm = ({ form, onFormChange }: WaCallsFormProps) => {
         </label>
         <PhoneInput
           value={getStr('phone_number')}
-          onChange={value => onFormChange('phone_number', value)}
+          onChange={(value: string) => onFormChange('phone_number', value)}
           placeholder="+55 11 99999-9999"
           defaultCountry="BR"
         />
