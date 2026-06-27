@@ -1,4 +1,4 @@
-import api from './api';
+import evoaiApi from '@/services/core/apiEvoAI';
 
 export interface AgentMedia {
   filename: string;
@@ -9,7 +9,7 @@ export interface AgentMedia {
 export const agentMediaService = {
   list: async (agentId: string): Promise<AgentMedia[]> => {
     try {
-      const response = await api.get(`/adk/agent_media/${agentId}/media`);
+      const response = await evoaiApi.get(`/adk/agent_media/${agentId}/media`);
       return response.data.media || [];
     } catch (error) {
       console.error('Error fetching agent media:', error);
@@ -22,7 +22,7 @@ export const agentMediaService = {
       const formData = new FormData();
       formData.append('file', file);
       
-      const response = await api.post(`/adk/agent_media/${agentId}/media`, formData, {
+      const response = await evoaiApi.post(`/adk/agent_media/${agentId}/media`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -36,7 +36,7 @@ export const agentMediaService = {
 
   delete: async (agentId: string, filename: string) => {
     try {
-      const response = await api.delete(`/adk/agent_media/${agentId}/media/${filename}`);
+      const response = await evoaiApi.delete(`/adk/agent_media/${agentId}/media/${filename}`);
       return response.data;
     } catch (error) {
       console.error('Error deleting agent media:', error);
