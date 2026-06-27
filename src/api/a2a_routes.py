@@ -48,8 +48,10 @@ Features:
 - API key authentication
 """
 
-import uuid
+import os
 import json
+import logging
+import uuid
 import base64
 import httpx
 from datetime import datetime
@@ -467,27 +469,18 @@ def create_task_response(
                 final_response = final_response.replace(match.group(0), '').strip()
                 
         for url in extracted_urls:
-            # Download the video and encode as base64 to ensure CRM compatibility
-            import urllib.request
-            import base64
-            
-            b64_data = ""
-            try:
-                req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-                with urllib.request.urlopen(req, timeout=15) as response:
-                    video_bytes = response.read()
-                    b64_data = base64.b64encode(video_bytes).decode('utf-8')
-                    logger.info(f"🎥 Downloaded and encoded video from {url} ({len(video_bytes)} bytes)")
-            except Exception as e:
-                logger.error(f"❌ Failed to download video from {url}: {e}")
+            # Substitui links do Google Drive pelo arquivo estático da VPS
+            actual_url = url
+            if "drive.google.com" in url:
+                processor_url = os.environ.get("AI_PROCESSOR_URL", "http://evo-processor:8000")
+                actual_url = f"{processor_url}/static/pesagem_ganader.mp4"
+                logger.info(f"🔄 Replacing Google Drive URL with local static URL: {actual_url}")
                 
             file_obj = {
-                "url": url,
+                "url": actual_url,
                 "mimeType": "video/mp4",
                 "name": "video.mp4"
             }
-            if b64_data:
-                file_obj["bytes"] = b64_data
                 
             artifacts.append({
                 "artifactId": str(uuid.uuid4()),
@@ -496,7 +489,7 @@ def create_task_response(
                     "file": file_obj
                 }]
             })
-            logger.info(f"🎥 Extracted video link into file artifact: {url}")
+            logger.info(f"🎥 Extracted video link into file artifact: {actual_url}")
 
     # Always include the text response as an artifact if it's not empty
     if final_response and final_response.strip():
@@ -1810,18 +1803,6 @@ async def handle_message_send(
                 },
             }
         )
-        return JSONResponse(
-            content={
-                "jsonrpc": "2.0",
-                "id": request_id,
-                "error": {
-                    "code": -32603,
-                    "message": "Agent execution failed",
-                    "data": {"error": str(e)},
-                },
-            }
-        )
-
 
 async def handle_message_stream(
     agent_id: uuid.UUID, params: Dict[str, Any], request_id: str, request: Request, db: Session
@@ -1917,9 +1898,9 @@ async def handle_message_stream(
                 metadata = params.get("metadata", {})
                 has_audio = metadata.get("has_audio", False) or has_audio_in_files
             
-            if respond_in_audio == "always" or (respond_in_audio == "when_client_asks" and has_audio):
-                text += "\n\n[SYSTEM DIRECTIVE]: You must call the `text_to_speech` tool using the exact text of your response to generate the audio. Do not just reply with text, you MUST execute the tool call."
-                logger.info("🔊 Appended TTS tool directive in stream because user sent audio or agent is configured to always respond in audio")
+                if respond_in_audio == "always" or (respond_in_audio == "when_client_asks" and has_audio):
+                    text += "\n\n[SYSTEM DIRECTIVE]: You must call the `text_to_speech` tool using the exact text of your response to generate the audio. Do not just reply with text, you MUST execute the tool call."
+                    logger.info("🔊 Appended TTS tool directive in stream because user sent audio or agent is configured to always respond in audio")
 
     # Extract and combine conversation history
     conversation_history = await extract_conversation_history(str(agent_id), context_id, db=db)
