@@ -371,6 +371,14 @@ class ToolBuilder:
                     self.tools.append(transfer_conv_tool)
                     logger.info(f"Added transfer_conversation tool for A2A handoffs")
 
+                # Add send_agent_media tool
+                from src.services.adk.tools.send_agent_media import create_send_agent_media_tool
+                effective_agent_id = agent_id or agent_config.get("id") or agent_config.get("agent_id")
+                if effective_agent_id:
+                    send_media_tool = create_send_agent_media_tool(agent_id=effective_agent_id)
+                    self.tools.append(send_media_tool)
+                    logger.info(f"Added send_agent_media tool from CRM tools")
+
             except Exception as e:
                 logger.error(f"Error loading CRM tools: {e}")
 
