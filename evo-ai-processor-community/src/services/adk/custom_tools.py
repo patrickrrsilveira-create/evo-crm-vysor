@@ -33,6 +33,7 @@ from google.adk.tools.tool_context import ToolContext
 import requests
 import json
 import urllib.parse
+import inspect
 from src.utils.logger import setup_logger
 
 logger = setup_logger(__name__)
@@ -188,6 +189,37 @@ class CustomToolBuilder:
 
         # Defines the function name to be used by the ADK
         http_tool.__name__ = name
+
+        # Dynamically inject __signature__ so LiteLLM generates a valid JSON Schema
+        sig_parameters = []
+        for param_dict in [path_params, query_params, body_params]:
+            for param_name, param_config in param_dict.items():
+                if isinstance(param_config, dict):
+                    # It's from body_params with type, description, required etc.
+                    t = param_config.get("type", "string")
+                    is_req = param_config.get("required", False)
+                else:
+                    # It's from path_params or query_params
+                    t = "string"
+                    is_req = True
+                
+                ptype = str
+                if t in ("integer", "number"):
+                    ptype = int
+                elif t == "boolean":
+                    ptype = bool
+
+                default_val = inspect.Parameter.empty if is_req else None
+                sig_parameters.append(
+                    inspect.Parameter(
+                        param_name,
+                        inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                        annotation=ptype,
+                        default=default_val
+                    )
+                )
+
+        http_tool.__signature__ = inspect.Signature(sig_parameters, return_annotation=str)
 
         return FunctionTool(func=http_tool)
 
