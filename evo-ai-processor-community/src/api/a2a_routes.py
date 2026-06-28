@@ -1190,6 +1190,11 @@ async def handle_message_send(
         metadata = extract_metadata_from_request(params)
         logger.info(f"📋 Extracted metadata: {metadata}")
         
+        # Extract phone number for N8N webhook
+        phone_number = ""
+        if isinstance(metadata, dict) and isinstance(metadata.get("contact"), dict):
+            phone_number = metadata["contact"].get("phone_number", "")
+        
         # Override context_id with the real conversation_id from CRM to ensure stable session IDs
         if metadata and "evoai_crm_data" in metadata:
             crm_data = metadata["evoai_crm_data"]
@@ -1805,6 +1810,37 @@ async def handle_message_send(
         logger.info(
             f"📦 Task response created with {len(task_response.get('artifacts', []))} artifacts"
         )
+
+        # Trigger N8N webhook if there is a video/file artifact
+        if phone_number:
+            video_url = None
+            for art in task_response.get("artifacts", []):
+                for part in art.get("parts", []):
+                    if part.get("type") == "file" and part.get("url"):
+                        video_url = part.get("url")
+                        break
+                if video_url:
+                    break
+            
+            if video_url:
+                try:
+                    import httpx
+                    import asyncio
+                    
+                    async def fire_n8n_webhook(phone, v_url):
+                        try:
+                            payload = {"telefone": phone, "video_url": v_url, "media": v_url}
+                            url = "https://n8n1.vysortech.app.br/webhook/video-drone-ganader"
+                            async with httpx.AsyncClient() as client:
+                                resp = await client.post(url, json=payload, timeout=10.0)
+                                logger.info(f"🚀 N8N Webhook fired for {phone} with video {v_url}. Status: {resp.status_code}")
+                        except Exception as e:
+                            logger.error(f"❌ Failed to fire N8N webhook: {e}")
+                            
+                    # Fire and forget
+                    asyncio.create_task(fire_n8n_webhook(phone_number, video_url))
+                except Exception as e:
+                    logger.error(f"❌ Failed to setup N8N webhook task: {e}")
 
         # Handle push notification if configured
         if push_notification_config:
