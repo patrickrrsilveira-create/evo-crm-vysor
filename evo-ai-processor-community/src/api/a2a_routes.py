@@ -1816,8 +1816,10 @@ async def handle_message_send(
             video_urls = []
             for art in task_response.get("artifacts", []):
                 for part in art.get("parts", []):
-                    if part.get("type") == "file" and part.get("url"):
-                        video_urls.append(part.get("url"))
+                    if part.get("type") == "file":
+                        file_obj = part.get("file", {})
+                        if file_obj and file_obj.get("url"):
+                            video_urls.append(file_obj.get("url"))
             
             if video_urls:
                 try:
