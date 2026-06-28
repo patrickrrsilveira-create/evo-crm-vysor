@@ -58,6 +58,6 @@ def create_send_agent_media_tool(agent_id: str) -> FunctionTool:
     sig_parameters = [
         inspect.Parameter("media_url", inspect.Parameter.POSITIONAL_OR_KEYWORD, annotation=str, default=inspect.Parameter.empty)
     ]
-    send_agent_media.__signature__ = inspect.Signature(sig_parameters, return_annotation=str)
+    setattr(send_agent_media, "__signature__", inspect.Signature(sig_parameters, return_annotation=str))
     send_agent_media.__name__ = "send_agent_media"
     return FunctionTool(func=send_agent_media)
