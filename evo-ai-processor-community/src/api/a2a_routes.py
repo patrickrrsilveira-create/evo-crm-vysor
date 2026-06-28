@@ -494,9 +494,14 @@ def create_task_response(
     # Always include the text response as an artifact if it's not empty
     if final_response and final_response.strip():
         # Check if we already have a text artifact to avoid duplication
-        has_text_artifact = any(
-            p.get("type") == "text" for art in artifacts for p in art.get("parts", [])
-        )
+        has_text_artifact = False
+        for art in artifacts:
+            for p in art.get("parts", []):
+                if p.get("type") == "text":
+                    has_text_artifact = True
+                    # Update existing text with stripped version
+                    p["text"] = final_response
+
         if not has_text_artifact:
             artifacts.insert(0, {
                 "artifactId": str(uuid.uuid4()),
