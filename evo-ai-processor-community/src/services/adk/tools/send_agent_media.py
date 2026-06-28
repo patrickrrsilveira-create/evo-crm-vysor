@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 def create_send_agent_media_tool(agent_id: str) -> FunctionTool:
     """Create a tool to send agent media files to the user."""
     
-    async def send_agent_media(filename: str, tool_context: ToolContext = None) -> str:
+    async def send_agent_media(filename: str) -> str:
         """
         CRITICAL: Use this tool to send a media file (video, image, document) to the user. 
         You MUST execute this function whenever the user requests a file, video, or media. 
@@ -55,6 +55,10 @@ def create_send_agent_media_tool(agent_id: str) -> FunctionTool:
             logger.error(f"Error in send_agent_media tool: {e}")
             return json.dumps({"status": "error", "message": str(e)})
 
+    import inspect
+    sig_parameters = [
+        inspect.Parameter("filename", inspect.Parameter.POSITIONAL_OR_KEYWORD, annotation=str, default=inspect.Parameter.empty)
+    ]
+    send_agent_media.__signature__ = inspect.Signature(sig_parameters, return_annotation=str)
     send_agent_media.__name__ = "send_agent_media"
     return FunctionTool(func=send_agent_media)
-

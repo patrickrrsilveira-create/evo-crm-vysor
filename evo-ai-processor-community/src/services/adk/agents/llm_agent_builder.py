@@ -625,13 +625,7 @@ class LlmAgentBuilder:
         )
         all_tools = custom_tools + mcp_tools + agent_tools
         
-        # Add the native media sending tool
-        try:
-            from src.services.adk.tools.send_agent_media import create_send_agent_media_tool
-            media_tool = create_send_agent_media_tool(agent_id=str(agent.id))
-            all_tools.append(media_tool)
-        except Exception as e:
-            logger.error(f"Failed to load SendAgentMediaTool: {e}")
+        # Add the native media sending tool (Removed duplicate append)
 
         logger.info(f"Total tools after combining: {len(all_tools)}")
 
