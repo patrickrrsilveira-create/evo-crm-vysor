@@ -34,7 +34,13 @@ from src.config.settings import settings
 
 POSTGRES_CONNECTION_STRING = settings.POSTGRES_CONNECTION_STRING
 
-engine = create_engine(POSTGRES_CONNECTION_STRING)
+engine = create_engine(
+    POSTGRES_CONNECTION_STRING,
+    pool_pre_ping=True,       # Verifica se a conexão está viva antes de usar
+    pool_recycle=3600,        # Recicla conexões a cada hora
+    pool_size=10,             # Tamanho padrão do pool
+    max_overflow=20           # Conexões extras caso o pool lote
+)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
