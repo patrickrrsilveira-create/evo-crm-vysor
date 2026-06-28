@@ -16,7 +16,7 @@ def create_send_agent_media_tool(agent_id: str) -> FunctionTool:
         You MUST execute this function whenever the user requests a file, video, or media. 
         DO NOT generate raw text URLs or markdown links. You MUST trigger this function call.
         
-        Parameters:
+        Args:
         filename: The exact name of the media file to send (e.g. Ganader_Brasil.mp4) OR a direct external URL (e.g. https://drive.usercontent.google.com/...)
         """
         try:

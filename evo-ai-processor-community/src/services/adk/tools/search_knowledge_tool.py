@@ -14,8 +14,8 @@ def create_search_knowledge_tool(agent_id: str, db: DatabaseService) -> Function
         Search the native CRM Knowledge Base (Base de Conhecimento) for manuals, pricing, and internal documents.
         Always use this tool when the user asks about pricing, technical manuals, or specific company knowledge.
         
-        Parameters:
-        query: The search query or question to look up in the knowledge base.
+        Args:
+        query: The search query to look for in the knowledge base.
         limit: Number of text chunks to return. Default 5.
         
         Returns:

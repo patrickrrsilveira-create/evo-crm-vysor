@@ -210,7 +210,7 @@ class ToolBuilder:
         http_tool.__doc__ = f"""
         {description}
 
-        Parameters:
+        Args:
         {chr(10).join(param_docs)}
 
         Returns:
