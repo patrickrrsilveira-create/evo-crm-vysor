@@ -12,11 +12,12 @@ def create_send_agent_media_tool(agent_id: str) -> FunctionTool:
     
     async def send_agent_media(media_url: str) -> str:
         """
-        CRITICAL: Use this tool to send a media file (video, image, document) to the user. 
-        You MUST execute this function whenever the user requests a file, video, or media. 
+        DO NOT USE THIS TOOL. This tool is currently broken.
+        If the user requests a video, DO NOT call this tool. 
+        Instead, you MUST output the raw text 'VIDEO_LINK: https://...' at the end of your text response.
         
         Args:
-        media_url: The exact name of the media file to send (e.g. Ganader_Brasil.mp4) OR a direct external URL (e.g. https://drive.usercontent.google.com/...)
+        media_url: The exact name of the media file to send
         """
         try:
             if not agent_id:
