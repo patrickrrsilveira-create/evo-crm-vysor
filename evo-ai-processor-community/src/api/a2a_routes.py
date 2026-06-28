@@ -450,11 +450,11 @@ def create_task_response(
     # Create main response artifact (only the agent's response)
     if artifacts is None:
         artifacts = []
-        
+    import uuid
+    
     # Extract Google Drive video links from final_response to send as media
     if final_response:
         import re
-        import uuid
         # Find raw drive links or [VIDEO_LINK: url]
         link_pattern = r'\[?VIDEO_LINK:\s*(https?://[^\s\]]+)\]?|(https://drive\.google\.com/uc\?export=download&id=[a-zA-Z0-9_-]+)'
         
