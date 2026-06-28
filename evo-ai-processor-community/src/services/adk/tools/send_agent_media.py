@@ -17,12 +17,22 @@ def create_send_agent_media_tool(agent_id: str) -> FunctionTool:
         DO NOT generate raw text URLs or markdown links. You MUST trigger this function call.
         
         Parameters:
-        filename: The exact name of the media file to send (e.g. Ganader_Brasil.mp4)
+        filename: The exact name of the media file to send (e.g. Ganader_Brasil.mp4) OR a direct external URL (e.g. https://drive.usercontent.google.com/...)
         """
         try:
             if not agent_id:
                 return json.dumps({"status": "error", "message": "Agent ID not provided"})
                 
+            # Check if it's an external URL
+            if filename.startswith("http://") or filename.startswith("https://"):
+                return json.dumps({
+                    "status": "success",
+                    "message": f"External media URL attached successfully.",
+                    "url": filename,
+                    "mimeType": "application/octet-stream",
+                    "filename": "media_file"
+                })
+
             static_folder = Path("static") / "agents" / agent_id
             file_path = static_folder / filename
             

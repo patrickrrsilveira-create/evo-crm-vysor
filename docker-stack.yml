@@ -346,5 +346,3 @@ volumes:
     external: false
   minio_data:
     external: false
-  evo_processor_static:
-    external: false

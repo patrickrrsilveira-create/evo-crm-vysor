@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "instanceId": "cb4fbb4e"
+  },
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "evo-teams-webhook",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "8b51ce0c-859a-4c26-8051-50e50efb0e3d",
+      "name": "Webhook CRM",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "event",
+        "operation": "create",
+        "calendar": "Calendar",
+        "subject": "={{$json.body.summary}}",
+        "start": "={{$json.body.start_time}}",
+        "end": "={{$json.body.end_time}}",
+        "additionalFields": {
+          "isOnlineMeeting": true
+        }
+      },
+      "id": "e2ba31dc-274e-4f15-84e1-23f20d5e1654",
+      "name": "Criar Evento Outlook (com Teams)",
+      "type": "n8n-nodes-base.microsoftOutlook",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"status\": \"success\",\n  \"meeting_url\": \"{{ $json.onlineMeeting.joinUrl }}\",\n  \"meeting_id\": \"{{ $json.id }}\"\n}",
+        "options": {}
+      },
+      "id": "b3e04e9c-c511-47c3-9ba2-c2e817e94e77",
+      "name": "Resposta para CRM",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        440,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook CRM": {
+      "main": [
+        [
+          {
+            "node": "Criar Evento Outlook (com Teams)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Criar Evento Outlook (com Teams)": {
+      "main": [
+        [
+          {
+            "node": "Resposta para CRM",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

@@ -607,9 +607,28 @@ class LlmAgentBuilder:
             f"agent={len(agent_tools)}"
         )
         all_tools = custom_tools + mcp_tools + agent_tools
+<<<<<<< Updated upstream
+        
+        # Add the native media sending tool
+        try:
+            from src.services.adk.tools.send_agent_media import create_send_agent_media_tool
+            media_tool = create_send_agent_media_tool(agent_id=str(agent.id))
+            all_tools.append(media_tool)
+        except Exception as e:
+            logger.error(f"Failed to load SendAgentMediaTool: {e}")
+
         logger.info(f"Total tools after combining: {len(all_tools)}")
 
         if enabled_tools:
+            if "send_agent_media" not in enabled_tools:
+                enabled_tools.append("send_agent_media")
+            if "search_knowledge" not in enabled_tools:
+                enabled_tools.append("search_knowledge")
+=======
+        logger.info(f"Total tools after combining: {len(all_tools)}")
+
+        if enabled_tools:
+>>>>>>> Stashed changes
             all_tools = [tool for tool in all_tools if tool.name in enabled_tools]
             logger.debug(
                 f"Filtered tools by enabled list. Total tools: {len(all_tools)}"
@@ -674,6 +693,10 @@ class LlmAgentBuilder:
         formatted_prompt = (
             formatted_prompt
             + "<system-data>\n{_system_data}\n</system-data>\n\n"
+            + "CRITICAL INSTRUCTIONS:\n"
+            + "1. NEVER make up excuses or fake technical problems if you can't find information.\n"
+            + "2. ALWAYS use the search_knowledge tool FIRST when asked for prices, manuals, or company information. Do NOT answer without calling the tool.\n"
+            + "3. NEVER invent names of agents for handoff. Only transfer to a human if absolutely necessary, using the appropriate tool without hallucinating names.\n\n"
         )
 
         # Add agent configuration (timezone and use_emojis) to the prompt

@@ -1,0 +1,86 @@
+repos:
+  # ──────────────────────────────────────────────────────────────────────────
+  # Guard 1 — forbid raw sqlite3.connect() / import sqlite3 outside allowlist
+  # ──────────────────────────────────────────────────────────────────────────
+  - repo: local
+    hooks:
+      - id: no-raw-sqlite3
+        name: "Guard 1 — forbid raw sqlite3 outside allowlist"
+        language: system
+        entry: bash -c '
+          ALLOWLIST="dashboard/backend/db/|dashboard/alembic/env.py|dashboard/backend/knowledge/|tests/fixtures/";
+          VIOLATIONS=$(grep -rn "sqlite3\.connect\|^import sqlite3" dashboard/backend/
+            --include="*.py"
+            | grep -v __pycache__
+            | grep -vE "$ALLOWLIST"
+            | grep -vE "# noqa.*allowlisted"
+            | grep -v "\"\"\"" || true);
+          if [ -n "$VIOLATIONS" ]; then
+            echo "Forbidden raw sqlite3 usage outside the allowlist:";
+            echo "$VIOLATIONS";
+            exit 1;
+          fi'
+        pass_filenames: false
+        types: [python]
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # Guard 3 — yaml.safe_load outside PG-native-configs allowlist (AC10)
+  # ──────────────────────────────────────────────────────────────────────────
+      - id: no-yaml-safe-load-pg-leak
+        name: "Guard 3 — yaml.safe_load outside PG-native-configs allowlist (AC10)"
+        language: system
+        entry: bash -c '
+          ALLOWLIST="config_store\.py|heartbeat_schema\.py|plugin_loader\.py|plugin_schema\.py|plugin_integration_health\.py|brain_repo/manifest\.py|routes/plugins\.py|routes/integrations\.py|routes/_helpers\.py|routes/config\.py|routes/settings\.py|alembic/versions/|claude_hook_dispatcher\.py|routine_store\.py|dashboard/cli/|tests/";
+          VIOLATIONS=$(grep -rn "yaml.safe_load" dashboard/
+            --include="*.py"
+            | grep -v __pycache__
+            | grep -vE "$ALLOWLIST"
+            | grep -v "# noqa: pg-native-configs"
+            || true);
+          if [ -n "$VIOLATIONS" ]; then
+            echo "yaml.safe_load found outside PG-native-configs allowlist (AC10):";
+            echo "$VIOLATIONS";
+            echo "";
+            echo "Fix: add dialect guard or # noqa: pg-native-configs with reason.";
+            exit 1;
+          fi'
+        pass_filenames: false
+        types: [python]
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # Guard 4 — file-log writers outside pg-native-logs allowlist
+  # ──────────────────────────────────────────────────────────────────────────
+      - id: no-new-file-logs-pg-leak
+        name: "Guard 4 — file-log writers outside pg-native-logs allowlist"
+        language: system
+        entry: bash -c '
+          ALLOWLIST="heartbeat_runner\.py|daily_output_store\.py|meeting_store\.py|plugin_hook_runner\.py|workspace_audit\.py|routine_run_store\.py|brain_repo/transcripts_mirror\.py|ADWs/runner\.py|cli/|tests/|scripts/|alembic/|setup\.py|backup\.py";
+          PY_VIOL=$(grep -rE "with open\([^)]*[\"'"'"']a[\"'"'"']" dashboard/ ADWs/ scheduler.py --include="*.py" 2>/dev/null | grep -vE "$ALLOWLIST" | grep -v "# noqa: pg-native-logs" || true);
+          JS_ALLOW="chat-logger\.js|sync-queue\.js|sync-marker\.js";
+          JS_VIOL=$(grep -rE "fs\.appendFile" dashboard/terminal-server/ --include="*.js" --exclude-dir=node_modules 2>/dev/null | grep -vE "$JS_ALLOW" | grep -v "// noqa: pg-native-logs" || true);
+          if [ -n "$PY_VIOL" ] || [ -n "$JS_VIOL" ]; then
+            echo "Python: $PY_VIOL";
+            echo "JS: $JS_VIOL";
+            exit 1;
+          fi'
+        pass_filenames: false
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # Guard 2 — forbid raw UPDATE goal_tasks outside allowlist
+  # ──────────────────────────────────────────────────────────────────────────
+      - id: no-raw-update-goal-tasks
+        name: "Guard 2 — forbid raw UPDATE goal_tasks outside allowlist"
+        language: system
+        entry: bash -c '
+          ALLOWLIST="dashboard/alembic/versions/|dashboard/cli/evonexus_migrate\.py|tests/";
+          VIOLATIONS=$(grep -rEn "UPDATE\s+goal_tasks|text\(['"'"'\"'"'"'].*UPDATE.*goal_tasks" dashboard/
+            --include="*.py"
+            | grep -v __pycache__
+            | grep -vE "$ALLOWLIST" || true);
+          if [ -n "$VIOLATIONS" ]; then
+            echo "Forbidden raw UPDATE goal_tasks outside the allowlist:";
+            echo "$VIOLATIONS";
+            exit 1;
+          fi'
+        pass_filenames: false
+        types: [python]
