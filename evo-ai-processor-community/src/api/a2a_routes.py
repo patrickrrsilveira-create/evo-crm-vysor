@@ -1811,18 +1811,15 @@ async def handle_message_send(
             f"📦 Task response created with {len(task_response.get('artifacts', []))} artifacts"
         )
 
-        # Trigger N8N webhook if there is a video/file artifact
+        # Trigger N8N webhook if there are video/file artifacts
         if phone_number:
-            video_url = None
+            video_urls = []
             for art in task_response.get("artifacts", []):
                 for part in art.get("parts", []):
                     if part.get("type") == "file" and part.get("url"):
-                        video_url = part.get("url")
-                        break
-                if video_url:
-                    break
+                        video_urls.append(part.get("url"))
             
-            if video_url:
+            if video_urls:
                 try:
                     import httpx
                     import asyncio
@@ -1835,12 +1832,13 @@ async def handle_message_send(
                                 resp = await client.post(url, json=payload, timeout=10.0)
                                 logger.info(f"🚀 N8N Webhook fired for {phone} with video {v_url}. Status: {resp.status_code}")
                         except Exception as e:
-                            logger.error(f"❌ Failed to fire N8N webhook: {e}")
+                            logger.error(f"❌ Failed to fire N8N webhook for {v_url}: {e}")
                             
-                    # Fire and forget
-                    asyncio.create_task(fire_n8n_webhook(phone_number, video_url))
+                    # Fire and forget for each video
+                    for v_url in video_urls:
+                        asyncio.create_task(fire_n8n_webhook(phone_number, v_url))
                 except Exception as e:
-                    logger.error(f"❌ Failed to setup N8N webhook task: {e}")
+                    logger.error(f"❌ Failed to setup N8N webhook tasks: {e}")
 
         # Handle push notification if configured
         if push_notification_config:
