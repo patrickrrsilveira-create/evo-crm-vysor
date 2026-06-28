@@ -638,6 +638,20 @@ class LlmAgentBuilder:
             logger.debug(
                 f"Filtered tools by enabled list. Total tools: {len(all_tools)}"
             )
+            
+        try:
+            import litellm.utils
+            import json
+            schemas = []
+            for t in all_tools:
+                try:
+                    schemas.append(litellm.utils.function_to_dict(t.func))
+                except Exception as ex:
+                    schemas.append({"error": str(ex), "tool_name": getattr(t, "name", "unknown")})
+            logger.info(f"LITELLM_TOOL_SCHEMAS_DUMP: {json.dumps(schemas)}")
+        except Exception as e:
+            logger.info(f"LITELLM_TOOL_SCHEMAS_DUMP error: {e}")
+            
 
         # Get timezone from agent config
         timezone_str = agent.config.get("timezone")
