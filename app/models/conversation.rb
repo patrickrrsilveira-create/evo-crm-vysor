@@ -234,9 +234,6 @@ class Conversation < ApplicationRecord
   def is_boosted_post?
     additional_attributes&.dig('is_boosted') == true
   end
-
-  private
-
   def ensure_display_id
     return if display_id.present?
 
@@ -291,6 +288,8 @@ class Conversation < ApplicationRecord
   def status_explicitly_set!
     @status_explicitly_set = true
   end
+
+  private
 
   def notify_conversation_creation
     dispatcher_dispatch(CONVERSATION_CREATED)

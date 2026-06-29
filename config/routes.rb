@@ -38,6 +38,9 @@ Rails.application.routes.draw do
 
       resource :global_config, controller: 'global_config', only: [:show]
       namespace :integrations do
+        namespace :openai do
+          get 'credentials', to: 'credentials#show'
+        end
         namespace :google_calendar do
           get 'credentials', to: 'credentials#show'
         end

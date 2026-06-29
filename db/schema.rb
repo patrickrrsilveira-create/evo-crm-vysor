@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_06_24_173000) do
+ActiveRecord::Schema[7.1].define(version: 2026_06_25_223500) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -826,6 +826,16 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_24_173000) do
     t.index ["knowledge_base_id"], name: "index_knowledge_base_agent_bots_on_knowledge_base_id"
   end
 
+  create_table "knowledge_base_ai_agents", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "knowledge_base_id", null: false
+    t.uuid "ai_agent_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["ai_agent_id"], name: "index_knowledge_base_ai_agents_on_ai_agent_id"
+    t.index ["knowledge_base_id", "ai_agent_id"], name: "idx_kb_ai_agents_unique", unique: true
+    t.index ["knowledge_base_id"], name: "index_knowledge_base_ai_agents_on_knowledge_base_id"
+  end
+
   create_table "knowledge_bases", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.string "name", null: false
     t.text "description"
@@ -1535,16 +1545,16 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_24_173000) do
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "agent_bot_inboxes", "agent_bots", column: "facebook_comment_agent_bot_id", on_delete: :nullify
-  add_foreign_key "agent_sessions", "agent_bots"
-  add_foreign_key "agent_sessions", "conversations"
+  add_foreign_key "agent_sessions", "agent_bots", on_delete: :cascade
+  add_foreign_key "agent_sessions", "conversations", on_delete: :cascade
   add_foreign_key "ai_agent_products", "products", on_delete: :cascade
   add_foreign_key "automation_rule_runs", "automation_rules", on_delete: :cascade
   add_foreign_key "contact_companies", "contacts"
   add_foreign_key "contact_companies", "contacts", column: "company_id"
-  add_foreign_key "conversation_contexts", "conversations"
-  add_foreign_key "conversation_transfers", "agent_bots", column: "from_agent_id"
-  add_foreign_key "conversation_transfers", "agent_bots", column: "to_agent_id"
-  add_foreign_key "conversation_transfers", "conversations"
+  add_foreign_key "conversation_contexts", "conversations", on_delete: :cascade
+  add_foreign_key "conversation_transfers", "agent_bots", column: "from_agent_id", on_delete: :cascade
+  add_foreign_key "conversation_transfers", "agent_bots", column: "to_agent_id", on_delete: :cascade
+  add_foreign_key "conversation_transfers", "conversations", on_delete: :cascade
   add_foreign_key "conversations", "agent_bots", column: "active_agent_id"
   add_foreign_key "data_privacy_consents", "users"
   add_foreign_key "evo_core_agent_integrations", "evo_core_agents", column: "agent_id", name: "evo_core_agent_integrations_agent_id_fkey", on_delete: :cascade
@@ -1555,6 +1565,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_24_173000) do
   add_foreign_key "facebook_comment_moderations", "messages"
   add_foreign_key "knowledge_base_agent_bots", "agent_bots"
   add_foreign_key "knowledge_base_agent_bots", "knowledge_bases", column: "knowledge_base_id"
+  add_foreign_key "knowledge_base_ai_agents", "knowledge_bases", column: "knowledge_base_id", on_delete: :cascade
   add_foreign_key "knowledge_document_chunks", "knowledge_documents"
   add_foreign_key "knowledge_documents", "knowledge_bases", column: "knowledge_base_id"
   add_foreign_key "macro_executions", "conversations"

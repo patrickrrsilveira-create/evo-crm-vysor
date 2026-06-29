@@ -15,7 +15,7 @@ class ContactInboxBuilder
     case @inbox.channel_type
     when 'Channel::TwilioSms'
       twilio_source_id
-    when 'Channel::Whatsapp'
+    when 'Channel::Whatsapp', 'Channel::Evolution', 'Channel::EvolutionGo'
       wa_source_id
     when 'Channel::Email'
       email_source_id

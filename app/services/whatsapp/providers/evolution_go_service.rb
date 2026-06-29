@@ -153,7 +153,7 @@ class Whatsapp::Providers::EvolutionGoService < Whatsapp::Providers::BaseService
     body = {
       number: clean_number,
       presence: presence,
-      delay: 15000
+      delay: 1200
     }
 
     response = HTTParty.post(
@@ -169,22 +169,17 @@ class Whatsapp::Providers::EvolutionGoService < Whatsapp::Providers::BaseService
 
   def read_messages(phone_number, messages)
     clean_number = phone_number.delete('+')
-    remote_jid = "#{clean_number}@s.whatsapp.net"
+    message_ids = messages.map(&:source_id).compact
 
-    read_messages_payload = messages.map do |message|
-      {
-        remoteJid: remote_jid,
-        fromMe: message.message_type == 'outgoing',
-        id: message.source_id
-      }
-    end
+    return if message_ids.empty?
 
     body = {
-      readMessages: read_messages_payload
+      number: clean_number,
+      id: message_ids
     }
 
     response = HTTParty.post(
-      "#{api_base_path}/chat/markMessageAsRead/#{instance_name}",
+      "#{api_base_path}/message/markread",
       headers: instance_headers,
       body: body.to_json
     )
