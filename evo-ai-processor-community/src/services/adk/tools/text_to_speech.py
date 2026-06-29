@@ -55,9 +55,11 @@ def _clean_text_for_tts(text: str) -> str:
     text = re.sub(r'\*+', '', text)
     text = re.sub(r'_+', '', text)
     
-    # Remover tags internas como VIDEO_LINK e AUDIO_LINK para que a IA não leia URLs em voz alta (Case Insensitive)
-    text = re.sub(r'\[?VIDEO_LINK:\s*https?://[^\s\]]+\]?', '', text, flags=re.IGNORECASE)
-    text = re.sub(r'\[?AUDIO_LINK:\s*https?://[^\s\]]+\]?', '', text, flags=re.IGNORECASE)
+    # Remover tags internas como VIDEO_LINK e AUDIO_LINK para que a IA não leia em voz alta (Case Insensitive)
+    text = re.sub(r'\[?VIDEO_LINK[^\]\s]*\s*(?:https?://[^\s\]]+)?\]?', '', text, flags=re.IGNORECASE)
+    text = re.sub(r'\[?AUDIO_LINK[^\]\s]*\s*(?:https?://[^\s\]]+)?\]?', '', text, flags=re.IGNORECASE)
+    # E para garantir que, se ela disser literalmente a palavra "video link" solta, também apague:
+    text = re.sub(r'\bvideo_link\b|\bvideo link\b', '', text, flags=re.IGNORECASE)
     
     # Remover URLs cruas caso a IA tenha enviado o link fora da tag
     text = re.sub(r'https?://\S+', '', text)
