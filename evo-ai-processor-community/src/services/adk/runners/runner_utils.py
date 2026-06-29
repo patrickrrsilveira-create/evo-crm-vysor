@@ -248,6 +248,18 @@ class RunnerUtils:
                     logger.info(f"[RunnerUtils] Storing contact data: name={value.get('name', 'N/A')}, id={value.get('id', 'N/A')}")
                 elif key == "evoai_crm_data" and isinstance(value, dict) and "contact" in value:
                     contact_in_data = value.get("contact", {})
+                    logger.info(f"[RunnerUtils] Storing evoai_crm_data with contact: name={contact_in_data.get('name', 'N/A') if isinstance(contact_in_data, dict) else 'N/A'}")
+                
+                state_changes = {f"{key}": value}
+                actions_with_update = EventActions(state_delta=state_changes)
+                new_metadata_event = Event(
+                    invocation_id=f"metadata_{key}_{int(time.time())}",
+                    author="system",
+                    actions=actions_with_update,
+                    timestamp=time.time(),
+                )
+                await session_service.append_event(session, new_metadata_event)
+                logger.info(f"[RunnerUtils] ✅ Stored metadata '{key}' in session state via ADK")
                     
             # Try to fetch and inject handoff context
             conversation_id = metadata.get("conversation_id")
@@ -277,18 +289,6 @@ class RunnerUtils:
                             logger.info(f"[RunnerUtils] Injected handoff context into session for conversation {conversation_id}")
                 except Exception as e:
                     logger.error(f"[RunnerUtils] Error fetching handoff context: {e}")
-                    logger.info(f"[RunnerUtils] Storing evoai_crm_data with contact: name={contact_in_data.get('name', 'N/A') if isinstance(contact_in_data, dict) else 'N/A'}")
-                
-                state_changes = {f"{key}": value}
-                actions_with_update = EventActions(state_delta=state_changes)
-                new_metadata_event = Event(
-                    invocation_id=f"metadata_{key}_{int(time.time())}",
-                    author="system",
-                    actions=actions_with_update,
-                    timestamp=time.time(),
-                )
-                await session_service.append_event(session, new_metadata_event)
-                logger.info(f"[RunnerUtils] ✅ Stored metadata '{key}' in session state via ADK")
 
     async def process_files(
         self,
