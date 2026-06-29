@@ -77,7 +77,11 @@ module Templates
           # phone_number is NOT NULL + UNIQUE. Use a placeholder that's unique
           # enough that the user is forced to change it before connecting.
           attrs['phone_number'] = "+0#{SecureRandom.hex(7)}"
-          attrs['provider_config'] = {}
+          if attrs['provider'] == 'evolution_go'
+            attrs['provider_config'] = { 'instance_name' => "configure-#{SecureRandom.hex(4)}" }
+          else
+            attrs['provider_config'] = {}
+          end
           attrs['provider_connection'] = {}
         when 'Channel::Email'
           # email and forward_to_email are NOT NULL + UNIQUE. Placeholder.
