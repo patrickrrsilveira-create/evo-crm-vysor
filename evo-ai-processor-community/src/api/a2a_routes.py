@@ -1383,8 +1383,8 @@ async def handle_message_send(
                                                                 name = f"audio_fallback_{int(time.time())}.ogg"
                                                                 files_payload = {"attachments[]": (name, audio_bytes, "audio/ogg")}
                                                                 import re
-                                                                urls = re.findall(r'https?://[^\s\]]+', final_text)
-                                                                final_text = "\n".join(urls) if urls else "" # Preserva apenas o link para acionar o N8N, apaga o texto duplicado
+                                                                tags = re.findall(r'\[VIDEO_LINK:\s*https?://[^\s\]]+\]', final_text)
+                                                                final_text = "\n".join(tags) if tags else "" # Preserva a tag exata para acionar a automação do Chatwoot
                                                 except Exception as e:
                                                     logger.error(f"Error generating fallback audio for handoff: {e}")
 
