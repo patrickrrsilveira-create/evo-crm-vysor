@@ -121,9 +121,14 @@ def create_update_contact_info_callback():
         # Try multiple ways to get contact data
         contact_data = None
         
+        # Define source_state once at the beginning
+        source_state = callback_context.state
+        if hasattr(callback_context, 'session') and hasattr(callback_context.session, 'state'):
+            source_state = callback_context.session.state
+            
         # 1. Check if contact is stored directly in state (most common case)
         try:
-            contact_data = callback_context.state.get("contact")
+            contact_data = source_state.get("contact")
             if contact_data:
                 logger.info(f"[ContactInfo] ✅ Found contact directly in state: {contact_data.get('name', 'Unknown')}")
         except (AttributeError, TypeError) as e:
@@ -132,7 +137,7 @@ def create_update_contact_info_callback():
         # 2. Check if contact is inside evoai_crm_data
         if not contact_data:
             try:
-                evoai_crm_data = callback_context.state.get("evoai_crm_data", {})
+                evoai_crm_data = source_state.get("evoai_crm_data", {})
                 logger.debug(f"[ContactInfo] evoai_crm_data type: {type(evoai_crm_data)}, keys: {list(evoai_crm_data.keys()) if isinstance(evoai_crm_data, dict) else 'N/A'}")
                 if isinstance(evoai_crm_data, dict) and "contact" in evoai_crm_data:
                     contact_data = evoai_crm_data.get("contact")
@@ -143,7 +148,7 @@ def create_update_contact_info_callback():
         # 3. Check if evoai_crm_data itself contains contact fields (flat structure)
         if not contact_data:
             try:
-                evoai_crm_data = callback_context.state.get("evoai_crm_data", {})
+                evoai_crm_data = source_state.get("evoai_crm_data", {})
                 if isinstance(evoai_crm_data, dict) and evoai_crm_data.get("contactId"):
                     # Try to reconstruct contact from evoai_crm_data fields
                     if evoai_crm_data.get("contact"):
@@ -1296,7 +1301,7 @@ class LlmAgentBuilder:
                 root_agent.config.get("sub_agents"),
                 root_agent.type,  # parent_type
                 root_agent.config,  # parent_config
-                processed_agents=processed_agents,
+                processed_agents=processed_agents or set(),
             )
             # Add after_model_callback to each sub agent with escalate_after
             # for sub_agent in sub_agents:
