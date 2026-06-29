@@ -451,6 +451,41 @@ def create_task_response(
     if artifacts is None:
         artifacts = []
     import uuid
+    
+    # Extract Google Drive or VIDEO_LINK video links from final_response to send as media
+    if final_response:
+        import re
+        link_pattern = r'\[?VIDEO_LINK:\s*(https?://[^\s\]]+)\]?|(https://drive\.google\.com/uc\?export=download&id=[a-zA-Z0-9_-]+)'
+        
+        matches = list(re.finditer(link_pattern, final_response))
+        extracted_urls = []
+        
+        for match in matches:
+            url = match.group(1) if match.group(1) else match.group(2)
+            if url:
+                extracted_urls.append(url)
+                # Remove the exact match from the text
+                final_response = final_response.replace(match.group(0), '').strip()
+                
+        for url in extracted_urls:
+            actual_url = url
+            if "drive.google.com" in url:
+                processor_url = os.environ.get("APP_URL", "http://evo_processor:8000").rstrip('/')
+                actual_url = f"{processor_url}/static/pesagem_ganader.mp4"
+                
+            file_obj = {
+                "url": actual_url,
+                "mimeType": "video/mp4",
+                "name": "video_Ganader.mp4"
+            }
+                
+            artifacts.append({
+                "artifactId": str(uuid.uuid4()),
+                "parts": [{
+                    "type": "file",
+                    "file": file_obj
+                }]
+            })
 
     # Always include the text response as an artifact if it's not empty
     if final_response and final_response.strip():
@@ -1382,11 +1417,33 @@ async def handle_message_send(
                                                                 import time
                                                                 name = f"audio_fallback_{int(time.time())}.ogg"
                                                                 files_payload = {"attachments[]": (name, audio_bytes, "audio/ogg")}
-                                                                import re
-                                                                tags = re.findall(r'\[VIDEO_LINK:\s*https?://[^\s\]]+\]', final_text)
-                                                                final_text = "\n".join(tags) if tags else "" # Preserva a tag exata para acionar a automação do Chatwoot
+                                                                final_text = "" # limpa texto no handoff pra não mandar duplicado
                                                 except Exception as e:
                                                     logger.error(f"Error generating fallback audio for handoff: {e}")
+                                        # Disparo direto do N8N no handoff
+                                        phone_number = contact_info.get("phone") or contact_info.get("phone_number")
+                                        if phone_number and final_text:
+                                            import re
+                                            link_pattern = r'\[?VIDEO_LINK:\s*(https?://[^\s\]]+)\]?'
+                                            matches = list(re.finditer(link_pattern, final_text))
+                                            if matches:
+                                                import httpx
+                                                import asyncio
+                                                async def fire_n8n_webhook_handoff(phone, v_url):
+                                                    try:
+                                                        payload = {"telefone": phone, "video_url": v_url, "media": v_url}
+                                                        url = "https://n8n1.vysortech.app.br/webhook/video-drone-ganader"
+                                                        async with httpx.AsyncClient() as client:
+                                                            resp = await client.post(url, json=payload, timeout=10.0)
+                                                            logger.info(f"🚀 N8N Webhook fired from handoff for {phone} with video {v_url}. Status: {resp.status_code}")
+                                                    except Exception as e:
+                                                        logger.error(f"❌ Failed to fire N8N webhook from handoff: {e}")
+                                                
+                                                for match in matches:
+                                                    v_url = match.group(1)
+                                                    if v_url:
+                                                        asyncio.create_task(fire_n8n_webhook_handoff(phone_number, v_url))
+                                                        final_text = final_text.replace(match.group(0), '').strip()
 
                                         if final_text or files_payload:
                                             crm_client = EvoCrmClient()
