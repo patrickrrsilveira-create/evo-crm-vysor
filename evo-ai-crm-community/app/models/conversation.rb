@@ -287,10 +287,14 @@ class Conversation < ApplicationRecord
     Rails.logger.info("[Conversation] determine_conversation_status - Final status: #{status}")
   end
 
+  public
+
   # Helper method to mark status as explicitly set (used by builders and services)
   def status_explicitly_set!
     @status_explicitly_set = true
   end
+
+  private
 
   def notify_conversation_creation
     dispatcher_dispatch(CONVERSATION_CREATED)
