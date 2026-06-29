@@ -70,9 +70,9 @@ class Api::V1::EvolutionGo::QrcodesController < Api::V1::BaseController
     return [api_url, instance_token] if api_url.present? && instance_token.present?
     return [api_url, instance_token] if instance_uuid.blank?
 
-    channel = Channel::Whatsapp.joins(:inbox)
-                               .where(provider: 'evolution_go')
+    channel = Channel::Whatsapp.where(provider: 'evolution_go')
                                .where('provider_config @> ?', { instance_uuid: instance_uuid }.to_json)
+                               .order(id: :desc)
                                .first
     return [api_url, instance_token] unless channel
 
@@ -90,16 +90,16 @@ class Api::V1::EvolutionGo::QrcodesController < Api::V1::BaseController
     Rails.logger.info "Evolution Go API: Looking for instance with identifier: #{identifier}"
 
     # Try to find by instance_name first (most common case)
-    whatsapp_channel = Channel::Whatsapp.joins(:inbox)
-                                        .where(provider: 'evolution_go')
+    whatsapp_channel = Channel::Whatsapp.where(provider: 'evolution_go')
                                         .where('provider_config @> ?', { instance_name: identifier }.to_json)
+                                        .order(id: :desc)
                                         .first
 
     # If not found by name, try by UUID
     if whatsapp_channel.nil?
-      whatsapp_channel = Channel::Whatsapp.joins(:inbox)
-                                          .where(provider: 'evolution_go')
+      whatsapp_channel = Channel::Whatsapp.where(provider: 'evolution_go')
                                           .where('provider_config @> ?', { instance_uuid: identifier }.to_json)
+                                          .order(id: :desc)
                                           .first
     end
 

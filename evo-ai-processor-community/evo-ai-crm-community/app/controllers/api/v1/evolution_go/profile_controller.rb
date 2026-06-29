@@ -225,9 +225,9 @@ class Api::V1::EvolutionGo::ProfileController < Api::V1::BaseController
     end
 
     # Busca diretamente pelo Channel::Whatsapp para evitar problemas com associação polimórfica
-    whatsapp_channel = Channel::Whatsapp.joins(:inbox)
-                                        .where(provider: 'evolution_go')
+    whatsapp_channel = Channel::Whatsapp.where(provider: 'evolution_go')
                                         .where('provider_config @> ?', { instance_uuid: @instance_uuid }.to_json)
+                                        .order(id: :desc)
                                         .first
 
     if whatsapp_channel
