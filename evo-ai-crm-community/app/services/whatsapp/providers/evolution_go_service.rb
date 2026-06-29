@@ -143,7 +143,7 @@ class Whatsapp::Providers::EvolutionGoService < Whatsapp::Providers::BaseService
   def toggle_typing_status(phone_number, typing_status)
     status_map = {
       Events::Types::CONVERSATION_TYPING_ON => 'composing',
-      Events::Types::CONVERSATION_RECORDING => 'composing',
+      Events::Types::CONVERSATION_RECORDING => 'composing', # Evolution Go accepts isAudio
       Events::Types::CONVERSATION_TYPING_OFF => 'paused'
     }
 
