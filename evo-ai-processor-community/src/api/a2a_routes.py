@@ -1421,7 +1421,6 @@ async def handle_message_send(
                                                 except Exception as e:
                                                     logger.error(f"Error generating fallback audio for handoff: {e}")
                                         # Disparo direto do N8N no handoff
-                                        phone_number = contact_info.get("phone") or contact_info.get("phone_number")
                                         if phone_number and final_text:
                                             import re
                                             link_pattern = r'\[?VIDEO_LINK:\s*(https?://[^\s\]]+)\]?'
