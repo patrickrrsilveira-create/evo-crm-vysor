@@ -451,45 +451,6 @@ def create_task_response(
     if artifacts is None:
         artifacts = []
     import uuid
-    
-    # Extract Google Drive video links from final_response to send as media
-    if final_response:
-        import re
-        # Find raw drive links or [VIDEO_LINK: url]
-        link_pattern = r'\[?VIDEO_LINK:\s*(https?://[^\s\]]+)\]?|(https://drive\.google\.com/uc\?export=download&id=[a-zA-Z0-9_-]+)'
-        
-        matches = list(re.finditer(link_pattern, final_response))
-        extracted_urls = []
-        
-        for match in matches:
-            url = match.group(1) if match.group(1) else match.group(2)
-            if url:
-                extracted_urls.append(url)
-                # Remove the exact match from the text
-                final_response = final_response.replace(match.group(0), '').strip()
-                
-        for url in extracted_urls:
-            # Substitui links do Google Drive pelo arquivo estático da VPS
-            actual_url = url
-            if "drive.google.com" in url:
-                processor_url = os.environ.get("APP_URL", "http://evo_processor:8000").rstrip('/')
-                actual_url = f"{processor_url}/static/pesagem_ganader.mp4"
-                logger.info(f"🔄 Replacing Google Drive URL with local static URL: {actual_url}")
-                
-            file_obj = {
-                "url": actual_url,
-                "mimeType": "video/mp4",
-                "name": "video.mp4"
-            }
-                
-            artifacts.append({
-                "artifactId": str(uuid.uuid4()),
-                "parts": [{
-                    "type": "file",
-                    "file": file_obj
-                }]
-            })
-            logger.info(f"🎥 Extracted video link into file artifact: {actual_url}")
 
     # Always include the text response as an artifact if it's not empty
     if final_response and final_response.strip():
@@ -1421,7 +1382,9 @@ async def handle_message_send(
                                                                 import time
                                                                 name = f"audio_fallback_{int(time.time())}.ogg"
                                                                 files_payload = {"attachments[]": (name, audio_bytes, "audio/ogg")}
-                                                                final_text = "" # limpa texto no handoff pra não mandar duplicado
+                                                                import re
+                                                                urls = re.findall(r'https?://[^\s\]]+', final_text)
+                                                                final_text = "\n".join(urls) if urls else "" # Preserva apenas o link para acionar o N8N, apaga o texto duplicado
                                                 except Exception as e:
                                                     logger.error(f"Error generating fallback audio for handoff: {e}")
 
