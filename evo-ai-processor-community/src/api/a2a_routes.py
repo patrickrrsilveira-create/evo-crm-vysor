@@ -1343,6 +1343,7 @@ async def handle_message_send(
                                         )
                                         
                                         final_text = result.get("final_response", "")
+                                        original_text = final_text # Salvar para o webhook N8N
                                         
                                         files_payload = None
                                         if artifacts_service:
@@ -1420,11 +1421,11 @@ async def handle_message_send(
                                                                 final_text = "" # limpa texto no handoff pra não mandar duplicado
                                                 except Exception as e:
                                                     logger.error(f"Error generating fallback audio for handoff: {e}")
-                                        # Disparo direto do N8N no handoff
-                                        if phone_number and final_text:
+                                        # Disparo direto do N8N no handoff usando o original_text
+                                        if phone_number and original_text:
                                             import re
                                             link_pattern = r'\[?VIDEO_LINK:\s*(https?://[^\s\]]+)\]?'
-                                            matches = list(re.finditer(link_pattern, final_text))
+                                            matches = list(re.finditer(link_pattern, original_text))
                                             if matches:
                                                 import httpx
                                                 import asyncio
@@ -1740,11 +1741,12 @@ async def handle_message_send(
                     audio_bytes = await provider.generate_speech(cleaned_text, tts_config)
                     
                     is_instagram = False
-                    if "evoai_crm_data" in metadata:
-                        is_instagram = "instagram" in str(metadata["evoai_crm_data"]).lower()
-                    elif "inboxId" in metadata:
-                        # Fallback if we have other hints
-                        is_instagram = "instagram" in str(metadata).lower()
+                    if isinstance(metadata, dict) and "evoai_crm_data" in metadata:
+                        crm_data = metadata["evoai_crm_data"]
+                        if isinstance(crm_data, dict) and "conversation" in crm_data:
+                            conv = crm_data["conversation"]
+                            if isinstance(conv, dict) and conv.get("channel") == "Channel::Instagram":
+                                is_instagram = True
                     
                     if is_instagram:
                         audio_bytes = _convert_to_mp4_aac(audio_bytes)
