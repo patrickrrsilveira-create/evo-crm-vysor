@@ -242,11 +242,31 @@ module Whatsapp::EvolutionGoHandlers::MessagesUpsert
       content: message_content || '',
       source_id: raw_message_id,
       created_at: Time.zone.at(message_timestamp),
-      sender: incoming? ? @contact : (User.where(type: 'SuperAdmin').first || User.first),
-      sender_type: incoming? ? 'Contact' : 'User',
       message_type: incoming? ? :incoming : :outgoing,
       content_attributes: content_attrs
     }
+
+    if incoming?
+      message_attributes[:sender] = @contact
+      message_attributes[:sender_type] = 'Contact'
+    else
+      outgoing_sender = nil
+      outgoing_sender_type = 'User'
+      
+      if @conversation.assignee
+        outgoing_sender = @conversation.assignee
+      elsif @conversation.respond_to?(:active_agent_id) && @conversation.active_agent_id
+        outgoing_sender = AgentBot.find_by(id: @conversation.active_agent_id)
+        outgoing_sender_type = 'AgentBot' if outgoing_sender
+      end
+      
+      unless outgoing_sender
+        outgoing_sender = User.where(type: 'SuperAdmin').first || User.first
+      end
+      
+      message_attributes[:sender] = outgoing_sender
+      message_attributes[:sender_type] = outgoing_sender_type
+    end
 
     @message = conversation.messages.build(message_attributes)
 
