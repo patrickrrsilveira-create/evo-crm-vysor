@@ -365,7 +365,7 @@ class Api::V1::ContactsController < Api::V1::BaseController
     @listable_contacts = @listable_contacts.for_company(params[:company_id]) if params[:company_id].present?
 
     @listable_contacts = @listable_contacts.tagged_with(params[:labels], any: true) if params[:labels].present?
-    @listable_contacts
+    @listable_contacts.distinct
   end
 
   # TODO: Move this to a finder class
