@@ -255,6 +255,9 @@ def create_text_to_speech_tool(config: Dict[str, Any]) -> FunctionTool:
         tool_context: Optional[ToolContext] = None,
     ):
         """Generates speech from text using the configured TTS provider and stores it in artifacts."""
+        if tool_context is None:
+            return {"status": "failed", "error": "tool_context is required"}
+            
         try:
             text = _clean_text_for_tts(text)
             
