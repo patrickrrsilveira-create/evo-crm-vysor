@@ -734,7 +734,7 @@
         "finalizeService": "Finalizar atendimento",
         "whatShouldAgentSay": "O que o agente deve falar?",
         "messagePlaceholder": "Perguntar se o cliente ainda está interessado",
-        "addAction": "+ Adicionar ação anterior"
+        "addAction": "Adicionar ação"
       },
       "transferRules": {
         "description": "Configure instruções para o agente fazer transferência do atendimento.",

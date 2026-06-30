@@ -45,7 +45,19 @@ const InactivityActions = ({ actions, onChange }: InactivityActionsProps) => {
     onChange(actions.filter(action => action.id !== id));
   };
 
-  const minuteOptions = [2, 5, 10, 15, 30, 60];
+  const minuteOptions = [2, 5, 10, 15, 30, 60, 120, 240, 360, 720, 1440, 2880, 4320];
+
+  const formatTime = (min: number) => {
+    if (min >= 1440) {
+      const days = min / 1440;
+      return `${days} ${days === 1 ? 'dia' : 'dias'}`;
+    }
+    if (min >= 60 && min < 1440) {
+      const hours = min / 60;
+      return `${hours} ${hours === 1 ? 'hora' : 'horas'}`;
+    }
+    return `${min} ${t('edit.configuration.inactivityActions.minutes') || 'minutos'}`;
+  };
 
   return (
     <div className="space-y-6">
@@ -85,8 +97,7 @@ const InactivityActions = ({ actions, onChange }: InactivityActionsProps) => {
                         <SelectContent>
                           {minuteOptions.map(min => (
                             <SelectItem key={min} value={min.toString()}>
-                              {min}{' '}
-                              {t('edit.configuration.inactivityActions.minutes') || 'minutos'}
+                              {formatTime(min)}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -164,7 +175,7 @@ const InactivityActions = ({ actions, onChange }: InactivityActionsProps) => {
       {/* Add Action Button */}
       <Button type="button" variant="outline" onClick={handleAddAction} className="w-full">
         <Plus className="h-4 w-4 mr-2" />
-        {t('edit.configuration.inactivityActions.addAction') || '+ Adicionar ação anterior'}
+        {t('edit.configuration.inactivityActions.addAction') || 'Adicionar ação'}
       </Button>
     </div>
   );
