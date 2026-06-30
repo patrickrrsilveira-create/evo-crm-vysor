@@ -63,9 +63,9 @@ class EvoAuthPlan(BaseModel):
 
 class EvoAuthAccount(BaseModel):
     """Evo Auth account structure"""
-    id: str
+    id: Any
     name: str
-    status: str
+    status: Optional[str] = None
     locale: str
     created_at: Optional[str] = None
     updated_at: Optional[str] = None
