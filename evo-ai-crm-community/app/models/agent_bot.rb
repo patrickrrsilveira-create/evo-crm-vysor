@@ -26,7 +26,7 @@ class AgentBot < ApplicationRecord
   has_many :agent_bot_inboxes, dependent: :destroy_async
   has_many :inboxes, through: :agent_bot_inboxes
   has_many :knowledge_base_agent_bots, dependent: :destroy
-  has_many :knowledge_bases, through: :knowledge_base_agent_bots
+  has_many :knowledge_bases, through: :knowledge_base_agent_bots, source: :knowledge_base
   has_many :messages, as: :sender, dependent: :nullify
 
   before_destroy :cleanup_associations
