@@ -27,7 +27,7 @@ module Templates
       ].freeze
       SLUG_FIELD = :name
 
-      BOT_CONFIG_SENSITIVE_KEYS = %w[api_key token secret access_token refresh_token password].freeze
+      BOT_CONFIG_SENSITIVE_KEYS = %w[api_key apikey token secret access_token refresh_token password].freeze
 
       def to_h
         base = super
