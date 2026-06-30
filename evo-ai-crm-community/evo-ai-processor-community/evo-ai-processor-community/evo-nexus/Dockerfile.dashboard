@@ -1,0 +1,65 @@
+# ============================================================
+# EvoNexus Dashboard — Multi-stage Dockerfile
+# Stage 1: Build React frontend
+# Stage 2: Python backend (Flask) serving built frontend
+# ============================================================
+
+# --- Stage 1: Frontend build ---
+FROM node:22-alpine AS frontend-build
+
+WORKDIR /frontend
+COPY dashboard/frontend/package.json dashboard/frontend/package-lock.json* ./
+RUN npm install
+COPY dashboard/frontend/ ./
+RUN npm run build
+
+# --- Stage 2: Python backend ---
+FROM python:3.12-slim AS runtime
+
+# System deps: curl for healthcheck + git for brain-repo restore/clone flow.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install uv
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+ENV PATH="/root/.local/bin:$PATH"
+
+# Timezone
+ENV TZ=America/Sao_Paulo
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+WORKDIR /workspace
+
+# Install Python deps
+COPY pyproject.toml uv.lock ./
+RUN uv venv .venv && uv sync --no-dev
+
+# Copy backend code
+COPY dashboard/backend/ dashboard/backend/
+COPY social-auth/ social-auth/
+COPY scheduler.py ./
+
+# Copy workspace assets the backend reads at runtime.
+# Without these, /api/agents, /api/skills, /api/commands etc. all return empty
+# and the UI shows "No agents found" / "No skills found" on a fresh deploy.
+# .claude/agent-memory and .claude/.env are excluded by .dockerignore so user
+# data and secrets stay out of the image.
+COPY .claude/ .claude/
+COPY docs/ docs/
+
+# Copy built frontend from stage 1
+COPY --from=frontend-build /frontend/dist dashboard/frontend/dist
+
+# Copy pyproject.toml again (needed by app.py for version reading)
+# Already copied above, but ensure it's at workspace root
+
+# Create data directory for SQLite
+RUN mkdir -p dashboard/data
+
+# Default port
+ENV EVONEXUS_PORT=8080
+EXPOSE 8080
+
+# Run Flask app via uv
+CMD ["uv", "run", "python", "dashboard/backend/app.py"]

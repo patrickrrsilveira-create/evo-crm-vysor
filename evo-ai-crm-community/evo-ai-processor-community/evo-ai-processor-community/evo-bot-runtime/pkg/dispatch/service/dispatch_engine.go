@@ -1,0 +1,281 @@
+package service
+
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"fmt"
+	"io"
+	"log/slog"
+	"mime/multipart"
+	"net/http"
+	"net/textproto"
+	"strings"
+	"time"
+	"unicode/utf8"
+
+	brtErrors "github.com/EvolutionAPI/evo-bot-runtime/internal/errors"
+	"github.com/EvolutionAPI/evo-bot-runtime/pkg/pipeline/model"
+)
+
+// DispatchEngine segments the AI response, appends the message signature,
+// and sends each part sequentially via HTTP postback.
+// Swap the dispatch backend by providing a different implementation at main.go wiring.
+type DispatchEngine interface {
+	Dispatch(
+		ctx            context.Context,
+		contactID      int64,
+		conversationID int64,
+		content        string,
+		audio          []byte,
+		cfg            model.BotConfig,
+		postbackURL    string,
+	) error
+}
+
+// postbackRequest is the JSON body for each HTTP POST to the postback endpoint.
+type postbackRequest struct {
+	Content     string `json:"content"`
+	MessageType string `json:"message_type"`
+	ContentType string `json:"content_type"`
+}
+
+type dispatchEngineImpl struct {
+	client *http.Client
+	secret string
+}
+
+// postbackClientTimeout is the maximum time allowed for a single HTTP postback call.
+// The per-call context (propagated via Dispatch) can still cancel earlier.
+const postbackClientTimeout = 30 * time.Second
+
+// NewDispatchEngine constructs the engine. Returns interface (GEAR R03).
+// secret is the BOT_RUNTIME_SECRET sent as X-Bot-Runtime-Secret header on postback.
+func NewDispatchEngine(secret string) DispatchEngine {
+	return &dispatchEngineImpl{
+		client: &http.Client{Timeout: postbackClientTimeout},
+		secret: secret,
+	}
+}
+
+func (d *dispatchEngineImpl) Dispatch(
+	ctx            context.Context,
+	contactID      int64,
+	conversationID int64,
+	content        string,
+	audio          []byte,
+	cfg            model.BotConfig,
+	postbackURL    string,
+) error {
+	// If audio is provided, try to send a single audio part WITHOUT text content
+	if len(audio) > 0 {
+		// Send audio without any text content to satisfy the "only audio" requirement
+		audioErr := d.sendAudioPart(ctx, postbackURL, "", audio)
+		
+		if audioErr == nil {
+			// Successfully sent audio, so we are done! Do NOT send text.
+			slog.Info("pipeline.dispatch.audio.success", "contact_id", contactID)
+			return nil
+		}
+		
+		// If audio failed, log the error and fall through to send the text message as a fallback
+		slog.Error("pipeline.dispatch.audio_failed_fallback_to_text", "error", audioErr)
+	}
+
+	parts := segmentContent(content, cfg)
+
+	// Prepend signature to the first part (FR-21)
+	if cfg.MessageSignature != "" && len(parts) > 0 {
+		parts[0] = cfg.MessageSignature + parts[0]
+	}
+
+	start := time.Now()
+
+	for i, part := range parts {
+		// Check cancellation BEFORE sending this part
+		select {
+		case <-ctx.Done():
+			slog.Info("pipeline.dispatch.interrupted",
+				"contact_id",      contactID,
+				"conversation_id", conversationID,
+				"parts_sent",      i,
+			)
+			return brtErrors.ErrDispatchInterrupted
+		default:
+		}
+
+		if strings.TrimSpace(part) == "" {
+			continue // Skip sending empty text messages
+		}
+
+		if err := d.sendPart(ctx, postbackURL, part); err != nil {
+			return fmt.Errorf("pipeline.dispatch.send[%d]: %w", i, err)
+		}
+
+		// Apply inter-part delay — skip for the last part (FR-22)
+		if i < len(parts)-1 && cfg.DelayPerCharacter > 0 {
+			delayMs := time.Duration(cfg.DelayPerCharacter*float64(utf8.RuneCountInString(part))) * time.Millisecond
+			select {
+			case <-ctx.Done():
+				slog.Info("pipeline.dispatch.interrupted",
+					"contact_id",      contactID,
+					"conversation_id", conversationID,
+					"parts_sent",      i+1,
+				)
+				return brtErrors.ErrDispatchInterrupted
+			case <-time.After(delayMs):
+			}
+		}
+	}
+
+	slog.Info("pipeline.dispatch.completed",
+		"contact_id",      contactID,
+		"conversation_id", conversationID,
+		"duration_ms",     time.Since(start).Milliseconds(),
+		"parts_total",     len(parts),
+	)
+	return nil
+}
+
+// sendPart sends a single content part to the postback URL.
+func (d *dispatchEngineImpl) sendPart(ctx context.Context, postbackURL, content string) error {
+	body, err := json.Marshal(postbackRequest{
+		Content:     content,
+		MessageType: "outgoing",
+		ContentType: "text",
+	})
+	if err != nil {
+		return fmt.Errorf("marshal: %w", err)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, postbackURL, bytes.NewReader(body))
+	if err != nil {
+		return fmt.Errorf("new_request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	if d.secret != "" {
+		req.Header.Set("X-Bot-Runtime-Secret", d.secret)
+	}
+
+	resp, err := d.client.Do(req)
+	if err != nil {
+		return fmt.Errorf("do: %w", err)
+	}
+	defer resp.Body.Close()
+	_, _ = io.Copy(io.Discard, resp.Body) // drain to allow connection reuse
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return fmt.Errorf("status: %d", resp.StatusCode)
+	}
+	return nil
+}
+
+// sendAudioPart sends an audio payload as multipart/form-data along with optional text content.
+func (d *dispatchEngineImpl) sendAudioPart(ctx context.Context, postbackURL string, content string, audio []byte) error {
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+
+	// Add the file part with correct MIME type so Chatwoot recognizes it as audio
+	h := make(textproto.MIMEHeader)
+	h.Set("Content-Disposition", fmt.Sprintf(`form-data; name="%s"; filename="%s"`, "attachments[]", "audio.ogg"))
+	h.Set("Content-Type", "audio/ogg")
+	part, err := writer.CreatePart(h)
+	if err != nil {
+		return fmt.Errorf("create form part: %w", err)
+	}
+	_, err = io.Copy(part, bytes.NewReader(audio))
+	if err != nil {
+		return fmt.Errorf("copy audio to multipart: %w", err)
+	}
+
+	_ = writer.WriteField("message_type", "outgoing")
+	
+	// Chatwoot (or Rack) sometimes fails to parse the multipart form correctly if the content field is completely omitted.
+	// We explicitly write the "content" field even if it is empty, to match the previously working behavior.
+	_ = writer.WriteField("content", content)
+	
+	if err := writer.Close(); err != nil {
+		return fmt.Errorf("close multipart writer: %w", err)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, postbackURL, body)
+	if err != nil {
+		return fmt.Errorf("new audio request: %w", err)
+	}
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+	if d.secret != "" {
+		req.Header.Set("X-Bot-Runtime-Secret", d.secret)
+	}
+
+	resp, err := d.client.Do(req)
+	if err != nil {
+		return fmt.Errorf("do audio post: %w", err)
+	}
+	defer resp.Body.Close()
+	_, _ = io.Copy(io.Discard, resp.Body)
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return fmt.Errorf("status: %d", resp.StatusCode)
+	}
+	return nil
+}
+
+
+// segmentContent splits content into parts of at most TextSegmentationLimit characters,
+// respecting word boundaries, then merges any part shorter than TextSegmentationMinSize
+// with its predecessor.
+func segmentContent(content string, cfg model.BotConfig) []string {
+	if !cfg.TextSegmentationEnabled || cfg.TextSegmentationLimit <= 0 {
+		return []string{content}
+	}
+
+	limit := cfg.TextSegmentationLimit
+	words := strings.Fields(content)
+	if len(words) == 0 {
+		return []string{content} // preserve empty or whitespace-only content
+	}
+
+	// Build raw parts greedily by word (rune-aware — fixes non-ASCII content)
+	var rawParts []string
+	var current strings.Builder
+	currentRunes := 0
+	for _, word := range words {
+		wordRunes := utf8.RuneCountInString(word)
+		if currentRunes == 0 {
+			current.WriteString(word)
+			currentRunes = wordRunes
+		} else if currentRunes+1+wordRunes <= limit {
+			current.WriteByte(' ')
+			current.WriteString(word)
+			currentRunes += 1 + wordRunes
+		} else {
+			rawParts = append(rawParts, current.String())
+			current.Reset()
+			current.WriteString(word)
+			currentRunes = wordRunes
+		}
+	}
+	if currentRunes > 0 {
+		rawParts = append(rawParts, current.String())
+	}
+
+	// Merge parts shorter than TextSegmentationMinSize into previous part,
+	// only when the merged result stays within limit (prevents overflow).
+	if cfg.TextSegmentationMinSize <= 0 || len(rawParts) <= 1 {
+		return rawParts
+	}
+
+	merged := make([]string, 0, len(rawParts))
+	lastPartRunes := 0
+	for _, p := range rawParts {
+		pRunes := utf8.RuneCountInString(p)
+		if len(merged) > 0 && pRunes < cfg.TextSegmentationMinSize && lastPartRunes+1+pRunes <= limit {
+			merged[len(merged)-1] += " " + p
+			lastPartRunes += 1 + pRunes
+		} else {
+			merged = append(merged, p)
+			lastPartRunes = pRunes
+		}
+	}
+	return merged
+}

@@ -1,0 +1,704 @@
+{
+  "title": "Contacts",
+  "card": {
+    "phone": "Téléphone",
+    "actions": {
+      "chat": "Converser",
+      "viewDetails": "Voir les détails",
+      "edit": "Modifier le contact",
+      "delete": "Supprimer le contact"
+    }
+  },
+  "details": {
+    "title": "Détails du Contact",
+    "tabs": {
+      "profile": "Profil",
+      "companies": "Entreprises",
+      "persons": "Personnes",
+      "pipeline": "Pipeline",
+      "history": "Historique",
+      "notes": "Notes",
+      "attributes": "Attributs",
+      "events": "Événements"
+    },
+    "actions": {
+      "startConversation": "Démarrer une Conversation",
+      "edit": "Modifier"
+    },
+    "conversations": "conversations",
+    "company": "entreprise",
+    "companies": "entreprises",
+    "employee": "contact",
+    "sections": {
+      "basicInfo": "Informations de Base",
+      "company": "Entreprise",
+      "location": "Localisation",
+      "description": "Description",
+      "timeline": "Chronologie",
+      "linkedCompanies": "Entreprises Liées"
+    },
+    "fields": {
+      "name": "Nom",
+      "email": "Email",
+      "phone": "Téléphone",
+      "identifier": "Identifiant",
+      "company": "Entreprise",
+      "city": "Ville",
+      "country": "Pays",
+      "createdAt": "Créé le",
+      "lastActivity": "Dernière activité",
+      "taxId": "N° SIRET",
+      "website": "Site Web",
+      "industry": "Secteur"
+    },
+    "notImplemented": {
+      "history": "L'historique des conversations n'est pas encore implémenté.",
+      "notes": "Les notes du contact ne sont pas encore implémentées.",
+      "attributes": "Les attributs personnalisés ne sont pas encore implémentés."
+    },
+    "errors": {
+      "invalidDate": "Date invalide"
+    },
+    "na": "N/A"
+  },
+  "export": {
+    "title": "Exporter les Contacts",
+    "description": "Exporter les contacts filtrés ({{count}} contacts)",
+    "descriptionAll": "Exporter tous les contacts ({{count}} contacts)",
+    "format": {
+      "title": "Format du fichier",
+      "csv": "CSV",
+      "excel": "Excel"
+    },
+    "filters": {
+      "title": "Appliquer les filtres actuels ({{count}} filtre actif)",
+      "title_other": "Appliquer les filtres actuels ({{count}} filtres actifs)"
+    },
+    "fields": {
+      "title": "Champs à exporter",
+      "name": "Nom",
+      "email": "E-mail",
+      "phone": "Téléphone",
+      "identifier": "Identifiant",
+      "createdAt": "Date de Création",
+      "lastActivity": "Dernière Activité",
+      "labels": "Étiquettes",
+      "customAttributes": "Attributs Personnalisés",
+      "required": "(obligatoire)"
+    },
+    "download": {
+      "title": "Téléchargement automatique",
+      "description": "Le fichier sera téléchargé automatiquement après le traitement. Pour de gros volumes de données, vous recevrez une notification lorsqu'il sera prêt."
+    },
+    "actions": {
+      "cancel": "Annuler",
+      "export": "Exporter",
+      "exporting": "Exportation en cours..."
+    }
+  },
+  "form": {
+    "title": {
+      "new": "Nouveau Contact",
+      "edit": "Modifier le Contact"
+    },
+    "avatar": {
+      "upload": "Ajouter une photo",
+      "change": "Modifier la photo",
+      "errors": {
+        "invalidType": "Veuillez sélectionner un fichier image.",
+        "tooLarge": "Fichier trop volumineux. Maximum 5 Mo."
+      }
+    },
+    "sections": {
+      "basicInfo": "Informations de Base",
+      "company": "Informations sur l'Entreprise",
+      "companyInfo": "Informations sur l'Entreprise",
+      "location": "Localisation",
+      "description": "Description",
+      "socialProfiles": "Réseaux Sociaux",
+      "labels": "Étiquettes",
+      "customAttributes": "Attributs Personnalisés",
+      "contactStatus": "Statut du Contact"
+    },
+    "fields": {
+      "type": {
+        "label": "Type de Contact",
+        "person": "Personne",
+        "company": "Entreprise",
+        "personDescription": "Individu ou personne physique",
+        "companyDescription": "Organisation ou entreprise"
+      },
+      "firstName": {
+        "label": "Prénom",
+        "placeholder": "Saisissez le prénom",
+        "required": true
+      },
+      "lastName": {
+        "label": "Nom de famille",
+        "placeholder": "Saisissez le nom de famille"
+      },
+      "companyName": {
+        "label": "Raison Sociale",
+        "placeholder": "Saisissez la raison sociale"
+      },
+      "taxId": {
+        "labelPerson": "Numéro Fiscal",
+        "labelCompany": "Numéro SIRET",
+        "placeholderPerson": "Saisissez le numéro fiscal",
+        "placeholderCompany": "Saisissez le numéro SIRET"
+      },
+      "website": {
+        "label": "Site Web",
+        "placeholder": "https://exemple.fr"
+      },
+      "industry": {
+        "label": "Secteur/Industrie",
+        "placeholder": "Sélectionnez le secteur",
+        "options": {
+          "technology": "Technologie",
+          "retail": "Commerce de Détail",
+          "health": "Santé",
+          "education": "Éducation",
+          "finance": "Finance",
+          "other": "Autre"
+        }
+      },
+      "companies": {
+        "label": "Entreprises Liées",
+        "searchPlaceholder": "Rechercher des entreprises...",
+        "description": "Liez ce contact à une ou plusieurs entreprises",
+        "loading": "Chargement des entreprises...",
+        "loadingMore": "Chargement en cours...",
+        "endOfList": "Toutes les entreprises chargées",
+        "noResults": "Aucune entreprise trouvée",
+        "noCompanies": "Aucune entreprise enregistrée",
+        "noContact": "Pas de contact"
+      },
+      "email": {
+        "label": "Email",
+        "placeholder": "email@exemple.fr"
+      },
+      "phone": {
+        "label": "Téléphone",
+        "placeholder": "+33 6 12 34 56 78"
+      },
+      "blocked": {
+        "label": {
+          "active": "Contact Actif",
+          "blocked": "Contact Bloqué"
+        },
+        "description": {
+          "active": "Ce contact peut démarrer des conversations et recevoir des messages normalement",
+          "blocked": "Ce contact ne peut pas démarrer de nouvelles conversations ni recevoir de messages"
+        }
+      },
+      "company": {
+        "label": "Nom de l'Entreprise",
+        "placeholder": "Nom de l'entreprise"
+      },
+      "city": {
+        "label": "Ville",
+        "placeholder": "Paris"
+      },
+      "country": {
+        "label": "Pays",
+        "placeholder": "Sélectionnez un pays"
+      },
+      "description": {
+        "label": "Description",
+        "placeholder": "Informations supplémentaires sur le contact..."
+      },
+      "social": {
+        "linkedin": {
+          "label": "LinkedIn",
+          "placeholder": "https://linkedin.com/in/utilisateur"
+        },
+        "facebook": {
+          "label": "Facebook",
+          "placeholder": "https://facebook.com/utilisateur"
+        },
+        "instagram": {
+          "label": "Instagram",
+          "placeholder": "@utilisateur"
+        },
+        "twitter": {
+          "label": "Twitter",
+          "placeholder": "@utilisateur"
+        },
+        "github": {
+          "label": "GitHub",
+          "placeholder": "https://github.com/utilisateur"
+        }
+      }
+    },
+    "countries": {
+      "BR": "Brésil",
+      "US": "États-Unis",
+      "CA": "Canada",
+      "AR": "Argentine",
+      "MX": "Mexique"
+    },
+    "validation": {
+      "firstNameRequired": "Le prénom est obligatoire",
+      "emailInvalid": "Email invalide",
+      "phoneInvalid": "Téléphone invalide",
+      "taxIdInvalidPerson": "Numéro fiscal invalide (maximum 11 chiffres)",
+      "taxIdInvalidCompany": "Numéro SIRET invalide (maximum 14 chiffres)",
+      "websiteInvalid": "URL invalide. Utilisez http:// ou https://"
+    },
+    "actions": {
+      "cancel": "Annuler",
+      "save": "Enregistrer les Modifications",
+      "create": "Créer le Contact",
+      "saving": "Enregistrement en cours..."
+    }
+  },
+  "viewMode": {
+    "cards": "Cartes",
+    "table": "Tableau"
+  },
+  "empty": {
+    "title": "Aucun contact trouvé",
+    "description": "Créez un nouveau contact pour commencer à gérer vos conversations avec les clients.",
+    "action": "Nouveau Contact"
+  },
+  "loading": {
+    "contacts": "Chargement des contacts...",
+    "creating": "Création en cours...",
+    "updating": "Mise à jour en cours...",
+    "deleting": "Suppression en cours...",
+    "importing": "Importation en cours...",
+    "exporting": "Exportation en cours...",
+    "bulk": "Traitement en cours..."
+  },
+  "actions": {
+    "startConversation": "Démarrer une Conversation",
+    "edit": "Modifier",
+    "delete": "Supprimer",
+    "cancel": "Annuler",
+    "save": "Enregistrer",
+    "confirm": "Confirmer"
+  },
+  "messages": {
+    "loadError": "Erreur lors du chargement des contacts",
+    "searchError": "Erreur lors de la recherche des contacts",
+    "createSuccess": "Contact créé avec succès",
+    "createError": "Erreur lors de la création du contact",
+    "updateSuccess": "Contact mis à jour avec succès",
+    "updateError": "Erreur lors de la mise à jour du contact",
+    "deleteSuccess": "Contact supprimé avec succès",
+    "deleteError": "Erreur lors de la suppression du contact",
+    "bulkDeleteSuccess": "{{count}} contact(s) supprimé(s) avec succès",
+    "bulkDeleteError": "Erreur lors de la suppression des contacts",
+    "mergeSuccess": "Contacts fusionnés avec succès",
+    "mergeError": "Erreur lors de la fusion des contacts",
+    "importSuccess": "Contacts importés avec succès",
+    "importQueued": "Importation démarrée. Vous recevrez un e-mail lorsque le traitement sera terminé.",
+    "importError": "Erreur lors de l'importation des contacts",
+    "exportSuccess": "Exportation démarrée avec succès. Le fichier sera téléchargé automatiquement.",
+    "exportQueued": "Exportation démarrée. Vous recevrez un e-mail avec le lien de téléchargement sous peu.",
+    "exportError": "Erreur lors de l'exportation des contacts",
+    "filterError": "Erreur lors de l'application des filtres",
+    "conversationStarted": "Conversation démarrée avec succès"
+  },
+  "errors": {
+    "loadContact": "Erreur lors du chargement des détails du contact"
+  },
+  "dialog": {
+    "deleteContact": {
+      "title": "Supprimer le Contact",
+      "description": "Êtes-vous sûr de vouloir supprimer le contact \"{{name}}\" ? Cette action ne peut pas être annulée.",
+      "confirm": "Supprimer",
+      "cancel": "Annuler",
+      "deleting": "Suppression en cours..."
+    },
+    "bulkDelete": {
+      "title": "Supprimer les Contacts",
+      "description": "Êtes-vous sûr de vouloir supprimer {{count}} contact(s) sélectionné(s) ? Cette action ne peut pas être annulée.",
+      "confirm": "Tout Supprimer",
+      "cancel": "Annuler",
+      "deleting": "Suppression en cours..."
+    },
+    "mergeContacts": {
+      "title": "Fusionner les Contacts",
+      "description": "Sélectionnez le contact principal à conserver. Les données des autres contacts seront fusionnées avec celui-ci et les contacts en double seront supprimés.",
+      "infoTitle": "Ce qui va se passer :",
+      "info1": "Le contact principal conservera toutes ses données actuelles",
+      "info2": "Les conversations, notes et historique des autres contacts seront transférés",
+      "info3": "Les attributs personnalisés seront fusionnés (les valeurs du principal sont prioritaires)",
+      "info4": "Les contacts en double seront supprimés définitivement",
+      "cancel": "Annuler",
+      "confirm": "Fusionner les Contacts",
+      "merging": "Fusion en cours..."
+    },
+    "selectContactToMerge": {
+      "title": "Sélectionner un Contact à Fusionner",
+      "description": "Sélectionnez le contact que vous souhaitez fusionner avec {{name}}",
+      "noContacts": "Aucun autre contact disponible",
+      "select": "Sélectionner le Contact"
+    }
+  },
+  "type": {
+    "person": "Personne",
+    "company": "Entreprise",
+    "group": "Groupe"
+  },
+  "filter": {
+    "title": "Filtrer les Contacts",
+    "description": "Configurez les filtres pour trouver les contacts que vous recherchez",
+    "apply": "Appliquer les Filtres",
+    "clear": "Effacer les Filtres",
+    "attribute": "Attribut",
+    "operator": "Opérateur",
+    "value": "Valeur",
+    "addFilter": "Ajouter un Filtre",
+    "type": {
+      "label": "Type",
+      "all": "Tous",
+      "person": "Personnes",
+      "company": "Entreprises"
+    },
+    "company": {
+      "label": "Entreprise",
+      "placeholder": "Filtrer par entreprise"
+    },
+    "operators": {
+      "equal_to": "Égal à",
+      "not_equal_to": "Différent de",
+      "contains": "Contient",
+      "does_not_contain": "Ne contient pas",
+      "is_present": "Présent",
+      "is_not_present": "Non présent"
+    },
+    "attributes": {
+      "name": "Nom",
+      "email": "Email",
+      "phone_number": "Téléphone",
+      "identifier": "Identifiant",
+      "created_at": "Date de Création",
+      "last_activity_at": "Dernière Activité",
+      "type": "Type de Contact"
+    }
+  },
+  "import": {
+    "title": "Importer des Contacts",
+    "description": "Importez plusieurs contacts à la fois en utilisant un fichier CSV.",
+    "downloadTemplate": "Télécharger le modèle CSV",
+    "fileLabel": "Fichier CSV",
+    "chooseFile": "Choisir un fichier",
+    "changeFile": "Modifier",
+    "formatTitle": "Format du fichier CSV",
+    "formatDescription": "Le fichier doit contenir les colonnes suivantes : name, email, phone_number, identifier (optionnel), et tous les attributs personnalisés.",
+    "fileHelper": "Formats acceptés : CSV, XLSX. Taille maximale : 10 Mo",
+    "mapping": "Correspondance des Champs",
+    "preview": "Aperçu",
+    "button": "Importer les Contacts",
+    "errors": {
+      "invalidType": "Veuillez sélectionner un fichier CSV",
+      "maxSize": "Le fichier ne doit pas dépasser 5 Mo"
+    },
+    "actions": {
+      "cancel": "Annuler",
+      "import": "Importer",
+      "importing": "Importation en cours..."
+    }
+  },
+  "pagination": {
+    "showing": "Affichage de {{from}} à {{to}} sur {{total}} contacts",
+    "perPage": "Par page",
+    "previous": "Précédent",
+    "next": "Suivant"
+  },
+  "labels": {
+    "add": "Ajouter une Étiquette",
+    "search": "Rechercher des étiquettes...",
+    "empty": "Aucune étiquette trouvée."
+  },
+  "modal": {
+    "title": {
+      "new": "Créer un Nouveau Contact",
+      "edit": "Modifier le Contact"
+    }
+  },
+  "table": {
+    "columns": {
+      "contact": "Contact",
+      "type": "Type",
+      "tags": "Tags",
+      "status": "Statut",
+      "pipelines": "Pipelines"
+    },
+    "actions": {
+      "startConversation": "Démarrer une conversation",
+      "edit": "Modifier le contact",
+      "delete": "Supprimer le contact",
+      "create": "Créer un contact"
+    },
+    "empty": {
+      "title": "Aucun contact créé",
+      "description": "Connectez des contacts pour commencer à envoyer et recevoir des messages.",
+      "noResults": "Aucun contact trouvé"
+    },
+    "noName": "Sans nom"
+  },
+  "header": {
+    "title": "Contacts",
+    "subtitle": "Gérez tous vos contacts en un seul endroit",
+    "searchPlaceholder": "Rechercher des contacts...",
+    "newContact": "Nouveau Contact",
+    "import": "Importer",
+    "export": "Exporter",
+    "filters": "Filtres",
+    "bulkDelete": "Supprimer la Sélection",
+    "mergeContacts": "Fusionner les Contacts",
+    "clearSelection": "Effacer la Sélection",
+    "selected": "{{count}} sélectionné",
+    "selected_other": "{{count}} sélectionnés"
+  },
+  "startConversation": {
+    "title": "Démarrer une Conversation",
+    "description": "Démarrer une nouvelle conversation avec {{name}}",
+    "fields": {
+      "channel": {
+        "label": "Canal de Communication",
+        "placeholder": "Sélectionnez un canal"
+      },
+      "message": {
+        "label": "Message",
+        "placeholder": "Saisissez votre message...",
+        "characters": "{{count}}/1000 caractères"
+      }
+    },
+    "pipelines": {
+      "morePipelines": "+{{count}} pipeline",
+      "morePipelines_other": "+{{count}} pipelines"
+    },
+    "channels": {
+      "whatsapp": "WhatsApp",
+      "email": "Email",
+      "sms": "SMS",
+      "webWidget": "Chat Web",
+      "api": "API"
+    },
+    "loading": {
+      "channels": "Chargement des canaux..."
+    },
+    "empty": {
+      "noChannels": "Aucun canal disponible pour ce contact"
+    },
+    "unavailable": "Indisponible",
+    "templates": {
+      "noneForInbox": "Aucun modèle enregistré pour cette boîte de réception. Créez-en un dans les paramètres de la boîte de réception.",
+      "noApproved": "Aucun modèle approuvé par Meta pour l'instant. Les modèles listés sont en attente d'approbation et ne peuvent pas être envoyés.",
+      "pendingSelectedHint": "Ce modèle n'a pas encore été approuvé par Meta et ne peut pas être utilisé pour démarrer la conversation.",
+      "statusBadge": {
+        "approved": "Approuvé",
+        "pending": "En attente",
+        "rejected": "Rejeté",
+        "paused": "En pause",
+        "inactive": "Inactif",
+        "unknown": "Inconnu"
+      }
+    },
+    "toggle": {
+      "label": "Utiliser un Modèle",
+      "cloudRequires": "WhatsApp Cloud nécessite un modèle pour démarrer la conversation",
+      "using": "Utilisation du Modèle"
+    },
+    "actions": {
+      "cancel": "Annuler",
+      "send": "Démarrer la Conversation",
+      "sending": "Envoi en cours..."
+    }
+  },
+  "scheduledActions": {
+    "label": "Actions Programmées",
+    "newAction": "Nouvelle Action",
+    "filter": "Filtrer:",
+    "filterAll": "Tous",
+    "filterPending": "En attente",
+    "filterCompleted": "Exécutées",
+    "filterCancelled": "Annulées",
+    "title": "Nouvelle Action Programmée",
+    "titleEdit": "Modifier l'Action Programmée",
+    "dateTime": "Date et Heure",
+    "recurrence": "Récurrence",
+    "recurrenceOnce": "Une fois",
+    "recurrenceDaily": "Quotidien",
+    "recurrenceWeekly": "Hebdomadaire",
+    "recurrenceMonthly": "Mensuel",
+    "actionType": "Type d'Action",
+    "channel": "Canal",
+    "channelWhatsapp": "WhatsApp",
+    "channelSms": "SMS",
+    "channelEmail": "Email",
+    "channelTelegram": "Telegram",
+    "message": "Message",
+    "subject": "Sujet",
+    "body": "Corps du Message",
+    "webhookUrl": "URL du Webhook",
+    "webhookMethod": "Méthode HTTP",
+    "taskTitle": "Titre de la Tâche",
+    "taskDescription": "Description de la Tâche (optionnel)",
+    "cancel": "Annuler",
+    "save": "Enregistrer",
+    "saving": "Enregistrement en cours...",
+    "subtitle": "Gérer toutes les actions programmées",
+    "searchPlaceholder": "Rechercher des actions programmées...",
+    "bulkCancel": "Annuler la Sélection",
+    "emptyDescription": "Créez une nouvelle action programmée pour commencer",
+    "pagination": "Page {{page}} sur {{totalPages}} ({{total}} au total)",
+    "messages": {
+      "noChannelsConfigured": "Aucun canal de messagerie configuré. Veuillez d'abord configurer un canal WhatsApp, SMS, Email ou Telegram dans les paramètres des Canaux."
+    },
+    "errors": {
+      "loadFailed": "Échec du chargement des actions programmées",
+      "cancelFailed": "Échec de l'annulation de l'action",
+      "bulkCancelFailed": "Échec de l'annulation des actions"
+    },
+    "table": {
+      "columns": {
+        "actionType": "Type d'Action",
+        "status": "Statut",
+        "contact": "Contact",
+        "scheduledFor": "Programmé Pour",
+        "createdAt": "Créé Le"
+      },
+      "actions": {
+        "edit": "Modifier",
+        "cancel": "Annuler"
+      }
+    },
+    "actions": {
+      "send_message": "Envoyer un Message",
+      "send_email": "Envoyer un Email",
+      "send_whatsapp": "Envoyer un WhatsApp",
+      "send_sms": "Envoyer un SMS",
+      "execute_webhook": "Exécuter un Webhook",
+      "create_task": "Créer une Tâche",
+      "update_deal_stage": "Mettre à jour l'Étape",
+      "add_deal_note": "Ajouter une Note"
+    },
+    "loading": "Chargement...",
+    "empty": "Aucune action programmée",
+    "emptyFiltered": "Aucune action avec ce filtre",
+    "overdue": "En retard",
+    "timeNow": "Maintenant",
+    "timePrefix": "Dans",
+    "timeFormat": {
+      "daysHours": "{{days}}j {{hours}}h",
+      "hoursMinutes": "{{hours}}h {{minutes}}m",
+      "minutesSeconds": "{{minutes}}m {{seconds}}s",
+      "seconds": "{{seconds}}s"
+    },
+    "validationRequired": {
+      "dateTime": "La date et l'heure sont obligatoires",
+      "dateTimeFuture": "La date et l'heure doivent être dans le futur",
+      "channel": "Le canal est obligatoire",
+      "message": "Le message est obligatoire",
+      "webhookUrl": "L'URL du webhook est obligatoire",
+      "journeyId": "L'ID du parcours est obligatoire",
+      "taskTitle": "Le titre de la tâche est obligatoire",
+      "contact": "Le contact est obligatoire"
+    },
+    "contact": "Contact",
+    "contactPlaceholder": "Rechercher un contact...",
+    "noContactsFound": "Aucun contact trouvé"
+  },
+  "events": {
+    "timeline": {
+      "title": "Historique des événements",
+      "ariaLabel": "Chronologie des événements du contact",
+      "loading": "Chargement des événements...",
+      "loadingMore": "Chargement...",
+      "loadMore": "Charger plus",
+      "showing": "{{count}} événements",
+      "softCapped": "Affichage des {{cap}} derniers événements. Utilisez les filtres pour affiner.",
+      "empty": {
+        "default": "Ce contact n'a pas encore d'événements enregistrés.",
+        "withFilters": "Aucun événement ne correspond aux filtres appliqués."
+      },
+      "degraded": {
+        "banner": "Historique temporairement indisponible. Veuillez réessayer dans quelques instants.",
+        "retry": "Réessayer"
+      },
+      "error": {
+        "forbidden": "Vous n'avez pas la permission de voir l'historique de ce contact.",
+        "invalidFilters": "Filtres invalides. Vérifiez les champs et réessayez.",
+        "rateLimit": "Trop de requêtes. Veuillez patienter quelques secondes.",
+        "generic": "Échec du chargement des événements. Veuillez recharger la page.",
+        "retry": "Réessayer"
+      },
+      "crashed": {
+        "title": "Une erreur est survenue lors de l'affichage de l'historique.",
+        "reload": "Recharger"
+      }
+    },
+    "filters": {
+      "title": "Filtres",
+      "eventType": "Type",
+      "eventName": "Nom",
+      "channel": "Canal",
+      "campaign": "Campagne",
+      "campaignPlaceholder": "Filtrer par campagne",
+      "campaignSearchPlaceholder": "Rechercher des campagnes…",
+      "campaignLoading": "Chargement des campagnes…",
+      "campaignEmpty": "Aucune campagne trouvée",
+      "clearCampaign": "Effacer le filtre de campagne",
+      "occurredAfter": "Du",
+      "occurredBefore": "Au",
+      "clear": "Effacer les filtres",
+      "allEventNames": "Tous les noms"
+    },
+    "types": {
+      "_comment": "Les valeurs de termes de protocole (Identify/Track/Page/Screen/Segment) sont volontairement conservées non traduites dans toutes les locales.",
+      "all": "Tous les types",
+      "identify": "Identify",
+      "track": "Track",
+      "page": "Page",
+      "screen": "Screen",
+      "segment": "Segment"
+    },
+    "channels": {
+      "all": "Tous les canaux",
+      "api": "API",
+      "email": "Email",
+      "facebook": "Facebook (inclut la page Facebook)",
+      "instagram": "Instagram",
+      "line": "LINE",
+      "sms": "SMS",
+      "telegram": "Telegram",
+      "twilio_sms": "Twilio SMS",
+      "twitter": "Twitter (inclut le profil Twitter)",
+      "web_widget": "Site web",
+      "whatsapp": "WhatsApp"
+    },
+    "card": {
+      "expand": "Voir les détails",
+      "collapse": "Masquer les détails",
+      "properties": "Propriétés de l'événement",
+      "justNow": "à l'instant",
+      "enriched": {
+        "campaign": "Campagne : {{name}}",
+        "channel": "Canal : {{label}}",
+        "agent": "Agent : {{name}}"
+      }
+    },
+    "names": {
+      "contact_created": "Contact créé",
+      "contact_updated": "Contact mis à jour",
+      "contact_label_added": "Étiquette ajoutée",
+      "contact_label_removed": "Étiquette supprimée",
+      "contact_custom_attribute_changed": "Attribut personnalisé modifié",
+      "conversation_created": "Conversation créée",
+      "conversation_updated": "Conversation mise à jour",
+      "conversation_resolved": "Conversation résolue",
+      "conversation_activity": "Activité de la conversation",
+      "conversation_first_reply": "Première réponse",
+      "message_created": "Message envoyé",
+      "pipeline_conversation_created": "Conversation créée dans le pipeline",
+      "pipeline_conversation_updated": "Conversation mise à jour dans le pipeline",
+      "pipeline_stage_changed": "Étape du pipeline modifiée"
+    }
+  }
+}

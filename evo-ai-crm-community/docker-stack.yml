@@ -1,0 +1,348 @@
+version: "3.8"
+
+services:
+  evo_gateway:
+    image: ghcr.io/patrickrrsilveira-create/evo-crm-vysor-evo-crm-gateway:latest
+    networks:
+      - minha_rede
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      restart_policy:
+        condition: any
+      labels:
+        - traefik.enable=true
+        - traefik.swarm.network=minha_rede
+        - traefik.http.routers.evo_gateway.rule=Host(`api-crm.vysortech.app.br`)
+        - traefik.http.routers.evo_gateway.entrypoints=websecure
+        - traefik.http.routers.evo_gateway.tls.certresolver=letsencryptresolver
+        - traefik.http.routers.evo_gateway.service=evo_gateway
+        - traefik.http.services.evo_gateway.loadbalancer.server.port=3030
+        - traefik.http.services.evo_gateway.loadbalancer.passHostHeader=true
+
+  evo_auth:
+    image: ghcr.io/patrickrrsilveira-create/evo-crm-vysor-evo-auth-service-community:latest
+    command: bash -c "bundle exec rails db:migrate 2>&1 || echo 'Migration had errors, continuing...'; bundle exec rails s -p 3001 -b 0.0.0.0"
+    environment:
+      RAILS_ENV: production
+      RAILS_MAX_THREADS: 5
+      SECRET_KEY_BASE: xsPT52m0647Je3uE1QO0yTOx5quGhBrf
+      JWT_SECRET_KEY: LAQnYLNFjCeekP7glOwhnYtUVZkQ0IXJ
+      EVOAI_CRM_API_TOKEN: 3cUU99Bc0eTetF2pEvUu7QuQZzdspBcf
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USERNAME: postgres
+      POSTGRES_PASSWORD: e2zaFkFxxIfX04QxP55LEvX2ZNW6XKFb
+      POSTGRES_DATABASE: evo_community
+      POSTGRES_SSLMODE: disable
+      REDIS_URL: redis://:e2zaFkFxxIfX04QxP55LEvX2ZNW6XKFb@redis:6379/4
+      FRONTEND_URL: https://crm.vysortech.app.br
+      BACKEND_URL: https://api-crm.vysortech.app.br
+      CORS_ORIGINS: https://crm.vysortech.app.br,https://api-crm.vysortech.app.br
+      DOORKEEPER_JWT_SECRET_KEY: OCMxvSBvISbjGju6hR0BVJDAEevy2631
+      DOORKEEPER_JWT_ALGORITHM: hs256
+      DOORKEEPER_JWT_ISS: evo-auth-service
+      MFA_ISSUER: EvoCRM
+      SIDEKIQ_CONCURRENCY: 10
+    networks:
+      - minha_rede
+    stop_grace_period: 300s
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      restart_policy:
+        condition: any
+
+  evo_auth_sidekiq:
+    image: ghcr.io/patrickrrsilveira-create/evo-crm-vysor-evo-auth-service-community:latest
+    command: ["bundle", "exec", "sidekiq", "-C", "config/sidekiq.yml"]
+    healthcheck:
+      disable: true
+    environment:
+      RAILS_ENV: production
+      SECRET_KEY_BASE: xsPT52m0647Je3uE1QO0yTOx5quGhBrf
+      JWT_SECRET_KEY: LAQnYLNFjCeekP7glOwhnYtUVZkQ0IXJ
+      EVOAI_CRM_API_TOKEN: 3cUU99Bc0eTetF2pEvUu7QuQZzdspBcf
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USERNAME: postgres
+      POSTGRES_PASSWORD: e2zaFkFxxIfX04QxP55LEvX2ZNW6XKFb
+      POSTGRES_DATABASE: evo_community
+      POSTGRES_SSLMODE: disable
+      REDIS_URL: redis://:e2zaFkFxxIfX04QxP55LEvX2ZNW6XKFb@redis:6379/4
+      CORS_ORIGINS: https://crm.vysortech.app.br,https://api-crm.vysortech.app.br
+      DOORKEEPER_JWT_SECRET_KEY: OCMxvSBvISbjGju6hR0BVJDAEevy2631
+      DOORKEEPER_JWT_ALGORITHM: hs256
+      DOORKEEPER_JWT_ISS: evo-auth-service
+      MFA_ISSUER: EvoCRM
+      SIDEKIQ_CONCURRENCY: 10
+    networks:
+      - minha_rede
+    stop_grace_period: 300s
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      restart_policy:
+        condition: any
+
+  evo_crm:
+    image: ghcr.io/patrickrrsilveira-create/evo-crm-vysor-evo-ai-crm-community:latest
+    command: sh -c "until wget -qO- http://evo_auth:3001/health >/dev/null 2>&1; do echo 'Waiting for auth...'; sleep 5; done; bundle exec rails db:migrate 2>&1 || echo 'Migration had errors, continuing...'; bundle exec rails s -p 3000 -b 0.0.0.0"
+    environment:
+      RAILS_ENV: production
+      RAILS_SERVE_STATIC_FILES: "true"
+      RAILS_LOG_TO_STDOUT: "true"
+      SECRET_KEY_BASE: xsPT52m0647Je3uE1QO0yTOx5quGhBrf
+      JWT_SECRET_KEY: LAQnYLNFjCeekP7glOwhnYtUVZkQ0IXJ
+      EVOAI_CRM_API_TOKEN: 3cUU99Bc0eTetF2pEvUu7QuQZzdspBcf
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USERNAME: postgres
+      POSTGRES_PASSWORD: e2zaFkFxxIfX04QxP55LEvX2ZNW6XKFb
+      POSTGRES_DATABASE: evo_community
+      POSTGRES_SSLMODE: disable
+      REDIS_URL: redis://:e2zaFkFxxIfX04QxP55LEvX2ZNW6XKFb@redis:6379/3
+      EVO_AUTH_SERVICE_URL: http://evo_auth:3001
+      EVO_AI_CORE_SERVICE_URL: http://evo_core:5555
+      BACKEND_URL: https://api-crm.vysortech.app.br
+      FRONTEND_URL: https://crm.vysortech.app.br
+      CORS_ORIGINS: https://crm.vysortech.app.br,https://api-crm.vysortech.app.br
+      DISABLE_TELEMETRY: "true"
+      LOG_LEVEL: info
+      ENABLE_ACCOUNT_SIGNUP: "true"
+      ENABLE_PUSH_RELAY_SERVER: "true"
+      ENABLE_INBOX_EVENTS: "true"
+      BOT_RUNTIME_URL: http://evo_bot_runtime:8080
+      BOT_RUNTIME_SECRET: u3D6aF31dqBuS2boknfQliZ0u7res06Z
+      BOT_RUNTIME_POSTBACK_BASE_URL: http://evo_crm:3000
+    volumes:
+      - evo_crm_storage:/app/storage
+    networks:
+      - minha_rede
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      restart_policy:
+        condition: any
+
+  evo_crm_sidekiq:
+    image: ghcr.io/patrickrrsilveira-create/evo-crm-vysor-evo-ai-crm-community:latest
+    command: ["bundle", "exec", "sidekiq", "-C", "config/sidekiq.yml"]
+    environment:
+      RAILS_ENV: production
+      SECRET_KEY_BASE: xsPT52m0647Je3uE1QO0yTOx5quGhBrf
+      JWT_SECRET_KEY: LAQnYLNFjCeekP7glOwhnYtUVZkQ0IXJ
+      EVOAI_CRM_API_TOKEN: 3cUU99Bc0eTetF2pEvUu7QuQZzdspBcf
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USERNAME: postgres
+      POSTGRES_PASSWORD: e2zaFkFxxIfX04QxP55LEvX2ZNW6XKFb
+      POSTGRES_DATABASE: evo_community
+      POSTGRES_SSLMODE: disable
+      REDIS_URL: redis://:e2zaFkFxxIfX04QxP55LEvX2ZNW6XKFb@redis:6379/3
+      EVO_AUTH_SERVICE_URL: http://evo_auth:3001
+      EVO_AI_CORE_SERVICE_URL: http://evo_core:5555
+      CORS_ORIGINS: https://crm.vysortech.app.br,https://api-crm.vysortech.app.br
+      BOT_RUNTIME_URL: http://evo_bot_runtime:8080
+      BOT_RUNTIME_SECRET: u3D6aF31dqBuS2boknfQliZ0u7res06Z
+      BOT_RUNTIME_POSTBACK_BASE_URL: http://evo_crm:3000
+      BACKEND_URL: https://api-crm.vysortech.app.br
+      FRONTEND_URL: https://crm.vysortech.app.br
+    volumes:
+      - evo_crm_storage:/app/storage
+    networks:
+      - minha_rede
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      restart_policy:
+        condition: any
+
+  evo_core:
+    image: ghcr.io/patrickrrsilveira-create/evo-crm-vysor-evo-ai-core-service-community:latest
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: e2zaFkFxxIfX04QxP55LEvX2ZNW6XKFb
+      DB_NAME: evo_community
+      DB_SSLMODE: disable
+      DB_MAX_IDLE_CONNS: 10
+      DB_MAX_OPEN_CONNS: 100
+      DB_CONN_MAX_LIFETIME: 1h
+      DB_CONN_MAX_IDLE_TIME: 30m
+      PORT: "5555"
+      SECRET_KEY_BASE: xsPT52m0647Je3uE1QO0yTOx5quGhBrf
+      JWT_SECRET_KEY: LAQnYLNFjCeekP7glOwhnYtUVZkQ0IXJ
+      JWT_ALGORITHM: HS256
+      ENCRYPTION_KEY: C8QcJC1D9vdvaIbBSlt52uUxqfDKctcn6gGRGQqN0io=
+      EVOLUTION_BASE_URL: http://evo_crm:3000
+      EVO_AUTH_BASE_URL: http://evo_auth:3001
+      AI_PROCESSOR_URL: http://evo_processor:8000
+      AI_PROCESSOR_VERSION: v1
+    networks:
+      - minha_rede
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      restart_policy:
+        condition: any
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Python AI Processor (branch atual em produção)
+  # ─────────────────────────────────────────────────────────────────────────────
+  evo_processor:
+    image: ghcr.io/patrickrrsilveira-create/evo-crm-vysor-evo-ai-processor-community:sha-4b4ad50
+    command: sh -c "alembic upgrade head 2>&1 || echo 'Alembic migration had errors, continuing...'; python -m scripts.run_seeders; uvicorn src.main:app --host 0.0.0.0 --port 3031 --proxy-headers"
+    environment:
+      POSTGRES_CONNECTION_STRING: postgresql://postgres:e2zaFkFxxIfX04QxP55LEvX2ZNW6XKFb@postgres:5432/evo_community
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: e2zaFkFxxIfX04QxP55LEvX2ZNW6XKFb
+      REDIS_SSL: "false"
+      REDIS_DB: 5
+      REDIS_KEY_PREFIX: "a2a:"
+      REDIS_TTL: 3600
+      HOST: 0.0.0.0
+      PORT: "8000"
+      DEBUG: "false"
+      SECRET_KEY_BASE: xsPT52m0647Je3uE1QO0yTOx5quGhBrf
+      ENCRYPTION_KEY: C8QcJC1D9vdvaIbBSlt52uUxqfDKctcn6gGRGQqN0io=
+      EVOAI_CRM_API_TOKEN: 3cUU99Bc0eTetF2pEvUu7QuQZzdspBcf
+      EVO_AI_CRM_URL: http://evo_crm:3000
+      CORE_SERVICE_URL: http://evo_core:5555/api/v1
+      EVO_AUTH_BASE_URL: http://evo_auth:3001
+      APP_URL: https://api-crm.vysortech.app.br
+      API_TITLE: Agent Processor Community
+      API_DESCRIPTION: Agent Processor Community for Evo AI
+      API_VERSION: 1.0.0
+      API_URL: https://api-crm.vysortech.app.br
+      ORGANIZATION_NAME: Evo CRM
+      TOOLS_CACHE_ENABLED: "true"
+      TOOLS_CACHE_TTL: 3600
+      ARTIFACT_SERVICE_TYPE: "minio"
+      ARTIFACT_FILES_BUCKET: "files"
+      ARTIFACT_ENDPOINT: "minio-api.vysortech.app.br"
+      ARTIFACT_ACCESS_KEY: "admin"
+      ARTIFACT_SECRET_KEY: "vysor@BR001"
+      ARTIFACT_SECURE: "true"
+    volumes:
+      - evo_processor_logs:/app/logs
+      - evo_processor_static:/app/static
+    networks:
+      - minha_rede
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      restart_policy:
+        condition: any
+
+
+  evo_bot_runtime:
+    image: ghcr.io/patrickrrsilveira-create/evo-crm-vysor-evo-bot-runtime:latest
+    environment:
+      LISTEN_ADDR: 0.0.0.0:8080
+      REDIS_URL: redis://:e2zaFkFxxIfX04QxP55LEvX2ZNW6XKFb@redis:6379/5
+      AI_PROCESSOR_URL: http://evo_processor:8000
+      BOT_RUNTIME_SECRET: u3D6aF31dqBuS2boknfQliZ0u7res06Z
+      AI_CALL_TIMEOUT_SECONDS: 240
+    networks:
+      - minha_rede
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      restart_policy:
+        condition: any
+
+  evo_frontend:
+    image: ghcr.io/patrickrrsilveira-create/evo-crm-vysor-evo-ai-frontend-community:latest
+    environment:
+      VITE_APP_ENV: production
+      VITE_API_URL: https://api-crm.vysortech.app.br
+      VITE_AUTH_API_URL: https://api-crm.vysortech.app.br
+      VITE_EVOAI_API_URL: https://api-crm.vysortech.app.br
+      VITE_AGENT_PROCESSOR_URL: https://api-crm.vysortech.app.br
+      VITE_WS_URL: wss://api-crm.vysortech.app.br
+    networks:
+      - minha_rede
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      restart_policy:
+        condition: any
+      labels:
+        - traefik.enable=true
+        - traefik.swarm.network=minha_rede
+        - traefik.http.routers.evo_frontend.rule=Host(`crm.vysortech.app.br`)
+        - traefik.http.routers.evo_frontend.entrypoints=websecure
+        - traefik.http.routers.evo_frontend.tls.certresolver=letsencryptresolver
+        - traefik.http.routers.evo_frontend.service=evo_frontend
+        - traefik.http.services.evo_frontend.loadbalancer.server.port=80
+        - traefik.http.services.evo_frontend.loadbalancer.passHostHeader=true
+
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: "admin"
+      MINIO_ROOT_PASSWORD: "vysor@BR001"
+      MINIO_SERVER_URL: "https://minio-api.vysortech.app.br"
+      MINIO_BROWSER_REDIRECT_URL: "https://minio.vysortech.app.br"
+      MINIO_SUBNET_LICENSE: "eyJhbGciOiJFUzM4NCIsInR5cCI6IkpXVCJ9.eyJhaWQiOjAsImNhcCI6MCwiaWF0IjoxLjc4MTE3MTQyNTA5NzE5NzMwNmU5LCJpc3MiOiJzdWJuZXRAbWluLmlvIiwibGlkIjoiZjk1YmM0NmEtNTNiNi00NDQwLTgzYzYtODE4MWM5ZTVmZjJjIiwibm9kZXMiOjEsIm9yZyI6IiIsInBsYW4iOiJGUkVFIiwicHJvZHVjdCI6IkFJU3RvciIsInN1YiI6InBhdHJpY2suci5zaWx2ZWlyYUBnbWFpbC5jb20iLCJ0cmlhbCI6ZmFsc2V9.iPd2r5hkQiuiGVHYJzDI3Pe3PJdjvKnGQwv2G5wZAXOfptRhKoSImsm0uovK7hQQRlasGSPhR08DfvnqjvdMFn-TyHt9amH-ZRUdtlDfkggYFx75D-SozT6SjV-jHwUr"
+    volumes:
+      - minio_data:/data
+    networks:
+      - minha_rede
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      restart_policy:
+        condition: any
+      labels:
+        - "traefik.enable=true"
+        - "traefik.swarm.network=minha_rede"
+        - "traefik.http.routers.minio_console.rule=Host(`minio.vysortech.app.br`)"
+        - "traefik.http.routers.minio_console.entrypoints=websecure"
+        - "traefik.http.routers.minio_console.tls.certresolver=letsencryptresolver"
+        - "traefik.http.routers.minio_console.service=minio_console"
+        - "traefik.http.services.minio_console.loadbalancer.server.port=9001"
+        - "traefik.http.routers.minio_api.rule=Host(`minio-api.vysortech.app.br`)"
+        - "traefik.http.routers.minio_api.entrypoints=websecure"
+        - "traefik.http.routers.minio_api.tls.certresolver=letsencryptresolver"
+        - "traefik.http.routers.minio_api.service=minio_api"
+        - "traefik.http.services.minio_api.loadbalancer.server.port=9000"
+
+networks:
+  minha_rede:
+    external: true
+    name: minha_rede
+
+volumes:
+  evo_processor_logs:
+    external: false
+  evo_processor_static:
+    external: false
+  evo_crm_storage:
+    external: false
+  minio_data:
+    external: false

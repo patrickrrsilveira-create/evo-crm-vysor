@@ -1,0 +1,1 @@
+TRUNCATE TABLE IF EXISTS evo_core_mcp_servers;

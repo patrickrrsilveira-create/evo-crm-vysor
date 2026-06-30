@@ -2,7 +2,7 @@ package middleware
 
 import (
 	"context"
-	"fmt"
+	"log/slog"
 	"net/http"
 	"strings"
 
@@ -43,18 +43,24 @@ func (m *evoAuthMiddleware) GetEvoAuthMiddleware() gin.HandlerFunc {
 			token = apiAccessToken
 			tokenType = "api_access_token"
 		} else {
-			fmt.Printf("EvoAuth: No authentication token found\n")
+			slog.Warn("EvoAuth: no authentication token found", "path", c.Request.URL.Path)
 			response.ErrorResponse(c, "UNAUTHORIZED", "Authentication token required", nil, http.StatusUnauthorized)
 			c.Abort()
 			return
 		}
 
-		fmt.Printf("EvoAuth: Using %s token for validation\n", tokenType)
+		slog.Debug("EvoAuth: validating request", "tokenType", tokenType, "path", c.Request.URL.Path)
 
 		tokenDataResponse, err := m.authService.ValidateToken(token, tokenType)
 		if err != nil {
-			fmt.Printf("EvoAuth: Token validation failed: %v\n", err)
+			slog.Error("EvoAuth: token validation error", "error", err, "tokenType", tokenType)
 			response.ErrorResponse(c, "INVALID_TOKEN", "Invalid "+tokenType+" token", nil, http.StatusUnauthorized)
+			c.Abort()
+			return
+		}
+		if tokenDataResponse == nil {
+			slog.Warn("EvoAuth: token validation failed (nil response)", "tokenType", tokenType)
+			response.ErrorResponse(c, "INVALID_TOKEN", "Invalid or expired "+tokenType+" token", nil, http.StatusUnauthorized)
 			c.Abort()
 			return
 		}

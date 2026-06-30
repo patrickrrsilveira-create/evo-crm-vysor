@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"net/http"
 
 	"evo-ai-core-service/internal/httpclient"
@@ -70,42 +71,48 @@ func NewEvoAuthService(baseURL string) EvoAuthService {
 // Authentication Methods
 // ============================================================================
 
-// ValidateToken validates token with Evo Auth API - Primary authentication method
+// ValidateToken validates token with Evo Auth API - Primary authentication method.
+// Returns (nil, nil) when the token is simply invalid (e.g. 401); only returns
+// a non-nil error for unrecoverable conditions such as network failures.
 func (s *evoAuthService) ValidateToken(token, tokenType string) (*types.EvoAuthValidateTokenData, error) {
 	headers, err := s.BuildHeaders(token, tokenType)
 	if err != nil {
 		return nil, err
 	}
 
-	fmt.Printf("EvoAuth: Validating %s token at %s/api/v1/auth/validate\n", tokenType, s.baseURL)
+	slog.Info("EvoAuth: validating token", "type", tokenType, "url", s.baseURL+"/api/v1/auth/validate")
 
 	response, err := s.doPost("/api/v1/auth/validate", map[string]interface{}{}, headers)
 	if err != nil {
+		if _, ok := err.(*AuthenticationError); ok {
+			// 401 from auth service — token simply invalid, not a system error
+			return nil, nil
+		}
 		if _, ok := err.(*NetworkError); ok {
 			return nil, &ServiceUnavailableError{Message: "Authentication service unavailable"}
 		}
 		return nil, err
 	}
 
-	// Parse response
-	dataMap, ok := response["data"].(map[string]interface{})
+	dataMap, ok := extractResponseData(response)
 	if !ok {
-		return nil, &ValidationError{Message: "Invalid response format from auth service"}
+		return nil, &ValidationError{Message: "Invalid response format from auth service: missing 'data' field"}
 	}
 
-	// Convert to JSON and back to struct for proper type conversion
+	// Marshal → Unmarshal to leverage encoding/json for safe struct hydration.
+	// This avoids manual type assertion on every field.
 	dataJSON, err := json.Marshal(dataMap)
 	if err != nil {
-		return nil, &ValidationError{Message: "Failed to serialize response data"}
+		return nil, &ValidationError{Message: "Failed to serialize auth response data"}
 	}
 
 	var tokenData types.EvoAuthValidateTokenData
 	if err := json.Unmarshal(dataJSON, &tokenData); err != nil {
-		fmt.Printf("EvoAuth: Failed to parse token data. Error: %v\nJSON Data: %s\n", err, string(dataJSON))
+		slog.Error("EvoAuth: failed to parse token data", "error", err, "json", string(dataJSON))
 		return nil, &ValidationError{Message: "Failed to parse token data"}
 	}
 
-	fmt.Printf("EvoAuth: Successfully validated token for user %s with %d accounts\n", tokenData.User.Email, len(tokenData.Accounts))
+	slog.Info("EvoAuth: token validated", "user", tokenData.User.Email, "accounts", len(tokenData.Accounts))
 	return &tokenData, nil
 }
 
@@ -145,20 +152,22 @@ func (s *evoAuthService) CheckPermission(ctx context.Context, authToken, permiss
 
 	response, err := s.doPost("/api/v1/permissions/check", payload, headers)
 	if err != nil {
-		// Check if it's a 404 (endpoint not implemented)
 		if _, ok := err.(*NetworkError); ok {
-			// Fallback: allow access for authenticated users when permission system not implemented
-			fmt.Printf("Permission endpoint not found (404) - allowing access for authenticated user (permission: %s)\n", permissionKey)
+			// Fallback: allow access when the permission endpoint does not exist yet
+			slog.Warn("permission endpoint not found, allowing authenticated user", "permission", permissionKey)
 			return true, nil
 		}
-		fmt.Printf("Permission check failed for %s: %v\n", permissionKey, err)
+		slog.Error("permission check failed", "permission", permissionKey, "error", err)
 		return false, nil
 	}
 
-	data := response["data"].(map[string]interface{})
+	data, ok := extractResponseData(response)
+	if !ok {
+		return false, nil
+	}
 
 	hasPermission, _ := data["has_permission"].(bool)
-	fmt.Printf("Permission check for %s: %v\n", permissionKey, hasPermission)
+	slog.Debug("permission check result", "permission", permissionKey, "granted", hasPermission)
 	return hasPermission, nil
 }
 
@@ -175,11 +184,14 @@ func (s *evoAuthService) CheckAccountPermission(ctx context.Context, userID, acc
 
 	response, err := s.doPost(fmt.Sprintf("/api/v1/accounts/%s/users/%s/check_permission", accountID, userID), payload, headers)
 	if err != nil {
-		fmt.Printf("Error checking account permission: %v\n", err)
+		slog.Error("account permission check failed", "userID", userID, "accountID", accountID, "error", err)
 		return false, err
 	}
 
-	data := response["data"].(map[string]interface{})
+	data, ok := extractResponseData(response)
+	if !ok {
+		return false, nil
+	}
 
 	hasPermission, _ := data["has_permission"].(bool)
 	return hasPermission, nil
@@ -198,19 +210,32 @@ func (s *evoAuthService) CheckUserPermission(ctx context.Context, userID, permis
 
 	response, err := s.doPost("/api/v1/users/check_permission", payload, headers)
 	if err != nil {
-		fmt.Printf("Error checking user permission: %v\n", err)
+		slog.Error("user permission check failed", "userID", userID, "error", err)
 		return false, err
 	}
 
-	data := response["data"].(map[string]interface{})
+	data, ok := extractResponseData(response)
+	if !ok {
+		return false, nil
+	}
 
 	hasPermission, _ := data["has_permission"].(bool)
 	return hasPermission, nil
 }
 
-// ============================================================================
-// Private HTTP Methods
-// ============================================================================
+// extractResponseData safely extracts the "data" field from an API response map.
+// Returns (nil, false) if the field is absent or not a map.
+func extractResponseData(response map[string]interface{}) (map[string]interface{}, bool) {
+	if response == nil {
+		return nil, false
+	}
+	raw, exists := response["data"]
+	if !exists || raw == nil {
+		return nil, false
+	}
+	data, ok := raw.(map[string]interface{})
+	return data, ok
+}
 
 // doGet executes GET request to evo-auth-service using httpclient helpers
 func (s *evoAuthService) doGet(endpoint string, headers map[string]string) (map[string]interface{}, error) {
@@ -287,13 +312,15 @@ func (s *evoAuthService) doPost(endpoint string, payload map[string]interface{},
 
 var globalEvoAuthService EvoAuthService
 
-// InitializeEvoAuthService initializes the global service instance
+// InitializeEvoAuthService initializes the global service instance.
+// Must be called once during application startup before any request is served.
 func InitializeEvoAuthService(baseURL string) {
 	globalEvoAuthService = NewEvoAuthService(baseURL)
-	fmt.Printf("Global EvoAuthService initialized with base URL: %s\n", baseURL)
+	slog.Info("EvoAuthService initialized", "baseURL", baseURL)
 }
 
-// GetEvoAuthService returns the global service instance
+// GetEvoAuthService returns the global service instance.
+// Panics if called before InitializeEvoAuthService.
 func GetEvoAuthService() EvoAuthService {
 	if globalEvoAuthService == nil {
 		panic("EvoAuthService not initialized. Call InitializeEvoAuthService first.")

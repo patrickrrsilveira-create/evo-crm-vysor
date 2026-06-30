@@ -1,0 +1,43 @@
+# GO executables
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+
+# Build files
+bin/
+
+# GO vendor files
+vendor/
+
+# GO temporary files
+*.out
+*.a
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Configs
+.env
+*.local
+
+# Logs
+*.log
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Cache do Go
+**/.cache
+
+# Workspace planning artifacts (not part of the application)
+_evo/
+_evo-output/
+_bmad/
+_bmad-output/
