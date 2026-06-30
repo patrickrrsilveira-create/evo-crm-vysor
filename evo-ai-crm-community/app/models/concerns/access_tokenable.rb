@@ -10,6 +10,6 @@ module AccessTokenable
   def create_access_token_if_needed
     return if access_token.present?
 
-    create_access_token
+    create_access_token(name: 'Default', scopes: 'default')
   end
 end
