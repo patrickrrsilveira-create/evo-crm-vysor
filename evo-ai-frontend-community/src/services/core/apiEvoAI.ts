@@ -23,9 +23,7 @@ evoaiApi.interceptors.request.use((config) => {
 });
 
 import apiAuth from '@/services/core/apiAuth';
-import { InternalAxiosRequestConfig, AxiosError, AxiosRequestConfig } from 'axios';
-import { requestMonitor } from '@/utils/requestMonitor';
-
+import { InternalAxiosRequestConfig } from 'axios';
 let isRefreshing = false;
 let isTerminatingSession = false;
 let failedQueue: Array<{
