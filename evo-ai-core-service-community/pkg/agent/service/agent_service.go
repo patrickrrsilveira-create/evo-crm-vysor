@@ -617,7 +617,10 @@ func (s *agentService) ImportAgentsFromJSON(ctx context.Context, request model.A
 		if apiKeyIDStr, ok := data["api_key_id"].(string); ok {
 			apiKeyID, err := uuid.Parse(apiKeyIDStr)
 			if err == nil {
-				agent.ApiKeyID = &apiKeyID
+				// Only set ApiKeyID if it actually exists in the current environment
+				if _, errCheck := s.apiKeyService.GetByID(ctx, apiKeyID); errCheck == nil {
+					agent.ApiKeyID = &apiKeyID
+				}
 			}
 		}
 

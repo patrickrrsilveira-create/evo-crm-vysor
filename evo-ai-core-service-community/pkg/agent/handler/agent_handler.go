@@ -349,9 +349,27 @@ func (h *agentHandler) ImportAgents(c *gin.Context) {
 	}
 
 	var agentsData []map[string]interface{}
+	
+	// Try parsing as array first
 	if err := json.Unmarshal(fileContent, &agentsData); err != nil {
-		response.ErrorResponse(c, errors.BadRequest, err.Error(), nil, http.StatusBadRequest)
-		return
+		// If that fails, try parsing as an object with "agents" key
+		var objData map[string]interface{}
+		if errObj := json.Unmarshal(fileContent, &objData); errObj == nil {
+			if agents, ok := objData["agents"].([]interface{}); ok {
+				// Convert []interface{} to []map[string]interface{}
+				for _, a := range agents {
+					if agentMap, isMap := a.(map[string]interface{}); isMap {
+						agentsData = append(agentsData, agentMap)
+					}
+				}
+			} else {
+				response.ErrorResponse(c, errors.BadRequest, "Invalid JSON format: expected an array or an object with an 'agents' array", nil, http.StatusBadRequest)
+				return
+			}
+		} else {
+			response.ErrorResponse(c, errors.BadRequest, err.Error(), nil, http.StatusBadRequest)
+			return
+		}
 	}
 
 	AgentImportRequest := model.AgentImportRequest{
