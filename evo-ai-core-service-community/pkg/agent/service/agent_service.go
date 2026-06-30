@@ -132,10 +132,10 @@ func (s *agentService) Create(ctx context.Context, request model.Agent) (*model.
 }
 
 func (s *agentService) validateCreate(ctx context.Context, request *model.Agent) error {
-	return s.validateRelatedEntities(ctx, request, true)
+	return s.validateRelatedEntities(ctx, request)
 }
 
-func (s *agentService) validateRelatedEntities(ctx context.Context, request *model.Agent, isCreate bool) error {
+func (s *agentService) validateRelatedEntities(ctx context.Context, request *model.Agent) error {
 	if request.FolderID != nil {
 		if _, err := s.folderService.GetByID(ctx, *request.FolderID); err != nil {
 			return err
@@ -184,13 +184,13 @@ func (s *agentService) Update(ctx context.Context, request *model.Agent, id uuid
 		return nil, errors.New("Failed to get current agent")
 	}
 
-	if err := s.validateRelatedEntities(ctx, request, false); err != nil {
+	if err := s.validateRelatedEntities(ctx, request); err != nil {
 		return nil, errors.New("Validation failed: " + err.Error())
 	}
 
 	if err := s.processAgentUpdate(ctx, current, request); err != nil {
 		// Include the original error message for better debugging
-		return nil, errors.New(fmt.Sprintf("Failed to process agent: %v", err))
+		return nil, fmt.Errorf("failed to process agent: %w", err)
 	}
 
 	agent, err := s.agentRepository.Update(ctx, request, id)
@@ -221,7 +221,7 @@ func (s *agentService) processAgentUpdate(ctx context.Context, current, request 
 	currentConfig := stringutils.JSONToInterfaceMap(current.Config)
 
 	if err := s.configProcessor.ProcessAgentConfig(ctx, request, currentConfig); err != nil {
-		return errors.New(fmt.Sprintf("Failed to process agent config: %v", err))
+		return fmt.Errorf("failed to process agent config: %w", err)
 	}
 
 	switch {
