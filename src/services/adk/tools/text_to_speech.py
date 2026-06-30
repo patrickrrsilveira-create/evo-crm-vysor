@@ -58,6 +58,9 @@ def _clean_text_for_tts(text: str) -> str:
     # Remove markdown headers (#)
     text = re.sub(r'#+', '', text)
     
+    # Remove URLs so the TTS engine doesn't read them out
+    text = re.sub(r'https?://[^\s]+', '', text)
+    
     # Clean up double spaces left behind
     text = re.sub(r'\s+', ' ', text).strip()
     
