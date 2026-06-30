@@ -34,6 +34,7 @@ type AgentHandler interface {
 	GetSharedAgent(c *gin.Context)
 	GetShareAgent(c *gin.Context)
 	AssignFolder(c *gin.Context)
+	SyncAllBots(c *gin.Context)
 }
 
 // agentHandler implements the AgentHandler interface
@@ -93,6 +94,11 @@ func (h *agentHandler) RegisterRoutesMiddleware(router gin.IRouter) {
 			permissionMiddleware.RequirePermission("ai_agents", "import"),
 			h.ImportAgents)
 
+		// Sync-all-bots: idempotent recovery endpoint that creates missing agent_bots
+		// records in the Ruby CRM for agents imported before the sync step existed.
+		agents.POST("/sync-all-bots",
+			permissionMiddleware.RequirePermission("ai_agents", "update"),
+			h.SyncAllBots)
 		// Update permissions
 		agents.PUT("/:id",
 			permissionMiddleware.RequirePermission("ai_agents", "update"),
@@ -459,4 +465,18 @@ func (h *agentHandler) ListAgentsByFolderID(c *gin.Context) {
 	}
 
 	response.SuccessResponse(c, agents, "Agents retrieved successfully", http.StatusOK)
+}
+
+// SyncAllBots handles POST /agents/sync-all-bots
+// Iterates all agents with evolution_bot_sync = false and creates the corresponding
+// agent_bots record in the Ruby CRM. Idempotent — safe to call multiple times.
+func (h *agentHandler) SyncAllBots(c *gin.Context) {
+	result, err := h.agentService.SyncAllBots(c.Request.Context())
+	if err != nil {
+		code, message, httpCode := errors.HandleError(err)
+		response.ErrorResponse(c, code, message, nil, httpCode)
+		return
+	}
+
+	response.SuccessResponse(c, result, "Bot sync completed", http.StatusOK)
 }

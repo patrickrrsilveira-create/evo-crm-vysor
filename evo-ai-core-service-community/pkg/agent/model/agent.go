@@ -160,3 +160,21 @@ func (a *Agent) ToResponse(aiProcessorURL string) *AgentResponse {
 		UpdatedAt:        a.UpdatedAt,
 	}
 }
+
+// SyncBotEntry holds the per-agent result of a sync-all-bots operation.
+type SyncBotEntry struct {
+	AgentID   uuid.UUID  `json:"agent_id"`
+	AgentName string     `json:"agent_name"`
+	BotID     *uuid.UUID `json:"bot_id,omitempty"`
+	Synced    bool       `json:"synced"`
+	Error     string     `json:"error,omitempty"`
+}
+
+// SyncAllBotsResult is the response body for POST /agents/sync-all-bots.
+type SyncAllBotsResult struct {
+	Total   int            `json:"total"`
+	Synced  int            `json:"synced"`
+	Failed  int            `json:"failed"`
+	Entries []SyncBotEntry `json:"entries"`
+}
+
