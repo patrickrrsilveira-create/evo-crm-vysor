@@ -13,8 +13,8 @@ module Templates
 
       def attributes_for(item)
         attrs = item.except('slug')
-        # Defense in depth: zero secrets even if Sanitizer.zero_blocked_fields! missed.
-        attrs['api_key'] = nil
+        # Use a placeholder for api_key because evo_ai_provider bots require it to be present.
+        attrs['api_key'] = "configure-#{SecureRandom.hex(8)}"
         attrs['outgoing_url'] = nil
         attrs
       end
