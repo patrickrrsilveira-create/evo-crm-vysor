@@ -6,7 +6,7 @@ import { EmptyState } from '@/components/base';
 import { Bot, Search, Grid3X3, List } from 'lucide-react';
 import { toast } from 'sonner';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
-import { getAccessibleAgents, deleteAgent } from '@/services/agents';
+import { getAccessibleAgents, deleteAgent, importAgents } from '@/services/agents';
 import { Agent } from '@/types/agents';
 import { useLanguage } from '@/hooks/useLanguage';
 import { ApiKeysModal } from '@/components/ApiKeysModal';
@@ -59,6 +59,8 @@ const Agentes = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [agentToDelete, setAgentToDelete] = useState<Agent | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const isWizardOpen = location.pathname === '/agents/new';
 
   const loadAgents = useCallback(
@@ -146,6 +148,36 @@ const Agentes = () => {
       toast.error(t('export.error'), {
         description: t('export.errorDesc'),
       });
+    }
+  };
+
+  const handleImportAgentsClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!can('ai_agents', 'create')) {
+      toast.error(t('permissions.createDenied'));
+      return;
+    }
+
+    try {
+      setIsImporting(true);
+      await importAgents(file);
+      toast.success(t('import.success', { defaultValue: 'Agentes importados com sucesso!' }));
+      loadAgents(); // reload list
+    } catch (error) {
+      console.error('Erro ao importar agentes:', error);
+      toast.error(t('import.error', { defaultValue: 'Erro ao importar agentes' }));
+    } finally {
+      setIsImporting(false);
+      // Reset input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
   };
 
@@ -275,6 +307,7 @@ const Agentes = () => {
               searchValue={searchTerm}
               onSearchChange={setSearchTerm}
               onNewAgent={handleCreateAgent}
+              onImport={handleImportAgentsClick}
               onExport={handleExportAllAgents}
               onManageApiKeys={() => setIsApiKeysModalOpen(true)}
               onBulkDelete={handleBulkDelete}
@@ -377,6 +410,14 @@ const Agentes = () => {
           </div>
         </div>
       )}
+
+      <input
+        type="file"
+        accept=".json"
+        className="hidden"
+        ref={fileInputRef}
+        onChange={handleFileImport}
+      />
 
       <ApiKeysModal open={isApiKeysModalOpen} onOpenChange={setIsApiKeysModalOpen} />
 

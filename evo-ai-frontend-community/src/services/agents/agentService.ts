@@ -24,6 +24,17 @@ class AgentsService {
     return extractData<Agent>(response);
   }
 
+  async importAgents(file: File): Promise<any> {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await evoaiApi.post('/agents/import', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+    return extractData(response);
+  }
+
   async listAgents(page = 1, pageSize = 100, folderId?: string): Promise<AgentListResponse> {
     const params: any = buildPaginationParams(page, pageSize);
     if (folderId) {
@@ -179,6 +190,7 @@ export const listAgents = (page?: number, pageSize?: number, folderId?: string) 
 export const getAgent = (agentId: string) => agentsService.getAgent(agentId);
 export const updateAgent = (agentId: string, data: Partial<AgentCreate>) => agentsService.updateAgent(agentId, data);
 export const deleteAgent = (agentId: string) => agentsService.deleteAgent(agentId);
+export const importAgents = (file: File) => agentsService.importAgents(file);
 
 export const createFolder = (data: FolderCreate) => agentsService.createFolder(data);
 export const listFolders = (page?: number, pageSize?: number) => agentsService.listFolders(page, pageSize);
