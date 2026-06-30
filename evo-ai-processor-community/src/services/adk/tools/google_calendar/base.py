@@ -315,8 +315,8 @@ class GoogleCalendarClient:
             service = self.get_calendar_service(credentials_config)
 
             # Build event
-            import typing
-            event: typing.Dict[str, typing.Any] = {
+            from typing import Dict, Any
+            event: Dict[str, Any] = {
                 'summary': summary,
                 'description': description,
                 'start': {
@@ -334,7 +334,7 @@ class GoogleCalendarClient:
                 event['attendees'] = [{'email': email} for email in attendees]
 
             # Add Google Meet if configured
-            enable_google_meet = get_config_value("enableGoogleMeet", False)
+            enable_google_meet = get_config_value("enableGoogleMeet", False) or get_config_value("meetIntegration", False)
             if enable_google_meet:
                 event['conferenceData'] = {
                     'createRequest': {

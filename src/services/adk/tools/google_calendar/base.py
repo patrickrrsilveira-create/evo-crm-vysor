@@ -334,7 +334,7 @@ class GoogleCalendarClient:
                 event['attendees'] = [{'email': email} for email in attendees]
 
             # Add Google Meet if configured
-            enable_google_meet = get_config_value("enableGoogleMeet", False)
+            enable_google_meet = get_config_value("enableGoogleMeet", False) or get_config_value("meetIntegration", False)
             if enable_google_meet:
                 event['conferenceData'] = {
                     'createRequest': {
