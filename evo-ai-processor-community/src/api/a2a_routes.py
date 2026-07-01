@@ -442,6 +442,7 @@ def create_task_response(
     current_user_message: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """Create Task response according to A2A specification."""
+    import uuid
 
     logger.info(
         f"🏗️ create_task_response called with history: {len(conversation_history) if conversation_history else 0} messages"
@@ -1421,6 +1422,9 @@ async def handle_message_send(
                                                     logger.error(f"Error generating fallback audio for handoff: {e}")
                                         
                                         # Disparo direto do N8N no handoff
+                                        contact_info = {}
+                                        if metadata and "evoai_crm_data" in metadata:
+                                            contact_info = metadata["evoai_crm_data"].get("contact", {})
                                         phone_number = contact_info.get("phone") or contact_info.get("phone_number")
                                         if phone_number and final_text:
                                             import re
