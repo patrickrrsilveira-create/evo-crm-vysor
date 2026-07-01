@@ -442,7 +442,6 @@ def create_task_response(
     current_user_message: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """Create Task response according to A2A specification."""
-    import uuid
 
     logger.info(
         f"🏗️ create_task_response called with history: {len(conversation_history) if conversation_history else 0} messages"
@@ -466,8 +465,8 @@ def create_task_response(
             url = match.group(1) if match.group(1) else match.group(2)
             if url:
                 extracted_urls.append(url)
-                # DO NOT remove the match from the text so that external webhooks (like N8N) can still parse the tag from the Chatwoot message!
-                # final_response = final_response.replace(match.group(0), '').strip()
+                # Remove the exact match from the text
+                final_response = final_response.replace(match.group(0), '').strip()
                 
         for url in extracted_urls:
             # Substitui links do Google Drive pelo arquivo estático da VPS
@@ -1414,7 +1413,7 @@ async def handle_message_send(
                                                                 final_text = "" # limpa texto no handoff pra não mandar duplicado
                                                 except Exception as e:
                                                     logger.error(f"Error generating fallback audio for handoff: {e}")
-                                        
+
                                         if final_text or files_payload:
                                             crm_client = EvoCrmClient()
                                             await crm_client.post(
