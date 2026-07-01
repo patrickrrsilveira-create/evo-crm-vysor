@@ -1,0 +1,12 @@
+BEGIN;
+DROP TABLE IF EXISTS cmp_delivery_events;
+DROP TABLE IF EXISTS cmp_send_jobs;
+DROP TABLE IF EXISTS cmp_message_variants;
+DROP TABLE IF EXISTS cmp_audience_members;
+DROP TABLE IF EXISTS cmp_campaign_audience;
+DROP TABLE IF EXISTS cmp_campaign_channels;
+DROP TABLE IF EXISTS cmp_campaigns;
+DROP TABLE IF EXISTS cmp_sender_instances;
+DROP TABLE IF EXISTS cmp_throttle_profiles;
+DROP TABLE IF EXISTS cmp_suppression;
+COMMIT;

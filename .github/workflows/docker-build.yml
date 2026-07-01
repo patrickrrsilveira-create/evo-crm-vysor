@@ -49,6 +49,10 @@ jobs:
             context: ./evo-ai-frontend-community
             dockerfile: ./evo-ai-frontend-community/Dockerfile
             image: evo-ai-frontend-community
+          - name: evo-campaign-engine
+            context: ./evo-campaign-engine
+            dockerfile: ./evo-campaign-engine/Dockerfile
+            image: evo-campaign-engine
           - name: evo-crm-gateway
             context: ./nginx
             dockerfile: ./nginx/Dockerfile
