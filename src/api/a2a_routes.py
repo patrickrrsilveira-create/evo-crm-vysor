@@ -466,8 +466,8 @@ def create_task_response(
             url = match.group(1) if match.group(1) else match.group(2)
             if url:
                 extracted_urls.append(url)
-                # Remove the exact match from the text
-                final_response = final_response.replace(match.group(0), '').strip()
+                # DO NOT remove the match from the text so that external webhooks (like N8N) can still parse the tag from the Chatwoot message!
+                # final_response = final_response.replace(match.group(0), '').strip()
                 
         for url in extracted_urls:
             # Substitui links do Google Drive pelo arquivo estático da VPS
