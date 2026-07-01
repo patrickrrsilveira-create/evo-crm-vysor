@@ -1391,6 +1391,7 @@ async def handle_message_send(
                                                 except Exception as e:
                                                     logger.error(f"Failed to decode artifact in auto-trigger: {e}")
                                             
+                                            original_text = final_text
                                             if not filename and final_text and (has_audio or new_agent_audio_always):
                                                 try:
                                                     if new_agent:
