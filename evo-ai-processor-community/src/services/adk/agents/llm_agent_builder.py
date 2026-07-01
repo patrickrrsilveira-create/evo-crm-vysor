@@ -121,14 +121,9 @@ def create_update_contact_info_callback():
         # Try multiple ways to get contact data
         contact_data = None
         
-        # Define source_state once at the beginning
-        source_state = callback_context.state
-        if hasattr(callback_context, 'session') and hasattr(callback_context.session, 'state'):
-            source_state = callback_context.session.state
-            
         # 1. Check if contact is stored directly in state (most common case)
         try:
-            contact_data = source_state.get("contact")
+            contact_data = callback_context.state.get("contact")
             if contact_data:
                 logger.info(f"[ContactInfo] ✅ Found contact directly in state: {contact_data.get('name', 'Unknown')}")
         except (AttributeError, TypeError) as e:
@@ -137,7 +132,7 @@ def create_update_contact_info_callback():
         # 2. Check if contact is inside evoai_crm_data
         if not contact_data:
             try:
-                evoai_crm_data = source_state.get("evoai_crm_data", {})
+                evoai_crm_data = callback_context.state.get("evoai_crm_data", {})
                 logger.debug(f"[ContactInfo] evoai_crm_data type: {type(evoai_crm_data)}, keys: {list(evoai_crm_data.keys()) if isinstance(evoai_crm_data, dict) else 'N/A'}")
                 if isinstance(evoai_crm_data, dict) and "contact" in evoai_crm_data:
                     contact_data = evoai_crm_data.get("contact")
@@ -148,7 +143,7 @@ def create_update_contact_info_callback():
         # 3. Check if evoai_crm_data itself contains contact fields (flat structure)
         if not contact_data:
             try:
-                evoai_crm_data = source_state.get("evoai_crm_data", {})
+                evoai_crm_data = callback_context.state.get("evoai_crm_data", {})
                 if isinstance(evoai_crm_data, dict) and evoai_crm_data.get("contactId"):
                     # Try to reconstruct contact from evoai_crm_data fields
                     if evoai_crm_data.get("contact"):
@@ -435,7 +430,17 @@ class LlmAgentBuilder:
                             sub_agent, tool_processed_agents
                         )
                         if llm_agent:
-                            agent_tools.append(AgentTool(agent=llm_agent))
+                            tool = AgentTool(agent=llm_agent)
+                            # Fix for schema dumper bug that expects .func
+                            if not hasattr(tool, "func"):
+                                def agent_call(query: str) -> str:
+                                    """Delegate task to sub-agent."""
+                                    return ""
+                                tool_name = sub_agent.name.lower().replace(" ", "_").replace("-", "_")
+                                agent_call.__name__ = str(getattr(getattr(tool, "metadata", None), "name", tool_name) or tool_name)
+                                agent_call.__doc__ = str(getattr(getattr(tool, "metadata", None), "description", f"Delegate to {sub_agent.name}"))
+                                tool.func = agent_call
+                            agent_tools.append(tool)
                             logger.debug(f"Added agent tool: {sub_agent.name}")
                     else:
                         logger.warning(f"Agent tool {agent_tool_id_str} not found")
@@ -630,33 +635,23 @@ class LlmAgentBuilder:
         )
         all_tools = custom_tools + mcp_tools + agent_tools
         
-        # Add the native media sending tool (Removed duplicate append)
+        # Add the native media sending tool
+        try:
+            from src.services.adk.tools.send_agent_media import create_send_agent_media_tool
+            media_tool = create_send_agent_media_tool(agent_id=str(agent.id))
+            all_tools.append(media_tool)
+        except Exception as e:
+            logger.error(f"Failed to load SendAgentMediaTool: {e}")
 
         logger.info(f"Total tools after combining: {len(all_tools)}")
 
         if enabled_tools:
             if "send_agent_media" not in enabled_tools:
                 enabled_tools.append("send_agent_media")
-            if "search_knowledge" not in enabled_tools:
-                enabled_tools.append("search_knowledge")
             all_tools = [tool for tool in all_tools if tool.name in enabled_tools]
             logger.debug(
                 f"Filtered tools by enabled list. Total tools: {len(all_tools)}"
             )
-            
-        try:
-            import litellm.utils
-            import json
-            schemas = []
-            for t in all_tools:
-                try:
-                    schemas.append(litellm.utils.function_to_dict(t.func))
-                except Exception as ex:
-                    schemas.append({"error": str(ex), "tool_name": getattr(t, "name", "unknown")})
-            logger.info(f"LITELLM_TOOL_SCHEMAS_DUMP: {json.dumps(schemas)}")
-        except Exception as e:
-            logger.info(f"LITELLM_TOOL_SCHEMAS_DUMP error: {e}")
-            
 
         # Get timezone from agent config
         timezone_str = agent.config.get("timezone")
@@ -717,10 +712,6 @@ class LlmAgentBuilder:
         formatted_prompt = (
             formatted_prompt
             + "<system-data>\n{_system_data}\n</system-data>\n\n"
-            + "CRITICAL INSTRUCTIONS:\n"
-            + "1. NEVER make up excuses or fake technical problems if you can't find information.\n"
-            + "2. ALWAYS use the search_knowledge tool FIRST when asked for prices, manuals, or company information. Do NOT answer without calling the tool.\n"
-            + "3. NEVER invent names of agents for handoff. Only transfer to a human if absolutely necessary, using the appropriate tool without hallucinating names.\n\n"
         )
 
         # Add agent configuration (timezone and use_emojis) to the prompt

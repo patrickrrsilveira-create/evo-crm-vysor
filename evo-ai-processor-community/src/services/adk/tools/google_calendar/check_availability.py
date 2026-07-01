@@ -65,7 +65,7 @@ def create_check_availability_tool(
         try:
             logger.info(f"Checking calendar availability from {start_date} to {end_date}, find_slots={find_slots}")
             logger.info(f"[CalendarConfig] Full config keys: {list(calendar_config.keys()) if calendar_config else 'None'}")
-            logger.info(f"[CalendarConfig] businessHours raw: {(calendar_config.get('settings') or calendar_config).get('businessHours', 'NOT FOUND')}")
+            logger.info(f"[CalendarConfig] businessHours raw: {((calendar_config or {}).get('settings') or (calendar_config or {})).get('businessHours', 'NOT FOUND')}")
             logger.debug(f"Calendar config received: {calendar_config}")
             logger.debug(f"Credentials available: {bool(credentials_config)}")
 
@@ -316,20 +316,6 @@ def create_check_availability_tool(
             busy_raw = fb_result.get("calendars", {}).get(calendar_id, {}).get("busy", [])
         except Exception as e:
             logger.error(f"freebusy query failed: {e}")
-            error_str = str(e).lower()
-            if "invalid_grant" in error_str or "token has been expired" in error_str or "revoked" in error_str:
-                return {
-                    "status": "auth_error",
-                    "message": (
-                        "ERRO DE AUTENTICAÇÃO: O token do Google Calendar expirou ou foi revogado. "
-                        "NÃO tente chamar esta ferramenta novamente — ela continuará falhando. "
-                        "AÇÃO OBRIGATÓRIA: Informe o cliente de forma natural que houve uma instabilidade "
-                        "temporária na sua agenda e peça o e-mail dele para que você entre em contato "
-                        "manualmente para confirmar o melhor horário. Exemplo: 'Estou com uma instabilidade "
-                        "momentânea na minha agenda digital. Pode me passar seu e-mail? Assim te confirmo "
-                        "o horário em breve!'"
-                    )
-                }
             return {"status": "error", "message": f"Google Calendar API error: {str(e)}"}
 
         # Convert busy intervals to datetime pairs (timezone-naive for comparison)
@@ -429,7 +415,7 @@ def create_check_availability_tool(
 
         logger.info(f"Found {len(available_slots)} available time slots in range {start_dt} to {end_dt}")
 
-        response_data = {
+        return {
             "status": "success",
             "message": f"Found {len(available_slots)} available time slots",
             "available_slots": available_slots,
@@ -439,20 +425,6 @@ def create_check_availability_tool(
             },
             "slot_duration_minutes": slot_duration
         }
-
-        # Add behavioral instruction for the LLM
-        if len(available_slots) > 20:
-            response_data["instruction"] = (
-                "Atenção: A agenda está praticamente vazia e com alta disponibilidade. "
-                "NÃO liste horários específicos. Em vez disso, informe ao cliente de forma natural "
-                "que a sua agenda está livre nesta semana e pergunte qual o melhor dia e horário para ele."
-            )
-        elif len(available_slots) == 0:
-            response_data["instruction"] = "Atenção: Não há horários disponíveis. Peça desculpas e pergunte se ele quer tentar outra semana."
-        else:
-            response_data["instruction"] = "Sugira até 3 opções de horários distribuídas em dias diferentes, perguntando se algum deles funciona."
-
-        return response_data
 
     # Set function metadata
 
@@ -543,4 +515,4 @@ Args:
     slot_duration (int, optional): Duration of each slot in minutes when find_slots=True (default: 60)
 """
 
-    return check_calendar_availability
+    return FunctionTool.from_defaults(fn=check_calendar_availability)
