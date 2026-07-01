@@ -465,31 +465,9 @@ def create_task_response(
             url = match.group(1) if match.group(1) else match.group(2)
             if url:
                 extracted_urls.append(url)
-                # Remove the exact match from the text
-                final_response = final_response.replace(match.group(0), '').strip()
-                
-        for url in extracted_urls:
-            # Substitui links do Google Drive pelo arquivo estático da VPS
-            actual_url = url
-            if "drive.google.com" in url:
-                processor_url = os.environ.get("AI_PROCESSOR_URL", "http://evo-processor:8000")
-                actual_url = f"{processor_url}/static/pesagem_ganader.mp4"
-                logger.info(f"🔄 Replacing Google Drive URL with local static URL: {actual_url}")
-                
-            file_obj = {
-                "url": actual_url,
-                "mimeType": "video/mp4",
-                "name": "video.mp4"
-            }
-                
-            artifacts.append({
-                "artifactId": str(uuid.uuid4()),
-                "parts": [{
-                    "type": "file",
-                    "file": file_obj
-                }]
-            })
-            logger.info(f"🎥 Extracted video link into file artifact: {actual_url}")
+                # We intentionally DO NOT strip the [VIDEO_LINK: ...] tag from final_response here.
+                # N8N reads the Chatwoot messages via webhook and parses this tag to send the video.
+                logger.info(f"🎥 Detected video link, leaving in text for N8N to process: {url}")
 
     # Always include the text response as an artifact if it's not empty
     if final_response and final_response.strip():
