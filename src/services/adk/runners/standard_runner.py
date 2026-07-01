@@ -467,12 +467,14 @@ class StandardRunner:
                             except Exception as e:
                                 logger.debug(f"Could not save event to memory: {e}")
 
-                    if (
-                        event.content
-                        and event.content.parts
-                        and event.content.parts[0].text
-                    ):
-                        final_response_text = event.content.parts[0].text
+                    if event.content and event.content.parts:
+                        parts_text = ""
+                        for part in event.content.parts:
+                            if hasattr(part, "text") and part.text:
+                                parts_text += part.text + " "
+                        
+                        if parts_text.strip():
+                            final_response_text = parts_text.strip()
 
                     if event.actions and event.actions.escalate:
                         final_response_text = f"Agent escalated: {event.error_message or 'No specific message.'}"

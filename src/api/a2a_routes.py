@@ -442,6 +442,7 @@ def create_task_response(
     current_user_message: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """Create Task response according to A2A specification."""
+    import uuid
 
     logger.info(
         f"🏗️ create_task_response called with history: {len(conversation_history) if conversation_history else 0} messages"
@@ -467,6 +468,12 @@ def create_task_response(
                 extracted_urls.append(url)
                 # Remove the exact match from the text
                 final_response = final_response.replace(match.group(0), '').strip()
+                
+                # Also clean the match from any existing text artifacts
+                for art in artifacts:
+                    for part in art.get("parts", []):
+                        if part.get("type") == "text" and isinstance(part.get("text"), str):
+                            part["text"] = part["text"].replace(match.group(0), '').strip()
                 
         for url in extracted_urls:
             # Substitui links do Google Drive pelo arquivo estático da VPS
@@ -1413,6 +1420,34 @@ async def handle_message_send(
                                                                 final_text = "" # limpa texto no handoff pra não mandar duplicado
                                                 except Exception as e:
                                                     logger.error(f"Error generating fallback audio for handoff: {e}")
+                                        
+                                        # Disparo direto do N8N no handoff
+                                        contact_info = {}
+                                        if metadata and "evoai_crm_data" in metadata:
+                                            contact_info = metadata["evoai_crm_data"].get("contact", {})
+                                        phone_number = contact_info.get("phone") or contact_info.get("phone_number")
+                                        if phone_number and final_text:
+                                            import re
+                                            link_pattern = r'\[?VIDEO_LINK:\s*(https?://[^\s\]]+)\]?'
+                                            matches = list(re.finditer(link_pattern, final_text))
+                                            if matches:
+                                                import httpx
+                                                import asyncio
+                                                async def fire_n8n_webhook_handoff(phone, v_url):
+                                                    try:
+                                                        payload = {"telefone": phone, "video_url": v_url, "media": v_url}
+                                                        url = "https://n8n1.vysortech.app.br/webhook/video-drone-ganader"
+                                                        async with httpx.AsyncClient() as client:
+                                                            resp = await client.post(url, json=payload, timeout=10.0)
+                                                            logger.info(f"🚀 N8N Webhook fired from handoff for {phone} with video {v_url}. Status: {resp.status_code}")
+                                                    except Exception as e:
+                                                        logger.error(f"❌ Failed to fire N8N webhook from handoff: {e}")
+                                                
+                                                for match in matches:
+                                                    v_url = match.group(1)
+                                                    if v_url:
+                                                        asyncio.create_task(fire_n8n_webhook_handoff(phone_number, v_url))
+                                                        final_text = final_text.replace(match.group(0), '').strip()
 
                                         if final_text or files_payload:
                                             crm_client = EvoCrmClient()

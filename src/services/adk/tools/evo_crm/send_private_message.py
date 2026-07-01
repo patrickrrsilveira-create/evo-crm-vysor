@@ -236,5 +236,4 @@ def create_send_private_message_tool() -> FunctionTool:
         Dictionary with message status and details
     """
     
-    return send_private_message
-
+    return FunctionTool(func=send_private_message)

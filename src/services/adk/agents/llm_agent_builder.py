@@ -430,7 +430,17 @@ class LlmAgentBuilder:
                             sub_agent, tool_processed_agents
                         )
                         if llm_agent:
-                            agent_tools.append(AgentTool(agent=llm_agent))
+                            tool = AgentTool(agent=llm_agent)
+                            # Fix for schema dumper bug that expects .func
+                            if not hasattr(tool, "func"):
+                                def agent_call(query: str) -> str:
+                                    """Delegate task to sub-agent."""
+                                    return ""
+                                tool_name = sub_agent.name.lower().replace(" ", "_").replace("-", "_")
+                                agent_call.__name__ = str(getattr(getattr(tool, "metadata", None), "name", tool_name) or tool_name)
+                                agent_call.__doc__ = str(getattr(getattr(tool, "metadata", None), "description", f"Delegate to {sub_agent.name}"))
+                                tool.func = agent_call
+                            agent_tools.append(tool)
                             logger.debug(f"Added agent tool: {sub_agent.name}")
                     else:
                         logger.warning(f"Agent tool {agent_tool_id_str} not found")
@@ -1282,7 +1292,7 @@ class LlmAgentBuilder:
                 root_agent.config.get("sub_agents"),
                 root_agent.type,  # parent_type
                 root_agent.config,  # parent_config
-                processed_agents=processed_agents,
+                processed_agents=processed_agents or set(),
             )
             # Add after_model_callback to each sub agent with escalate_after
             # for sub_agent in sub_agents:
