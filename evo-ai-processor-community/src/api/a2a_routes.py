@@ -1728,22 +1728,19 @@ async def handle_message_send(
                         mime_type = "audio/mp4"
                         ext = "mp4"
                         
-                        # WORKAROUND: For Instagram, send text as private note to agent, 
-                        # and clear public response so only audio is sent to client.
+                        # Send text as visible outgoing message so client sees it alongside audio.
                         try:
                             from src.services.adk.tools.evo_crm.base import EvoCrmClient
                             client = EvoCrmClient()
-                            import asyncio
-                            # We don't want to block the response generation for too long, but we need to await it
                             await client.post(
                                 endpoint=f"/conversations/{context_id}/messages",
                                 json_data={
                                     "content": final_response,
                                     "message_type": "outgoing",
-                                    "private": True
+                                    "private": False
                                 }
                             )
-                            logger.info(f"Sent private text message for Instagram conversation {context_id}")
+                            logger.info(f"Sent outgoing text message for Instagram conversation {context_id}")
                             final_response = ""
                             # Remove the text artifact that was already created by build_a2a_artifacts
                             artifacts = [a for a in artifacts if not any(p.get("type") == "text" for p in a.get("parts", []))]

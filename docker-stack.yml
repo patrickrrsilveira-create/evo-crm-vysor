@@ -201,11 +201,11 @@ services:
         condition: any
 
   # ─────────────────────────────────────────────────────────────────────────────
-  # Python AI Processor (branch atual em produção)
+  # Python AI Processor — scaled for 5000+ concurrent users
   # ─────────────────────────────────────────────────────────────────────────────
   evo_processor:
     image: ghcr.io/patrickrrsilveira-create/evo-crm-vysor-evo-ai-processor-community:sha-4b4ad50
-    command: sh -c "alembic upgrade head 2>&1 || echo 'Alembic migration had errors, continuing...'; python -m scripts.run_seeders; uvicorn src.main:app --host 0.0.0.0 --port 3031 --proxy-headers"
+    command: sh -c "alembic upgrade head 2>&1 || echo 'Alembic migration had errors, continuing...'; python -m scripts.run_seeders; uvicorn src.main:app --host 0.0.0.0 --port 3031 --proxy-headers --workers 4 --timeout-keep-alive 30 --limit-max-requests 10000"
     environment:
       POSTGRES_CONNECTION_STRING: postgresql://postgres:e2zaFkFxxIfX04QxP55LEvX2ZNW6XKFb@postgres:5432/evo_community
       REDIS_HOST: redis
@@ -244,12 +244,16 @@ services:
     networks:
       - minha_rede
     deploy:
-      replicas: 1
+      replicas: 2
       placement:
         constraints:
           - node.role == manager
       restart_policy:
         condition: any
+      update_config:
+        parallelism: 1
+        delay: 30s
+        order: start-first
 
 
   evo_bot_runtime:
