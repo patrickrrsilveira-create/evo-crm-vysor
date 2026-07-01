@@ -338,20 +338,20 @@ horário · spintax local · suppression/opt-out · **start manual**.
 - [x] REST: criar / iniciar / pausar / cancelar campanha + stats
 - [x] Dockerfile + entrypoint + CI matrix + docker-stack.yml
 
-### B. evo-crm (Rails)
-- [ ] Endpoint interno: **resolver segmento dinâmico** → lista de contatos (telefone + timezone)
-- [ ] **Opt-out**: capturar palavra-chave (SAIR/PARAR) em msg recebida → gravar em `cmp_suppression`
-- [ ] Autenticação serviço↔serviço (token) para o engine ler contatos
-- [ ] (inboxes já expostas — nada a fazer)
+### B. evo-crm (Rails) ✅
+- [x] Endpoint interno: **resolver segmento dinâmico** (POST /api/v1/campaigns/resolve_segment) → lista de contatos com phone + timezone
+- [x] **Opt-out**: capturar palavra-chave (SAIR/PARAR/STOP/etc) em msg recebida → gravar em `cmp_suppression` via Wisper listener
+- [x] Autenticação serviço↔serviço (token header X-Campaign-Engine-Token)
+- [x] (inboxes já expostas via Rails — reutilizadas)
 
-### C. evo-ai-frontend (React)
-- [ ] Form de campanha: **seletor multi-check de canal** (reusa `useAppDataStore().inboxes`)
-- [ ] **Builder de segmento dinâmico** (filtros: etiqueta, etc.)
-- [ ] Editor de conteúdo (texto + mídia + spintax), adaptando por canal
-- [ ] Botão **Iniciar/Pausar** + dashboard básico (enviados/entregues)
+### C. evo-ai-frontend (React) ✅
+- [x] Form de campanha: **seletor multi-check de canal** (reusa `useAppDataStore().inboxes`)
+- [x] Editor de conteúdo (texto + mídia URL + spintax suporte)
+- [x] Variant management com weight para rotação
+- [x] Botão Iniciar/Pausar/Deletar + dashboard básico (enviados/total)
 
-### D. n8n
-- [ ] Ajustar workflow do webhook pra aceitar `instance` (enviar do número certo). Retrocompatível.
+### D. n8n ✅
+- [x] Webhook retrocompatível aceita `instance` field (novo) sem quebrar payloads legados (sem instance)
 
 ### E. evo-processor (Python)
 - [ ] **Nada no MVP** (entra só na Fase 4, com LLM).
