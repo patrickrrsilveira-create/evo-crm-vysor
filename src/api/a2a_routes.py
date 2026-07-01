@@ -1188,9 +1188,15 @@ async def handle_message_send(
         
         # Extract phone number for N8N webhook
         phone_number = ""
-        if isinstance(metadata, dict) and isinstance(metadata.get("contact"), dict):
-            phone_number = metadata["contact"].get("phone_number", "")
-        
+        if isinstance(metadata, dict):
+            contact_info = {}
+            if "evoai_crm_data" in metadata:
+                contact_info = metadata["evoai_crm_data"].get("contact", {})
+            phone_number = contact_info.get("phone") or contact_info.get("phone_number") or ""
+            # Strip non-digits (like +, spaces, parens) to ensure N8N receives clean number
+            import re
+            phone_number = re.sub(r'\D', '', str(phone_number))
+            
         # Override context_id with the real conversation_id from CRM to ensure stable session IDs
         if metadata and "evoai_crm_data" in metadata:
             crm_data = metadata["evoai_crm_data"]
