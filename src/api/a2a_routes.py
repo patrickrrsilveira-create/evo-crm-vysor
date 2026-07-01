@@ -469,12 +469,6 @@ def create_task_response(
                 # Remove the exact match from the text
                 final_response = final_response.replace(match.group(0), '').strip()
                 
-                # Also clean the match from any existing text artifacts
-                for art in artifacts:
-                    for part in art.get("parts", []):
-                        if part.get("type") == "text" and isinstance(part.get("text"), str):
-                            part["text"] = part["text"].replace(match.group(0), '').strip()
-                
         for url in extracted_urls:
             # Substitui links do Google Drive pelo arquivo estático da VPS
             actual_url = url
@@ -1420,47 +1414,6 @@ async def handle_message_send(
                                                 except Exception as e:
                                                     logger.error(f"Error generating fallback audio for handoff: {e}")
                                         
-                                        # Disparo direto do N8N no handoff
-                                        phone_number = None
-                                        if metadata:
-                                            # Try top-level contact first (has phone_number usually)
-                                            contact_data = metadata.get("contact", {})
-                                            phone_number = contact_data.get("phone_number") or contact_data.get("phone")
-                                            if not phone_number and "evoai_crm_data" in metadata:
-                                                # Fallback to evoai_crm_data
-                                                contact_info = metadata["evoai_crm_data"].get("contact", {})
-                                                phone_number = contact_info.get("phone") or contact_info.get("phone_number")
-                                                
-                                        if final_text:
-                                            import re
-                                            link_pattern = r'\[?VIDEO_LINK:\s*(https?://[^\s\]]+)\]?'
-                                            matches = list(re.finditer(link_pattern, final_text))
-                                            if matches:
-                                                import httpx
-                                                import asyncio
-                                                async def fire_n8n_webhook_handoff(phone, v_url):
-                                                    try:
-                                                        # Limpa o telefone mantendo apenas números (exigido pela Evolution API/WhatsApp)
-                                                        clean_phone = re.sub(r'\D', '', phone) if phone else ""
-                                                        payload = {"telefone": clean_phone, "video_url": v_url, "media": v_url}
-                                                        url = "https://n8n1.vysortech.app.br/webhook/video-drone-ganader"
-                                                        async with httpx.AsyncClient() as client:
-                                                            resp = await client.post(url, json=payload, timeout=10.0)
-                                                            logger.info(f"🚀 N8N Webhook fired from handoff for {clean_phone} with video {v_url}. Status: {resp.status_code}")
-                                                    except Exception as e:
-                                                        logger.error(f"❌ Failed to fire N8N webhook from handoff: {e}")
-                                                
-                                                for match in matches:
-                                                    v_url = match.group(1)
-                                                    if v_url:
-                                                        if phone_number:
-                                                            asyncio.create_task(fire_n8n_webhook_handoff(phone_number, v_url))
-                                                        else:
-                                                            logger.warning(f"⚠️ VIDEO_LINK found but no phone_number available to fire webhook for {v_url}")
-                                                        
-                                                        # Remove tag from text in all cases
-                                                        final_text = final_text.replace(match.group(0), '').strip()
-
                                         if final_text or files_payload:
                                             crm_client = EvoCrmClient()
                                             await crm_client.post(
