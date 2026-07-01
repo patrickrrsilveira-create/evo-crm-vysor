@@ -1391,37 +1391,7 @@ async def handle_message_send(
                                                 except Exception as e:
                                                     logger.error(f"Failed to decode artifact in auto-trigger: {e}")
                                             
-                                            if not filename and final_text and (has_audio or new_agent_audio_always):
-                                                try:
-                                                    if new_agent:
-                                                        tts_config = (new_agent.config or {}).get("integrations", {}).get("tts") or (new_agent.config or {}).get("integrations", {}).get("elevenlabs")
-                                                        if tts_config:
-                                                            api_key = str(tts_config.get("apiKey") or "").strip()
-                                                            if api_key:
-                                                                from src.services.apikey_service import get_decrypted_api_key
-                                                                import uuid
-                                                                try:
-                                                                    key_uuid = uuid.UUID(api_key)
-                                                                    decrypted = get_decrypted_api_key(background_db, key_uuid)
-                                                                    if decrypted: api_key = decrypted
-                                                                except ValueError: pass
-                                                                
-                                                            if api_key and api_key.lower() not in ("null", "none", "undefined", "false", "0"):
-                                                                from src.services.adk.tts.factory import get_tts_provider
-                                                                from src.services.adk.tools.text_to_speech import _convert_to_ogg_opus, _clean_text_for_tts
-                                                                provider_name = tts_config.get("provider", "elevenlabs")
-                                                                provider = get_tts_provider(provider_name)
-                                                                cleaned_text = _clean_text_for_tts(final_text)
-                                                                audio_bytes = await provider.generate_speech(cleaned_text, tts_config)
-                                                                audio_bytes = _convert_to_ogg_opus(audio_bytes)
-                                                                import time
-                                                                name = f"audio_fallback_{int(time.time())}.ogg"
-                                                                files_payload = {"attachments[]": (name, audio_bytes, "audio/ogg")}
-                                                                final_text = "" # limpa texto no handoff pra não mandar duplicado
-                                                except Exception as e:
-                                                    logger.error(f"Error generating fallback audio for handoff: {e}")
-                                        
-                                        # Disparo direto do N8N no handoff
+                                        # Disparo N8N ANTES do TTS limpar final_text
                                         contact_info = {}
                                         if metadata and "evoai_crm_data" in metadata:
                                             contact_info = metadata["evoai_crm_data"].get("contact", {})
@@ -1442,12 +1412,42 @@ async def handle_message_send(
                                                             logger.info(f"🚀 N8N Webhook fired from handoff for {phone} with video {v_url}. Status: {resp.status_code}")
                                                     except Exception as e:
                                                         logger.error(f"❌ Failed to fire N8N webhook from handoff: {e}")
-                                                
+
                                                 for match in matches:
                                                     v_url = match.group(1)
                                                     if v_url:
                                                         asyncio.create_task(fire_n8n_webhook_handoff(phone_number, v_url))
                                                         final_text = final_text.replace(match.group(0), '').strip()
+
+                                            if not filename and final_text and (has_audio or new_agent_audio_always):
+                                                try:
+                                                    if new_agent:
+                                                        tts_config = (new_agent.config or {}).get("integrations", {}).get("tts") or (new_agent.config or {}).get("integrations", {}).get("elevenlabs")
+                                                        if tts_config:
+                                                            api_key = str(tts_config.get("apiKey") or "").strip()
+                                                            if api_key:
+                                                                from src.services.apikey_service import get_decrypted_api_key
+                                                                import uuid
+                                                                try:
+                                                                    key_uuid = uuid.UUID(api_key)
+                                                                    decrypted = get_decrypted_api_key(background_db, key_uuid)
+                                                                    if decrypted: api_key = decrypted
+                                                                except ValueError: pass
+
+                                                            if api_key and api_key.lower() not in ("null", "none", "undefined", "false", "0"):
+                                                                from src.services.adk.tts.factory import get_tts_provider
+                                                                from src.services.adk.tools.text_to_speech import _convert_to_ogg_opus, _clean_text_for_tts
+                                                                provider_name = tts_config.get("provider", "elevenlabs")
+                                                                provider = get_tts_provider(provider_name)
+                                                                cleaned_text = _clean_text_for_tts(final_text)
+                                                                audio_bytes = await provider.generate_speech(cleaned_text, tts_config)
+                                                                audio_bytes = _convert_to_ogg_opus(audio_bytes)
+                                                                import time
+                                                                name = f"audio_fallback_{int(time.time())}.ogg"
+                                                                files_payload = {"attachments[]": (name, audio_bytes, "audio/ogg")}
+                                                                final_text = ""
+                                                except Exception as e:
+                                                    logger.error(f"Error generating fallback audio for handoff: {e}")
 
                                         if final_text or files_payload:
                                             crm_client = EvoCrmClient()
