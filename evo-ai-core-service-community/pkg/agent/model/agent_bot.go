@@ -42,7 +42,7 @@ func (a *AgentBot) GetBotConfigMap() map[string]interface{} {
 }
 
 func (a *AgentBot) SetBotConfigMap(config map[string]interface{}) {
-	if len(config) == 0 {
+	if config == nil || len(config) == 0 {
 		a.BotConfig = "{}"
 		return
 	}
