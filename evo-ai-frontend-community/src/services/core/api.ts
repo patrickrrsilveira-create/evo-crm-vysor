@@ -1,8 +1,8 @@
 import axios, { AxiosRequestConfig, AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { useAuthStore } from '@/store/authStore';
 import { requestMonitor } from '@/utils/requestMonitor';
-import apiAuth from '@/services/core/apiAuth';
 import { applySetupInterceptor } from '@/services/core/setupInterceptor';
+import { refreshAccessToken, terminateSession, AUTH_INVALIDATION_ERROR_CODES } from '@/services/core/tokenRefresh';
 
 const api = axios.create({
   baseURL: `${import.meta.env.VITE_API_URL}/api/v1`,
@@ -10,50 +10,6 @@ const api = axios.create({
     'Content-Type': 'application/json',
   },
 });
-
-// Mirrors the auth-invalidation codes declared in
-// app/models/concerns/api_error_codes.rb on the backend. Only these warrant
-// killing the session on a 401 response.
-const AUTH_INVALIDATION_ERROR_CODES = new Set<string>([
-  'UNAUTHORIZED',
-  'INVALID_TOKEN',
-  'TOKEN_EXPIRED',
-  'MISSING_TOKEN',
-  'INVALID_CREDENTIALS',
-  'SESSION_EXPIRED',
-]);
-
-let isRefreshing = false;
-let isTerminatingSession = false;
-let failedQueue: Array<{
-  resolve: (value?: unknown) => void;
-  reject: (reason?: unknown) => void;
-}> = [];
-
-const processQueue = (error: Error | null, token: string | null = null) => {
-  failedQueue.forEach(prom => {
-    if (error) {
-      prom.reject(error);
-    } else {
-      prom.resolve(token);
-    }
-  });
-
-  failedQueue = [];
-};
-
-const terminateSession = () => {
-  if (isTerminatingSession) return;
-  isTerminatingSession = true;
-
-  try {
-    window.dispatchEvent(new CustomEvent('evolution:auth-lost'));
-  } catch {
-    // noop
-  }
-
-  useAuthStore.getState().clearUser();
-};
 
 api.interceptors.request.use(config => {
   const requestId = requestMonitor.logRequest(
@@ -104,44 +60,16 @@ api.interceptors.response.use(
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
 
     if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
-      if (isRefreshing) {
-        return new Promise((resolve, reject) => {
-          failedQueue.push({ resolve, reject });
-        })
-          .then(() => {
-            const authHeader = useAuthStore.getState().getAuthHeader();
-            if (authHeader && originalRequest.headers) {
-              originalRequest.headers.Authorization = authHeader.Authorization;
-            }
-            return api(originalRequest);
-          })
-          .catch(err => Promise.reject(err));
-      }
-
       originalRequest._retry = true;
-      isRefreshing = true;
 
       try {
-        const refreshResponse = await apiAuth.post('/auth/refresh');
-        const refreshData = refreshResponse.data?.data || refreshResponse.data;
-        const newAccessToken = refreshData?.access_token || refreshData?.token?.access_token;
-
-        if (!newAccessToken) {
-          throw new Error('New token not received');
-        }
-
-        useAuthStore.getState().setAccessToken(newAccessToken);
-        processQueue(null, newAccessToken);
-
+        const newToken = await refreshAccessToken();
         if (originalRequest.headers) {
-          originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+          originalRequest.headers.Authorization = `Bearer ${newToken}`;
         }
-
-        isRefreshing = false;
         return api(originalRequest);
-      } catch (refreshError) {
-        processQueue(refreshError as Error, null);
-        isRefreshing = false;
+      } catch {
+        // refresh failed, fall through to session termination check
       }
     }
 
@@ -152,12 +80,6 @@ api.interceptors.response.use(
         return Promise.reject(error);
       }
 
-      // The backend uses ApiErrorCodes (see app/models/concerns/api_error_codes.rb)
-      // and returns business-logic errors with their own code even when the HTTP
-      // status is 401. Only treat the response as a session-invalidation 401 when
-      // the body is missing a code or carries a known auth-invalidation code —
-      // otherwise the global interceptor would log the user out on validation /
-      // permission errors that mistakenly use 401.
       const errorCode = (
         error.response?.data as { error?: { code?: string } } | undefined
       )?.error?.code;

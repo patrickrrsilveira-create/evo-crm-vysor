@@ -1,8 +1,8 @@
-import axios from 'axios';
+import axios, { InternalAxiosRequestConfig } from 'axios';
 import { useAuthStore } from '@/store/authStore';
 import { applySetupInterceptor } from '@/services/core/setupInterceptor';
+import { refreshAccessToken, terminateSession, AUTH_INVALIDATION_ERROR_CODES } from '@/services/core/tokenRefresh';
 
-// Criar instância do axios específica para a API do Agent Processor
 const agentProcessorApi = axios.create({
   baseURL: `${import.meta.env.VITE_AGENT_PROCESSOR_URL}/api/v1`,
   headers: {
@@ -10,28 +10,52 @@ const agentProcessorApi = axios.create({
   },
 });
 
-// Interceptador para adicionar headers específicos para o Agent Processor
 agentProcessorApi.interceptors.request.use(config => {
-  // Adicionar token de autenticação
   const authHeader = useAuthStore.getState().getAuthHeader();
   if (authHeader) {
     config.headers.Authorization = authHeader.Authorization;
   }
-
   return config;
 });
 
-// Interceptador para tratar respostas e erros
 agentProcessorApi.interceptors.response.use(
   response => {
-    // Automatically unwrap standard SuccessResponse
     if (response.data && (response.data.status === 'success' || response.data.success === true) && response.data.data !== undefined) {
-      // Return the inner data
       response.data = response.data.data;
     }
     return response;
   },
-  error => {
+  async error => {
+    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
+
+    if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
+      originalRequest._retry = true;
+
+      try {
+        const newToken = await refreshAccessToken();
+        if (originalRequest.headers) {
+          originalRequest.headers.Authorization = `Bearer ${newToken}`;
+        }
+        return agentProcessorApi(originalRequest);
+      } catch {
+        // refresh failed, fall through to session termination check
+      }
+    }
+
+    if (error.response?.status === 401) {
+      const errorCode = (
+        error.response?.data as { error?: { code?: string } } | undefined
+      )?.error?.code;
+
+      const isAuthInvalidationCode =
+        !errorCode ||
+        AUTH_INVALIDATION_ERROR_CODES.has(errorCode);
+
+      if (isAuthInvalidationCode) {
+        terminateSession();
+      }
+    }
+
     const detail =
       error?.response?.data?.error?.message ||
       error?.response?.data?.detail ||
