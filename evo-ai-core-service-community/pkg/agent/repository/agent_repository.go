@@ -19,8 +19,6 @@ type AgentRepository interface {
 	CountByFolderID(ctx context.Context, folderId uuid.UUID) (int64, error)
 	RemoveFolder(ctx context.Context, id uuid.UUID) (*model.Agent, error)
 	ListAgentsByFolderID(ctx context.Context, folderId uuid.UUID, page int, pageSize int) ([]*model.Agent, error)
-	// ListUnsyncedAgents returns all agents that haven't been synced to the Ruby CRM (evolution_bot_sync = false).
-	ListUnsyncedAgents(ctx context.Context) ([]*model.Agent, error)
 }
 
 type agentRepository struct {
@@ -112,16 +110,5 @@ func (r *agentRepository) ListAgentsByFolderID(ctx context.Context, folderId uui
 		return []*model.Agent{}, err
 	}
 
-	return agents, nil
-}
-
-// ListUnsyncedAgents returns every agent that has not yet been synced to the Ruby CRM.
-// These are agents with evolution_bot_sync = false, typically created via import before
-// the sync step was implemented.
-func (r *agentRepository) ListUnsyncedAgents(ctx context.Context) ([]*model.Agent, error) {
-	var agents []*model.Agent
-	if err := r.db.WithContext(ctx).Where("evolution_bot_sync = ?", false).Find(&agents).Error; err != nil {
-		return nil, err
-	}
 	return agents, nil
 }

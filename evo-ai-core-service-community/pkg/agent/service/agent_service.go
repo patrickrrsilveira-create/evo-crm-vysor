@@ -36,9 +36,6 @@ type AgentService interface {
 	GetShareAgent(ctx context.Context, id uuid.UUID) (string, error)
 	AssignFolder(ctx context.Context, id uuid.UUID, request *model.Agent) (*model.Agent, error)
 	ListAgentsByFolderID(ctx context.Context, folderId uuid.UUID, page int, pageSize int) (*model.AgentListResponse, error)
-	// SyncAllBots creates missing agent_bots records in the Ruby CRM for every agent
-	// that has evolution_bot_sync = false. Returns a summary of the operation.
-	SyncAllBots(ctx context.Context) (*model.SyncAllBotsResult, error)
 }
 
 type agentService struct {
@@ -551,60 +548,6 @@ func (s *agentService) GetShareAgent(ctx context.Context, id uuid.UUID) (string,
 	}
 
 	return apiKeyConfig.(string), nil
-}
-
-// SyncAllBots creates missing agent_bots in the Ruby CRM for every agent that
-// was not previously synced (evolution_bot_sync = false). This is a one-shot
-// recovery operation — subsequent runs are safe (already-synced agents are skipped
-// by evolutionService.CreateAgentBot, which checks the flag before creating).
-func (s *agentService) SyncAllBots(ctx context.Context) (*model.SyncAllBotsResult, error) {
-	agents, err := s.agentRepository.ListUnsyncedAgents(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to list unsynced agents: %w", err)
-	}
-
-	result := &model.SyncAllBotsResult{
-		Total:   len(agents),
-		Entries: make([]model.SyncBotEntry, 0, len(agents)),
-	}
-
-	for _, agent := range agents {
-		entry := model.SyncBotEntry{
-			AgentID:   agent.ID,
-			AgentName: agent.Name,
-		}
-
-		evolutionBot, createErr := s.evolutionService.CreateAgentBot(ctx, agent, s.aiProcessorURL)
-		if createErr != nil {
-			log.Printf("SyncAllBots: failed to create bot for agent %s (%s): %v", agent.Name, agent.ID, createErr)
-			entry.Synced = false
-			entry.Error = createErr.Error()
-			result.Failed++
-		} else if evolutionBot != nil {
-			agent.EvolutionBotID = &evolutionBot.ID
-			agent.EvolutionBotSync = true
-
-			if _, updateErr := s.agentRepository.Update(ctx, agent, agent.ID); updateErr != nil {
-				log.Printf("SyncAllBots: agent %s bot created but failed to persist bot ID: %v", agent.ID, updateErr)
-				s.evolutionService.CleanupEvolutionBot(ctx, evolutionBot.ID)
-				entry.Synced = false
-				entry.Error = updateErr.Error()
-				result.Failed++
-			} else {
-				entry.BotID = &evolutionBot.ID
-				entry.Synced = true
-				result.Synced++
-			}
-		} else {
-			// evolutionBot == nil means the agent was already synced (CreateAgentBot returned nil,nil)
-			entry.Synced = true
-			result.Synced++
-		}
-
-		result.Entries = append(result.Entries, entry)
-	}
-
-	return result, nil
 }
 
 func (s *agentService) ImportAgents(ctx context.Context, request model.AgentImportRequest) ([]*model.AgentResponse, error) {
