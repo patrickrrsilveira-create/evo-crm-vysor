@@ -59,6 +59,7 @@ const Agentes = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [agentToDelete, setAgentToDelete] = useState<Agent | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const isWizardOpen = location.pathname === '/agents/new';
 
@@ -164,6 +165,7 @@ const Agentes = () => {
     }
 
     try {
+      setIsImporting(true);
       await importAgents(file);
       toast.success(t('import.success', { defaultValue: 'Agentes importados com sucesso!' }));
       loadAgents(); // reload list
@@ -171,6 +173,7 @@ const Agentes = () => {
       console.error('Erro ao importar agentes:', error);
       toast.error(t('import.error', { defaultValue: 'Erro ao importar agentes' }));
     } finally {
+      setIsImporting(false);
       // Reset input
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
