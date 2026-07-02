@@ -35,8 +35,9 @@ type EvoAuthPlan struct {
 	Features []EvoAuthFeature `json:"features"`
 }
 
+// EvoAuthAccount represents an account from /api/v1/me response
 type EvoAuthAccount struct {
-	ID         interface{}      `json:"id"`
+	ID         uuid.UUID        `json:"id"`
 	Name       string           `json:"name"`
 	Status     string           `json:"status"`
 	Locale     string           `json:"locale"`
