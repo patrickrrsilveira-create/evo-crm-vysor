@@ -9,15 +9,15 @@ import (
 
 // EvoAuthUser represents the user data from /api/v1/me response
 type EvoAuthUser struct {
-	ID           uuid.UUID `json:"id"`
-	Name         string    `json:"name"`
-	Email        string    `json:"email"`
-	DisplayName  *string   `json:"display_name"`
-	Availability string    `json:"availability"`
-	MFAEnabled   bool      `json:"mfa_enabled"`
-	Confirmed    bool      `json:"confirmed"`
-	Type         string    `json:"type"`
-	Role         *Role     `json:"role"`
+	ID           uuid.UUID   `json:"id"`
+	Name         string      `json:"name"`
+	Email        string      `json:"email"`
+	DisplayName  *string     `json:"display_name"`
+	Availability interface{} `json:"availability"`
+	MFAEnabled   bool        `json:"mfa_enabled"`
+	Confirmed    bool        `json:"confirmed"`
+	Type         string      `json:"type"`
+	Role         *Role       `json:"role"`
 }
 
 type EvoAuthFeature struct {
@@ -31,20 +31,22 @@ type EvoAuthPlan struct {
 	IsActive bool             `json:"is_active"`
 	IsCustom bool             `json:"is_custom"`
 	StartsAt string           `json:"starts_at"`
-	EndsAt   string           `json:"ends_at"`
+	EndsAt   *string          `json:"ends_at,omitempty"`
 	Features []EvoAuthFeature `json:"features"`
 }
 
-// EvoAuthAccount represents an account from /api/v1/me response
+// EvoAuthAccount represents an account from the auth service.
+// Uses interface{} for ID and optional pointers for fields that may be
+// absent or null depending on the auth service version.
 type EvoAuthAccount struct {
-	ID         uuid.UUID        `json:"id"`
-	Name       string           `json:"name"`
-	Status     string           `json:"status"`
-	Locale     string           `json:"locale"`
-	CreatedAt  string           `json:"created_at"`
-	UpdatedAt  string           `json:"updated_at"`
-	Features   json.RawMessage  `json:"features"`
-	ActivePlan *EvoAuthPlan     `json:"active_plan,omitempty"`
+	ID         interface{}     `json:"id"`
+	Name       string          `json:"name"`
+	Status     *string         `json:"status,omitempty"`
+	Locale     string          `json:"locale"`
+	CreatedAt  *string         `json:"created_at,omitempty"`
+	UpdatedAt  *string         `json:"updated_at,omitempty"`
+	Features   json.RawMessage `json:"features,omitempty"`
+	ActivePlan *EvoAuthPlan    `json:"active_plan,omitempty"`
 }
 
 // EvoAuthValidateToken represents the complete response from /api/v1/me
