@@ -1421,17 +1421,11 @@ async def handle_message_send(
                                                     logger.error(f"Error generating fallback audio for handoff: {e}")
                                         
                                         # Disparo direto do N8N no handoff
-                                        phone_number = None
-                                        if metadata:
-                                            # Try top-level contact first (has phone_number usually)
-                                            contact_data = metadata.get("contact", {})
-                                            phone_number = contact_data.get("phone_number") or contact_data.get("phone")
-                                            if not phone_number and "evoai_crm_data" in metadata:
-                                                # Fallback to evoai_crm_data
-                                                contact_info = metadata["evoai_crm_data"].get("contact", {})
-                                                phone_number = contact_info.get("phone") or contact_info.get("phone_number")
-                                                
-                                        if final_text:
+                                        contact_info = {}
+                                        if metadata and "evoai_crm_data" in metadata:
+                                            contact_info = metadata["evoai_crm_data"].get("contact", {})
+                                        phone_number = contact_info.get("phone") or contact_info.get("phone_number")
+                                        if phone_number and final_text:
                                             import re
                                             link_pattern = r'\[?VIDEO_LINK:\s*(https?://[^\s\]]+)\]?'
                                             matches = list(re.finditer(link_pattern, final_text))
@@ -1451,12 +1445,7 @@ async def handle_message_send(
                                                 for match in matches:
                                                     v_url = match.group(1)
                                                     if v_url:
-                                                        if phone_number:
-                                                            asyncio.create_task(fire_n8n_webhook_handoff(phone_number, v_url))
-                                                        else:
-                                                            logger.warning(f"⚠️ VIDEO_LINK found but no phone_number available to fire webhook for {v_url}")
-                                                        
-                                                        # Remove tag from text in all cases
+                                                        asyncio.create_task(fire_n8n_webhook_handoff(phone_number, v_url))
                                                         final_text = final_text.replace(match.group(0), '').strip()
 
                                         if final_text or files_payload:
