@@ -1745,7 +1745,7 @@ async def handle_message_send(
                             # Remove the text artifact that was already created by build_a2a_artifacts
                             artifacts = [a for a in artifacts if not any(p.get("type") == "text" for p in a.get("parts", []))]
                         except Exception as e:
-                            logger.error(f"Failed to send outgoing text message: {e}")
+                            logger.error(f"Failed to send private text message: {e}")
                     else:
                         audio_bytes = _convert_to_ogg_opus(audio_bytes)
                         mime_type = "audio/ogg"

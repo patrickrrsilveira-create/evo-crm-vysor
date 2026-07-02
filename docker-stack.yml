@@ -27,7 +27,7 @@ services:
     command: bash -c "bundle exec rails db:migrate 2>&1 || echo 'Migration had errors, continuing...'; bundle exec rails s -p 3001 -b 0.0.0.0"
     environment:
       RAILS_ENV: production
-      RAILS_MAX_THREADS: 10
+      RAILS_MAX_THREADS: 5
       SECRET_KEY_BASE: xsPT52m0647Je3uE1QO0yTOx5quGhBrf
       JWT_SECRET_KEY: LAQnYLNFjCeekP7glOwhnYtUVZkQ0IXJ
       EVOAI_CRM_API_TOKEN: 3cUU99Bc0eTetF2pEvUu7QuQZzdspBcf
@@ -45,7 +45,7 @@ services:
       DOORKEEPER_JWT_ALGORITHM: hs256
       DOORKEEPER_JWT_ISS: evo-auth-service
       MFA_ISSUER: EvoCRM
-      SIDEKIQ_CONCURRENCY: 20
+      SIDEKIQ_CONCURRENCY: 10
     networks:
       - minha_rede
     stop_grace_period: 300s
@@ -79,7 +79,7 @@ services:
       DOORKEEPER_JWT_ALGORITHM: hs256
       DOORKEEPER_JWT_ISS: evo-auth-service
       MFA_ISSUER: EvoCRM
-      SIDEKIQ_CONCURRENCY: 20
+      SIDEKIQ_CONCURRENCY: 10
     networks:
       - minha_rede
     stop_grace_period: 300s
@@ -98,8 +98,6 @@ services:
       RAILS_ENV: production
       RAILS_SERVE_STATIC_FILES: "true"
       RAILS_LOG_TO_STDOUT: "true"
-      RAILS_MAX_THREADS: 10
-      WEB_CONCURRENCY: 2
       SECRET_KEY_BASE: xsPT52m0647Je3uE1QO0yTOx5quGhBrf
       JWT_SECRET_KEY: LAQnYLNFjCeekP7glOwhnYtUVZkQ0IXJ
       EVOAI_CRM_API_TOKEN: 3cUU99Bc0eTetF2pEvUu7QuQZzdspBcf
@@ -202,9 +200,12 @@ services:
       restart_policy:
         condition: any
 
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Python AI Processor — scaled for 5000+ concurrent users
+  # ─────────────────────────────────────────────────────────────────────────────
   evo_processor:
-    image: ghcr.io/patrickrrsilveira-create/evo-crm-vysor-evo-ai-processor-community:latest
-    command: sh -c "alembic upgrade head 2>&1 || echo 'Alembic migration had errors, continuing...'; python -m scripts.run_seeders; uvicorn src.main:app --host $$HOST --port $$PORT --proxy-headers --workers 4 --timeout-keep-alive 30 --limit-max-requests 10000"
+    image: ghcr.io/patrickrrsilveira-create/evo-crm-vysor-evo-ai-processor-community:sha-4b4ad50
+    command: sh -c "alembic upgrade head 2>&1 || echo 'Alembic migration had errors, continuing...'; python -m scripts.run_seeders; uvicorn src.main:app --host 0.0.0.0 --port 3031 --proxy-headers --workers 4 --timeout-keep-alive 30 --limit-max-requests 10000"
     environment:
       POSTGRES_CONNECTION_STRING: postgresql://postgres:e2zaFkFxxIfX04QxP55LEvX2ZNW6XKFb@postgres:5432/evo_community
       REDIS_HOST: redis
@@ -237,9 +238,9 @@ services:
       ARTIFACT_ACCESS_KEY: "admin"
       ARTIFACT_SECRET_KEY: "vysor@BR001"
       ARTIFACT_SECURE: "true"
-      N8N_WEBHOOK_URL: "https://n8n1.vysortech.app.br/webhook/enviar-video"
     volumes:
       - evo_processor_logs:/app/logs
+      - evo_processor_static:/app/static
     networks:
       - minha_rede
     deploy:
@@ -375,6 +376,8 @@ networks:
 
 volumes:
   evo_processor_logs:
+    external: false
+  evo_processor_static:
     external: false
   evo_crm_storage:
     external: false
