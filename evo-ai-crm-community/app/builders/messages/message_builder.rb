@@ -142,7 +142,15 @@ class Messages::MessageBuilder
   end
 
   def sender
-    message_type == 'outgoing' ? (message_sender || @user) : @conversation.contact
+    if message_type == 'outgoing'
+      message_sender || @user || conversation_agent_bot
+    else
+      @conversation.contact
+    end
+  end
+
+  def conversation_agent_bot
+    @conversation&.inbox&.agent_bot
   end
 
   def external_created_at
