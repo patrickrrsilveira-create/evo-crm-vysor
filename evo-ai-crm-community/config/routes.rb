@@ -37,11 +37,6 @@ Rails.application.routes.draw do
       end
 
       resource :global_config, controller: 'global_config', only: [:show]
-
-      namespace :campaigns do
-        post 'resolve_segment', to: 'campaigns#resolve_segment'
-      end
-
       namespace :integrations do
         namespace :openai do
           get 'credentials', to: 'credentials#show'
