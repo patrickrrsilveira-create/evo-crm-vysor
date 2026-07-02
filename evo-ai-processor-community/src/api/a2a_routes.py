@@ -1343,12 +1343,11 @@ async def handle_message_send(
                                         )
                                         
                                         final_text = result.get("final_response", "")
-
+                                        
                                         files_payload = None
                                         if artifacts_service:
                                             message_history = result.get("message_history", [])
                                             filename = None
-                                            tts_text_arg = None  # Extract text arg from TTS tool call
                                             for event in reversed(message_history):
                                                 role = event.get("role")
                                                 content = event.get("content")
@@ -1364,14 +1363,6 @@ async def handle_message_send(
                                                             fr = part["functionResponse"]
                                                             if fr.get("name") == "text_to_speech":
                                                                 filename = fr.get("response", {}).get("filename")
-                                                elif role == "model" and any(p.get("toolCall") and p["toolCall"].get("name") == "text_to_speech" for p in parts if isinstance(p, dict)):
-                                                    # Extract the 'text' argument from TTS tool call
-                                                    for part in parts:
-                                                        if isinstance(part, dict) and part.get("toolCall"):
-                                                            if part["toolCall"].get("name") == "text_to_speech":
-                                                                args = part["toolCall"].get("args", {})
-                                                                if isinstance(args, dict):
-                                                                    tts_text_arg = args.get("text", "")
                                                 elif role == "tool" and event.get("name") == "text_to_speech":
                                                     try:
                                                         import json
@@ -1397,9 +1388,6 @@ async def handle_message_send(
                                                         mime_type = art.inline_data.mime_type or "audio/ogg"
                                                         name = f"audio_{int(time.time())}.ogg"
                                                         files_payload = {"attachments[]": (name, file_bytes, mime_type)}
-                                                        # Restore the text from TTS tool call if available (preserves VIDEO_LINK)
-                                                        if tts_text_arg and not final_text:
-                                                            final_text = tts_text_arg
                                                 except Exception as e:
                                                     logger.error(f"Failed to decode artifact in auto-trigger: {e}")
                                             
