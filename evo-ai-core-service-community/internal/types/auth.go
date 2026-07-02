@@ -13,7 +13,7 @@ type EvoAuthUser struct {
 	Name         string    `json:"name"`
 	Email        string    `json:"email"`
 	DisplayName  *string   `json:"display_name"`
-	Availability interface{}    `json:"availability"`
+	Availability string    `json:"availability"`
 	MFAEnabled   bool      `json:"mfa_enabled"`
 	Confirmed    bool      `json:"confirmed"`
 	Type         string    `json:"type"`
