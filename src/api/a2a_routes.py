@@ -446,7 +446,6 @@ def create_task_response(
     logger.info(
         f"🏗️ create_task_response called with history: {len(conversation_history) if conversation_history else 0} messages"
     )
-    import uuid
 
     # Create main response artifact (only the agent's response)
     if artifacts is None:
@@ -1185,11 +1184,6 @@ async def handle_message_send(
     try:
         metadata = extract_metadata_from_request(params)
         logger.info(f"📋 Extracted metadata: {metadata}")
-        
-        # Extract phone number for N8N webhook
-        phone_number = ""
-        if isinstance(metadata, dict) and isinstance(metadata.get("contact"), dict):
-            phone_number = metadata["contact"].get("phone_number", "")
         
         # Override context_id with the real conversation_id from CRM to ensure stable session IDs
         if metadata and "evoai_crm_data" in metadata:
