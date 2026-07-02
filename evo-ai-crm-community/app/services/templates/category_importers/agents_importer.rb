@@ -14,7 +14,7 @@ module Templates
       def attributes_for(item)
         attrs = item.except('slug')
         # Defense in depth: zero secrets even if Sanitizer.zero_blocked_fields! missed.
-        attrs['api_key'] = "configure-#{SecureRandom.hex(4)}"
+        attrs['api_key'] = nil
         attrs['outgoing_url'] = nil
         attrs
       end
