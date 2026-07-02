@@ -515,4 +515,4 @@ Args:
     slot_duration (int, optional): Duration of each slot in minutes when find_slots=True (default: 60)
 """
 
-    return FunctionTool(func=check_calendar_availability)
+    return FunctionTool.from_defaults(fn=check_calendar_availability)
