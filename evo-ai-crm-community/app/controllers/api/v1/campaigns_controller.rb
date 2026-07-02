@@ -5,9 +5,9 @@ class Api::V1::CampaignsController < Api::ServiceController
     account = find_account
 
     filter_params = params.require(:filters).permit(
+      label_ids: [],
       :contact_type,
       :timezone,
-      label_ids: [],
       custom_attributes: {}
     )
 
@@ -32,8 +32,8 @@ class Api::V1::CampaignsController < Api::ServiceController
     raise Unauthorized unless valid_service_token?(token)
   end
 
-  def valid_service_token?(token)
-    expected = ENV['CRM_API_TOKEN']
-    expected.present? && expected == token
+  def valid_service_token?
+    token = ENV['CRM_API_TOKEN']
+    token.present? && token == (request.headers['X-Campaign-Engine-Token'] || params[:token])
   end
 end
