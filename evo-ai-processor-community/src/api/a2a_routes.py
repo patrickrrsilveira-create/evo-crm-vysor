@@ -1807,36 +1807,6 @@ async def handle_message_send(
             f"📦 Task response created with {len(task_response.get('artifacts', []))} artifacts"
         )
 
-        # Disparo direto do N8N para vídeos na resposta normal (mesmo padrão do handoff)
-        contact_info = {}
-        if metadata and "evoai_crm_data" in metadata:
-            contact_info = metadata["evoai_crm_data"].get("contact", {})
-        phone_number = contact_info.get("phone") or contact_info.get("phone_number")
-        if phone_number and final_response:
-            import re
-            n8n_link_pattern = r'\[?VIDEO_LINK:\s*(https?://[^\s\]]+)\]?'
-            n8n_matches = list(re.finditer(n8n_link_pattern, final_response))
-            if n8n_matches:
-                import httpx
-                import asyncio
-                n8n_url = os.environ.get("N8N_WEBHOOK_URL")
-                if not n8n_url:
-                    logger.error("N8N_WEBHOOK_URL não está configurada nas variáveis de ambiente.")
-                else:
-                    async def fire_n8n_webhook(phone, v_url):
-                        try:
-                            payload = {"telefone": phone, "video_url": v_url, "media": v_url}
-                            async with httpx.AsyncClient() as client:
-                                resp = await client.post(n8n_url, json=payload, timeout=10.0)
-                                logger.info(f"🚀 N8N Webhook fired for {phone} with video {v_url}. Status: {resp.status_code}")
-                        except Exception as e:
-                            logger.error(f"❌ Failed to fire N8N webhook for {v_url}: {e}")
-
-                    for match in n8n_matches:
-                        v_url = match.group(1)
-                        if v_url:
-                            asyncio.create_task(fire_n8n_webhook(phone_number, v_url))
-
         # Handle push notification if configured
         if push_notification_config:
             try:
