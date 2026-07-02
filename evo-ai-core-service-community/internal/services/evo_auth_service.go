@@ -101,7 +101,8 @@ func (s *evoAuthService) ValidateToken(token, tokenType string) (*types.EvoAuthV
 
 	var tokenData types.EvoAuthValidateTokenData
 	if err := json.Unmarshal(dataJSON, &tokenData); err != nil {
-		return nil, &ValidationError{Message: "Failed to parse token data"}
+		fmt.Printf("EvoAuth: Failed to parse token data: %v\nRaw data: %s\n", err, string(dataJSON))
+		return nil, &ValidationError{Message: fmt.Sprintf("Failed to parse token data: %v", err)}
 	}
 
 	fmt.Printf("EvoAuth: Successfully validated token for user %s with %d accounts\n", tokenData.User.Email, len(tokenData.Accounts))
