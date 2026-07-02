@@ -58,9 +58,6 @@ def _clean_text_for_tts(text: str) -> str:
     # Remove markdown headers (#)
     text = re.sub(r'#+', '', text)
     
-    # Remove internal media tags before parsing so it doesn't say "VIDEO LINK" out loud
-    text = re.sub(r'\[?(?:VIDEO_LINK|IMAGE_LINK|AUDIO_LINK)[^\]\s]*\s*(?:https?://[^\s\]]+)?\]?', '', text, flags=re.IGNORECASE)
-    
     # Remove URLs so the TTS engine doesn't read them out
     text = re.sub(r'https?://[^\s]+', '', text)
     
