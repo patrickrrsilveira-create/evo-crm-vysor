@@ -1,6 +1,5 @@
 import {
   Plus,
-  Upload,
   Download,
   Key,
   Trash2,
@@ -15,7 +14,6 @@ interface AgentsHeaderProps {
   searchValue: string;
   onSearchChange: (value: string) => void;
   onNewAgent: () => void;
-  onImport?: () => void;
   onExport: () => void;
   onManageApiKeys: () => void;
   onBulkDelete: () => void;
@@ -30,7 +28,6 @@ export default function AgentsHeader({
   searchValue,
   onSearchChange,
   onNewAgent,
-  onImport,
   onExport,
   onManageApiKeys,
   onBulkDelete,
@@ -56,12 +53,6 @@ export default function AgentsHeader({
       variant: 'outline' as const,
       dataTour: 'agents-api-keys',
     },
-    ...(onImport ? [{
-      label: t('import.title', { defaultValue: 'Importar' }),
-      icon: <Upload className="h-4 w-4" />,
-      onClick: onImport,
-      variant: 'outline' as const,
-    }] : []),
     {
       label: t('export.all'),
       icon: <Download className="h-4 w-4" />,
