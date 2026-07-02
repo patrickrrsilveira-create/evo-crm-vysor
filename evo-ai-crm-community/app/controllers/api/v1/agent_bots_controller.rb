@@ -1,13 +1,13 @@
 class Api::V1::AgentBotsController < Api::V1::BaseController
-  # require_permissions({
-  #   index: 'agent_bots.read',
-  #   show: 'agent_bots.read',
-  #   create: 'agent_bots.create',
-  #   update: 'agent_bots.update',
-  #   destroy: 'agent_bots.delete',
-  #   avatar: 'agent_bots.update',
-  #   reset_access_token: 'agent_bots.update'
-  # })
+  require_permissions({
+    index: 'agent_bots.read',
+    show: 'agent_bots.read',
+    create: 'agent_bots.create',
+    update: 'agent_bots.update',
+    destroy: 'agent_bots.delete',
+    avatar: 'agent_bots.update',
+    reset_access_token: 'agent_bots.update'
+  })
 
   include Api::V1::ResourceLimitsHelper
 
