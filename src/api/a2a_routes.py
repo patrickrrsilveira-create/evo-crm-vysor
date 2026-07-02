@@ -1113,23 +1113,22 @@ async def handle_message_send(
     provider = str(llm_config.get("provider") or "").lower()
     model_name = str(agent.model or "").lower()
     
-    # Filter out audio and video files to prevent API connection errors
-    # Video/Audio support is highly experimental and crashes often across providers (especially with Instagram audio-only mp4s)
-    # We also check filename extensions because sometimes CRM sends audio/video as application/octet-stream
-    media_exts = (".mp4", ".ogg", ".aac", ".wav", ".mp3", ".m4a", ".webm", ".avi", ".mov", ".mkv", ".flv", ".wmv")
-    
-    # Whitelist approach: only allow known safe types to avoid hidden audio/video in octet-stream
-    safe_types = ("image/", "text/", "application/pdf", "application/vnd.", "application/json", "application/xml")
-    
-    # Let's keep audio/video files ONLY if the model explicitly supports multimodal audio/video natively (e.g., gemini natively directly, not through openrouter wrapper if it crashes). 
-    # Actually, to be 100% safe against the OpenRouter crash, we filter it globally for now since the UI transcribes it anyway.
-    files = [
-        f for f in files 
-        if any(f.content_type.startswith(t) for t in safe_types)
-        and not f.content_type.startswith("audio/") 
-        and not f.content_type.startswith("video/")
-        and not f.filename.lower().endswith(media_exts)
-    ]
+    # Allow audio and video for native models (like Gemini) which can transcribe and process them natively.
+    # Only filter out media files if the provider is OpenRouter, because OpenRouter often crashes on media parts.
+    if provider == "openrouter":
+        media_exts = (".mp4", ".ogg", ".aac", ".wav", ".mp3", ".m4a", ".webm", ".avi", ".mov", ".mkv", ".flv", ".wmv")
+        safe_types = ("image/", "text/", "application/pdf", "application/vnd.", "application/json", "application/xml")
+        
+        files = [
+            f for f in files 
+            if any(f.content_type.startswith(t) for t in safe_types)
+            and not f.content_type.startswith("audio/") 
+            and not f.content_type.startswith("video/")
+            and not f.filename.lower().endswith(media_exts)
+        ]
+        logger.info(f"OpenRouter provider detected. Filtered out audio/video media files to prevent crashes. Remaining files: {len(files)}")
+    else:
+        logger.info(f"Native provider ({provider}) detected. Allowing audio/video files for native transcription.")
         
     # Use default text if only files provided or if message is completely empty
     if (not text or text.strip() == "No content") and files:
