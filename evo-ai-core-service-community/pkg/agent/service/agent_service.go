@@ -637,30 +637,11 @@ func (s *agentService) ImportAgentsFromJSON(ctx context.Context, request model.A
 			return nil, err
 		}
 
-		// Sync to Ruby CRM agent_bots table so the agent appears in channel configuration.
-		// This mirrors the same step executed in Create(). On failure we log and continue
-		// rather than rolling back the already-persisted agent record.
-		evolutionBot, err := s.evolutionService.CreateAgentBot(ctx, createdAgent, s.aiProcessorURL)
-		if err != nil {
-			log.Printf("ImportAgentsFromJSON: failed to create Evolution bot for agent %s (%s): %v", createdAgent.Name, createdAgent.ID, err)
-		} else if evolutionBot != nil {
-			createdAgent.EvolutionBotID = &evolutionBot.ID
-			createdAgent.EvolutionBotSync = true
-			if updated, updateErr := s.agentRepository.Update(ctx, createdAgent, createdAgent.ID); updateErr != nil {
-				log.Printf("ImportAgentsFromJSON: failed to persist EvolutionBotID for agent %s: %v", createdAgent.ID, updateErr)
-				// Clean up the orphaned bot record
-				s.evolutionService.CleanupEvolutionBot(ctx, evolutionBot.ID)
-			} else {
-				createdAgent = updated
-			}
-		}
-
 		importedAgents = append(importedAgents, createdAgent)
 	}
 
 	return importedAgents, nil
 }
-
 
 func (s *agentService) AssignFolder(ctx context.Context, id uuid.UUID, request *model.Agent) (*model.Agent, error) {
 	agent, err := s.agentRepository.GetByID(ctx, id)
