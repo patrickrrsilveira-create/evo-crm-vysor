@@ -38,15 +38,9 @@ module Templates
       private
 
       def scrub_bot_config(config)
-        return config unless config.is_a?(Hash)
+        return {} unless config.is_a?(Hash)
 
-        scrubbed = {}
-        config.each do |k, v|
-          next if BOT_CONFIG_SENSITIVE_KEYS.include?(k.to_s.downcase)
-
-          scrubbed[k] = v.is_a?(Hash) ? scrub_bot_config(v) : v
-        end
-        scrubbed
+        config.reject { |k, _| BOT_CONFIG_SENSITIVE_KEYS.include?(k.to_s.downcase) }
       end
     end
   end
