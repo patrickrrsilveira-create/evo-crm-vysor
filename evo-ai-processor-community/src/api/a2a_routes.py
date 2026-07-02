@@ -1432,7 +1432,11 @@ async def handle_message_send(
                                                 async def fire_n8n_webhook_handoff(phone, v_url):
                                                     try:
                                                         payload = {"telefone": phone, "video_url": v_url, "media": v_url}
-                                                        url = "https://n8n1.vysortech.app.br/webhook/video-drone-ganader"
+                                                        import os
+                                                        url = os.environ.get("N8N_WEBHOOK_URL")
+                                                        if not url:
+                                                            logger.error("N8N_WEBHOOK_URL não está configurada nas variáveis de ambiente.")
+                                                            return
                                                         async with httpx.AsyncClient() as client:
                                                             resp = await client.post(url, json=payload, timeout=10.0)
                                                             logger.info(f"🚀 N8N Webhook fired from handoff for {phone} with video {v_url}. Status: {resp.status_code}")
@@ -1850,7 +1854,11 @@ async def handle_message_send(
                     async def fire_n8n_webhook(phone, v_url):
                         try:
                             payload = {"telefone": phone, "video_url": v_url, "media": v_url}
-                            url = "https://n8n1.vysortech.app.br/webhook/video-drone-ganader"
+                            import os
+                            url = os.environ.get("N8N_WEBHOOK_URL")
+                            if not url:
+                                logger.error("N8N_WEBHOOK_URL não está configurada nas variáveis de ambiente.")
+                                return
                             async with httpx.AsyncClient() as client:
                                 resp = await client.post(url, json=payload, timeout=10.0)
                                 logger.info(f"🚀 N8N Webhook fired for {phone} with video {v_url}. Status: {resp.status_code}")
