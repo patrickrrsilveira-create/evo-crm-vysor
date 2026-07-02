@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { CampaignForm } from '../components/Campaigns/CampaignForm';
-import { campaignsService, CampaignPayload, Campaign } from '../services/campaignsService';
+import { campaignsService, CampaignPayload } from '../services/campaignsService';
 
 export const CampaignsPage: React.FC = () => {
   const [showForm, setShowForm] = useState(false);
-  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [campaigns, setCampaigns] = useState([]);
   const [loading, setLoading] = useState(false);
   const accountId = 1; // Get from current user context
 
@@ -86,7 +86,7 @@ export const CampaignsPage: React.FC = () => {
             Nenhuma campanha criada. Crie uma para começar!
           </div>
         ) : (
-          campaigns.map((campaign) => (
+          campaigns.map((campaign: any) => (
             <div key={campaign.id} className="border rounded-lg p-4 hover:shadow-md">
               <div className="flex justify-between items-start">
                 <div className="flex-1">

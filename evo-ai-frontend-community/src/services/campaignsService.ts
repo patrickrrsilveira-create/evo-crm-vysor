@@ -1,4 +1,4 @@
-import api from './core/api';
+import { api } from '../lib/apiClient';
 
 export interface CampaignPayload {
   account_id: number;
@@ -29,44 +29,44 @@ export interface Campaign {
 
 class CampaignService {
   async create(payload: CampaignPayload): Promise<Campaign> {
-    const response = await api.post('/campaigns', payload);
+    const response = await api.post('/api/v1/campaigns', payload);
     return response.data;
   }
 
   async list(accountId: number, page = 1, pageSize = 20): Promise<{ data: Campaign[]; total: number }> {
-    const response = await api.get('/campaigns', {
+    const response = await api.get('/api/v1/campaigns', {
       params: { account_id: accountId, page, page_size: pageSize },
     });
     return response.data;
   }
 
   async get(id: string): Promise<Campaign> {
-    const response = await api.get(`/campaigns/${id}`);
+    const response = await api.get(`/api/v1/campaigns/${id}`);
     return response.data;
   }
 
   async start(id: string): Promise<{ status: string }> {
-    const response = await api.post(`/campaigns/${id}/start`);
+    const response = await api.post(`/api/v1/campaigns/${id}/start`);
     return response.data;
   }
 
   async pause(id: string): Promise<{ status: string }> {
-    const response = await api.post(`/campaigns/${id}/pause`);
+    const response = await api.post(`/api/v1/campaigns/${id}/pause`);
     return response.data;
   }
 
   async cancel(id: string): Promise<{ status: string }> {
-    const response = await api.post(`/campaigns/${id}/cancel`);
+    const response = await api.post(`/api/v1/campaigns/${id}/cancel`);
     return response.data;
   }
 
   async stats(id: string): Promise<Record<string, number>> {
-    const response = await api.get(`/campaigns/${id}/stats`);
+    const response = await api.get(`/api/v1/campaigns/${id}/stats`);
     return response.data.stats;
   }
 
   async delete(id: string): Promise<{ deleted: boolean }> {
-    const response = await api.delete(`/campaigns/${id}`);
+    const response = await api.delete(`/api/v1/campaigns/${id}`);
     return response.data;
   }
 }
