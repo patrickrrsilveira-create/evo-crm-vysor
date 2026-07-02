@@ -270,39 +270,6 @@ services:
       restart_policy:
         condition: any
 
-  evo_campaign_engine:
-    image: ghcr.io/patrickrrsilveira-create/evo-crm-vysor-evo-campaign-engine:latest
-    environment:
-      PORT: "9090"
-      DB_HOST: postgres
-      DB_PORT: 5432
-      DB_USER: postgres
-      DB_PASSWORD: e2zaFkFxxIfX04QxP55LEvX2ZNW6XKFb
-      DB_NAME: evo_community
-      DB_SSLMODE: disable
-      DB_MAX_IDLE_CONNS: 10
-      DB_MAX_OPEN_CONNS: 50
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      REDIS_PASSWORD: e2zaFkFxxIfX04QxP55LEvX2ZNW6XKFb
-      REDIS_DB: 6
-      EVOLUTION_API_URL: ""
-      N8N_WEBHOOK_URL: ""
-      CRM_BASE_URL: http://evo_crm:3000
-      CRM_API_TOKEN: 3cUU99Bc0eTetF2pEvUu7QuQZzdspBcf
-      WORKER_COUNT: 4
-      SCHEDULER_TICK: 2s
-      MAX_RETRIES: 3
-    networks:
-      - minha_rede
-    deploy:
-      replicas: 1
-      placement:
-        constraints:
-          - node.role == manager
-      restart_policy:
-        condition: any
-
   evo_frontend:
     image: ghcr.io/patrickrrsilveira-create/evo-crm-vysor-evo-ai-frontend-community:latest
     environment:
