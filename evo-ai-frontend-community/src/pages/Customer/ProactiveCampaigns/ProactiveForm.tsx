@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Button, Input, Label, Textarea, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@evoapi/design-system';
-import { Save, ArrowLeft, MessageSquare, Clock, Target, Bot } from 'lucide-react';
+import { Save, ArrowLeft, UploadCloud, MessageSquare, Clock, Target, Bot } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { proactiveService, ProactiveCampaign } from '@/services/proactive/proactiveService';
 import { labelsService } from '@/services/contacts/labelsService';
@@ -72,7 +72,17 @@ export default function ProactiveForm() {
     }
   };
 
-
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      try {
+        const url = await proactiveService.uploadAttachment(file);
+        setFormData(prev => ({ ...prev, attachment_url: url }));
+      } catch (error) {
+        console.error('Failed to upload', error);
+      }
+    }
+  };
 
   return (
     <div className="flex flex-col h-full bg-background p-6 max-w-4xl mx-auto w-full">
@@ -211,38 +221,28 @@ export default function ProactiveForm() {
             />
           </div>
 
-          <div className="space-y-4 pt-2">
-            <div className="space-y-2">
-              <Label>Anexo (Mídia Externa)</Label>
-              <Select 
-                value={(formData as any).attachment_type || 'none'} 
-                onValueChange={(val: string) => setFormData({...formData, attachment_type: val === 'none' ? undefined : val} as any)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione o tipo de mídia (Opcional)" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Nenhum anexo</SelectItem>
-                  <SelectItem value="video">Vídeo</SelectItem>
-                  <SelectItem value="image">Imagem</SelectItem>
-                  <SelectItem value="document">Documento (PDF, etc)</SelectItem>
-                </SelectContent>
-              </Select>
+          <div className="space-y-2 pt-2">
+            <Label>Anexo (Vídeo, Imagem ou Áudio)</Label>
+            <div className="flex items-center gap-4">
+              <Label htmlFor="file-upload" className="cursor-pointer">
+                <div className="flex items-center gap-2 px-4 py-2 bg-secondary text-secondary-foreground hover:bg-secondary/80 rounded-md transition-colors text-sm font-medium">
+                  <UploadCloud className="w-4 h-4" />
+                  Subir Arquivo
+                </div>
+              </Label>
+              <Input 
+                id="file-upload" 
+                type="file" 
+                className="hidden" 
+                onChange={handleFileUpload}
+              />
+              {formData.attachment_url && (
+                <span className="text-sm text-green-600 truncate max-w-[200px]">
+                  Arquivo anexado com sucesso!
+                </span>
+              )}
             </div>
-
-            {(formData as any).attachment_type && (formData as any).attachment_type !== 'none' && (
-              <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
-                <Label>URL do Arquivo (Minio, N8N, etc)</Label>
-                <Input 
-                  placeholder={`Ex: https://minio.seu-dominio.com/${(formData as any).attachment_type}.mp4`}
-                  value={formData.attachment_url || ''}
-                  onChange={e => setFormData({...formData, attachment_url: e.target.value})}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Cole aqui o link direto do arquivo. O sistema fará o envio por debaixo dos panos.
-                </p>
-              </div>
-            )}
+            <p className="text-xs text-muted-foreground mt-1">Este arquivo será enviado junto com a mensagem.</p>
           </div>
         </div>
       </div>

@@ -450,12 +450,11 @@ def create_task_response(
     # Create main response artifact (only the agent's response)
     if artifacts is None:
         artifacts = []
-        
-    # Extract Google Drive video links from final_response to send as media
+    import uuid
+    
+    # Extract Google Drive or VIDEO_LINK video links from final_response to send as media
     if final_response:
         import re
-        import uuid
-        # Find raw drive links or [VIDEO_LINK: url]
         link_pattern = r'\[?VIDEO_LINK:\s*(https?://[^\s\]]+)\]?|(https://drive\.google\.com/uc\?export=download&id=[a-zA-Z0-9_-]+)'
         
         matches = list(re.finditer(link_pattern, final_response))
@@ -468,24 +467,16 @@ def create_task_response(
                 # Remove the exact match from the text
                 final_response = final_response.replace(match.group(0), '').strip()
                 
-                # Also clean the match from any existing text artifacts
-                for art in artifacts:
-                    for part in art.get("parts", []):
-                        if part.get("type") == "text" and isinstance(part.get("text"), str):
-                            part["text"] = part["text"].replace(match.group(0), '').strip()
-                
         for url in extracted_urls:
-            # Substitui links do Google Drive pelo arquivo estático da VPS
             actual_url = url
             if "drive.google.com" in url:
-                processor_url = os.environ.get("AI_PROCESSOR_URL", "http://evo-processor:8000")
+                processor_url = os.environ.get("APP_URL", "http://evo_processor:8000").rstrip('/')
                 actual_url = f"{processor_url}/static/pesagem_ganader.mp4"
-                logger.info(f"🔄 Replacing Google Drive URL with local static URL: {actual_url}")
                 
             file_obj = {
                 "url": actual_url,
                 "mimeType": "video/mp4",
-                "name": "video.mp4"
+                "name": "video_Ganader.mp4"
             }
                 
             artifacts.append({
@@ -495,14 +486,18 @@ def create_task_response(
                     "file": file_obj
                 }]
             })
-            logger.info(f"🎥 Extracted video link into file artifact: {actual_url}")
 
     # Always include the text response as an artifact if it's not empty
     if final_response and final_response.strip():
         # Check if we already have a text artifact to avoid duplication
-        has_text_artifact = any(
-            p.get("type") == "text" for art in artifacts for p in art.get("parts", [])
-        )
+        has_text_artifact = False
+        for art in artifacts:
+            for p in art.get("parts", []):
+                if p.get("type") == "text":
+                    has_text_artifact = True
+                    # Update existing text with stripped version
+                    p["text"] = final_response
+
         if not has_text_artifact:
             artifacts.insert(0, {
                 "artifactId": str(uuid.uuid4()),
@@ -1177,7 +1172,8 @@ async def handle_message_send(
             params["metadata"] = metadata
         
         if respond_in_audio == "always" or (respond_in_audio == "when_client_asks" and has_audio):
-            logger.info("🔊 Fallback TTS will handle audio if requested")
+            text += "\n\n[SYSTEM DIRECTIVE]: You must call the `text_to_speech` tool using the exact text of your response to generate the audio. Do not just reply with text, you MUST execute the tool call."
+            logger.info("🔊 Appended TTS tool directive because user sent audio or agent is configured to always respond in audio")
 
     logger.info(f"📝 Extracted text: {text}")
     logger.info(f"📎 Extracted files: {len(files)}")
@@ -1189,6 +1185,11 @@ async def handle_message_send(
     try:
         metadata = extract_metadata_from_request(params)
         logger.info(f"📋 Extracted metadata: {metadata}")
+        
+        # Extract phone number for N8N webhook
+        phone_number = ""
+        if isinstance(metadata, dict) and isinstance(metadata.get("contact"), dict):
+            phone_number = metadata["contact"].get("phone_number", "")
         
         # Override context_id with the real conversation_id from CRM to ensure stable session IDs
         if metadata and "evoai_crm_data" in metadata:
@@ -1326,7 +1327,7 @@ async def handle_message_send(
                                                 new_agent_audio_always = tts_cfg.get("respondInAudio") == "always"
                                         
                                         if has_audio or new_agent_audio_always:
-                                            system_message += "\n\n"
+                                            system_message += "\n\n[SYSTEM DIRECTIVE]: You must call the `text_to_speech` tool using the exact text of your response to generate the audio. Do not just reply with text, you MUST execute the tool call."
                                         
                                         runner = StandardRunner(db=background_db)
                                         logger.info(f"🤖 Auto-triggering new agent {new_agent_id} after handoff")
@@ -1342,6 +1343,7 @@ async def handle_message_send(
                                         )
                                         
                                         final_text = result.get("final_response", "")
+                                        original_text = final_text # Salvar para o webhook N8N
                                         
                                         files_payload = None
                                         if artifacts_service:
@@ -1419,6 +1421,33 @@ async def handle_message_send(
                                                                 final_text = "" # limpa texto no handoff pra não mandar duplicado
                                                 except Exception as e:
                                                     logger.error(f"Error generating fallback audio for handoff: {e}")
+                                        # Disparo direto do N8N no handoff usando o original_text
+                                        if phone_number and original_text:
+                                            import re
+                                            link_pattern = r'\[?VIDEO_LINK:\s*(https?://[^\s\]]+)\]?'
+                                            matches = list(re.finditer(link_pattern, original_text))
+                                            if matches:
+                                                import httpx
+                                                import asyncio
+                                                async def fire_n8n_webhook_handoff(phone, v_url):
+                                                    try:
+                                                        payload = {"telefone": phone, "video_url": v_url, "media": v_url}
+                                                        import os
+                                                        url = os.environ.get("N8N_WEBHOOK_URL")
+                                                        if not url:
+                                                            logger.error("N8N_WEBHOOK_URL não está configurada nas variáveis de ambiente.")
+                                                            return
+                                                        async with httpx.AsyncClient() as client:
+                                                            resp = await client.post(url, json=payload, timeout=10.0)
+                                                            logger.info(f"🚀 N8N Webhook fired from handoff for {phone} with video {v_url}. Status: {resp.status_code}")
+                                                    except Exception as e:
+                                                        logger.error(f"❌ Failed to fire N8N webhook from handoff: {e}")
+                                                
+                                                for match in matches:
+                                                    v_url = match.group(1)
+                                                    if v_url:
+                                                        asyncio.create_task(fire_n8n_webhook_handoff(phone_number, v_url))
+                                                        final_text = final_text.replace(match.group(0), '').strip()
 
                                         if final_text or files_payload:
                                             crm_client = EvoCrmClient()
@@ -1595,6 +1624,18 @@ async def handle_message_send(
                             fr = part["functionResponse"]
                             if fr.get("name") == "text_to_speech":
                                 filename = fr.get("response", {}).get("filename")
+                            elif fr.get("name") == "send_agent_media":
+                                resp = fr.get("response", {})
+                                if resp.get("status") == "success":
+                                    artifacts.append({
+                                        "artifactId": str(uuid.uuid4()),
+                                        "parts": [{
+                                            "type": "file",
+                                            "url": resp.get("url"),
+                                            "mimeType": resp.get("mimeType", "video/mp4")
+                                        }]
+                                    })
+                                    logger.info(f"📹 Attached media artifact to response: {resp.get('url')}...")
                 
                 # Check OpenAI format
                 elif role == "tool":
@@ -1605,6 +1646,22 @@ async def handle_message_send(
                             resp = json.loads(content) if isinstance(content, str) else content
                             if isinstance(resp, dict):
                                 filename = resp.get("filename")
+                        except Exception:
+                            pass
+                    elif event.get("name") == "send_agent_media":
+                        try:
+                            import json
+                            resp = json.loads(content) if isinstance(content, str) else content
+                            if isinstance(resp, dict) and resp.get("status") == "success":
+                                artifacts.append({
+                                    "artifactId": str(uuid.uuid4()),
+                                    "parts": [{
+                                        "type": "file",
+                                        "url": resp.get("url"),
+                                        "mimeType": resp.get("mimeType", "video/mp4")
+                                    }]
+                                })
+                                logger.info(f"📹 Attached media artifact to response: {resp.get('url')}...")
                         except Exception:
                             pass
                             
@@ -1688,11 +1745,12 @@ async def handle_message_send(
                     audio_bytes = await provider.generate_speech(cleaned_text, tts_config)
                     
                     is_instagram = False
-                    if "evoai_crm_data" in metadata:
-                        is_instagram = "instagram" in str(metadata["evoai_crm_data"]).lower()
-                    elif "inboxId" in metadata:
-                        # Fallback if we have other hints
-                        is_instagram = "instagram" in str(metadata).lower()
+                    if isinstance(metadata, dict) and "evoai_crm_data" in metadata:
+                        crm_data = metadata["evoai_crm_data"]
+                        if isinstance(crm_data, dict) and "conversation" in crm_data:
+                            conv = crm_data["conversation"]
+                            if isinstance(conv, dict) and conv.get("channel") == "Channel::Instagram":
+                                is_instagram = True
                     
                     if is_instagram:
                         audio_bytes = _convert_to_mp4_aac(audio_bytes)
@@ -1777,6 +1835,41 @@ async def handle_message_send(
         logger.info(
             f"📦 Task response created with {len(task_response.get('artifacts', []))} artifacts"
         )
+
+        # Trigger N8N webhook if there are video/file artifacts
+        if phone_number:
+            video_urls = []
+            for art in task_response.get("artifacts", []):
+                for part in art.get("parts", []):
+                    if part.get("type") == "file":
+                        file_obj = part.get("file", {})
+                        if file_obj and file_obj.get("url"):
+                            video_urls.append(file_obj.get("url"))
+            
+            if video_urls:
+                try:
+                    import httpx
+                    import asyncio
+                    
+                    async def fire_n8n_webhook(phone, v_url):
+                        try:
+                            payload = {"telefone": phone, "video_url": v_url, "media": v_url}
+                            import os
+                            url = os.environ.get("N8N_WEBHOOK_URL")
+                            if not url:
+                                logger.error("N8N_WEBHOOK_URL não está configurada nas variáveis de ambiente.")
+                                return
+                            async with httpx.AsyncClient() as client:
+                                resp = await client.post(url, json=payload, timeout=10.0)
+                                logger.info(f"🚀 N8N Webhook fired for {phone} with video {v_url}. Status: {resp.status_code}")
+                        except Exception as e:
+                            logger.error(f"❌ Failed to fire N8N webhook for {v_url}: {e}")
+                            
+                    # Fire and forget for each video
+                    for v_url in video_urls:
+                        asyncio.create_task(fire_n8n_webhook(phone_number, v_url))
+                except Exception as e:
+                    logger.error(f"❌ Failed to setup N8N webhook tasks: {e}")
 
         # Handle push notification if configured
         if push_notification_config:
@@ -1904,7 +1997,7 @@ async def handle_message_stream(
                 has_audio = metadata.get("has_audio", False) or has_audio_in_files
             
                 if respond_in_audio == "always" or (respond_in_audio == "when_client_asks" and has_audio):
-                    text += "\n\n"
+                    text += "\n\n[SYSTEM DIRECTIVE]: You must call the `text_to_speech` tool using the exact text of your response to generate the audio. Do not just reply with text, you MUST execute the tool call."
                     logger.info("🔊 Appended TTS tool directive in stream because user sent audio or agent is configured to always respond in audio")
 
     # Extract and combine conversation history
