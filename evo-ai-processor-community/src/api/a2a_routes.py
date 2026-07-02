@@ -1327,7 +1327,7 @@ async def handle_message_send(
                                                 new_agent_audio_always = tts_cfg.get("respondInAudio") == "always"
                                         
                                         if has_audio or new_agent_audio_always:
-                                            system_message += "\n\n[SYSTEM DIRECTIVE]: You must call the `text_to_speech` tool using the exact text of your response to generate the audio. Do not just reply with text, you MUST execute the tool call."
+                                            system_message += "\n\n"
                                         
                                         runner = StandardRunner(db=background_db)
                                         logger.info(f"🤖 Auto-triggering new agent {new_agent_id} after handoff")
@@ -1391,6 +1391,34 @@ async def handle_message_send(
                                                 except Exception as e:
                                                     logger.error(f"Failed to decode artifact in auto-trigger: {e}")
                                             
+                                        # Disparo N8N ANTES do TTS limpar final_text
+                                        contact_info = {}
+                                        if metadata and "evoai_crm_data" in metadata:
+                                            contact_info = metadata["evoai_crm_data"].get("contact", {})
+                                        phone_number = contact_info.get("phone") or contact_info.get("phone_number")
+                                        if phone_number and final_text:
+                                            import re
+                                            link_pattern = r'\[?VIDEO_LINK:\s*(https?://[^\s\]]+)\]?'
+                                            matches = list(re.finditer(link_pattern, final_text))
+                                            if matches:
+                                                import httpx
+                                                import asyncio
+                                                async def fire_n8n_webhook_handoff(phone, v_url):
+                                                    try:
+                                                        payload = {"telefone": phone, "video_url": v_url, "media": v_url}
+                                                        url = "https://n8n1.vysortech.app.br/webhook/video-drone-ganader"
+                                                        async with httpx.AsyncClient() as client:
+                                                            resp = await client.post(url, json=payload, timeout=10.0)
+                                                            logger.info(f"🚀 N8N Webhook fired from handoff for {phone} with video {v_url}. Status: {resp.status_code}")
+                                                    except Exception as e:
+                                                        logger.error(f"❌ Failed to fire N8N webhook from handoff: {e}")
+
+                                                for match in matches:
+                                                    v_url = match.group(1)
+                                                    if v_url:
+                                                        asyncio.create_task(fire_n8n_webhook_handoff(phone_number, v_url))
+                                                        final_text = final_text.replace(match.group(0), '').strip()
+
                                             if not filename and final_text and (has_audio or new_agent_audio_always):
                                                 try:
                                                     if new_agent:
