@@ -1,2 +1,0 @@
-# Atlassian MCP server configuration
-

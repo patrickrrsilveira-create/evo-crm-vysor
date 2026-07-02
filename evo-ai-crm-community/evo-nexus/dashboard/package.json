@@ -1,8 +1,0 @@
-{
-  "name": "evonexus-dashboard",
-  "private": true,
-  "workspaces": [
-    "frontend",
-    "packages/*"
-  ]
-}

@@ -1,2 +1,0 @@
--- Remove UUID extension (only if no other tables are using it)
--- DROP EXTENSION IF EXISTS "uuid-ossp";

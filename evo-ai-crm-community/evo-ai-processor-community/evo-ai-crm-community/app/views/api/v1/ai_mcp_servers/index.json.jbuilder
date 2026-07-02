@@ -1,1 +1,0 @@
-json.payload @mcp_servers

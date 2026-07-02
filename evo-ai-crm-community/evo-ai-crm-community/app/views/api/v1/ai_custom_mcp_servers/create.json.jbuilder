@@ -1,1 +1,0 @@
-json.payload @custom_mcp_server

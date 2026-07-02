@@ -31,23 +31,19 @@ type EvoAuthPlan struct {
 	IsActive bool             `json:"is_active"`
 	IsCustom bool             `json:"is_custom"`
 	StartsAt string           `json:"starts_at"`
-	EndsAt   *string          `json:"ends_at,omitempty"`
+	EndsAt   string           `json:"ends_at"`
 	Features []EvoAuthFeature `json:"features"`
 }
 
-// EvoAuthAccount represents an account from the auth service.
-// The id field is interface{} to support both integer (numeric IDs from Ruby)
-// and UUID string formats. Status is optional since some auth service versions
-// omit it from the accounts payload.
 type EvoAuthAccount struct {
-	ID         interface{}     `json:"id"`
-	Name       string          `json:"name"`
-	Status     *string         `json:"status,omitempty"`
-	Locale     string          `json:"locale"`
-	CreatedAt  *string         `json:"created_at,omitempty"`
-	UpdatedAt  *string         `json:"updated_at,omitempty"`
-	Features   json.RawMessage `json:"features,omitempty"`
-	ActivePlan *EvoAuthPlan    `json:"active_plan,omitempty"`
+	ID         interface{}      `json:"id"`
+	Name       string           `json:"name"`
+	Status     string           `json:"status"`
+	Locale     string           `json:"locale"`
+	CreatedAt  string           `json:"created_at"`
+	UpdatedAt  string           `json:"updated_at"`
+	Features   json.RawMessage  `json:"features"`
+	ActivePlan *EvoAuthPlan     `json:"active_plan,omitempty"`
 }
 
 // EvoAuthValidateToken represents the complete response from /api/v1/me

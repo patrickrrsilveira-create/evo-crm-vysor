@@ -1,1 +1,0 @@
-DELETE FROM evo_core_mcp_servers WHERE id = 'c1234567-89ab-cdef-0123-456789abcdef'::uuid;

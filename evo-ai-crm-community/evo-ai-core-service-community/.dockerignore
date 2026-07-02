@@ -1,7 +1,0 @@
-.git
-.gitignore
-.env
-*.md
-test.sh
-tmp/
-vendor/ 
