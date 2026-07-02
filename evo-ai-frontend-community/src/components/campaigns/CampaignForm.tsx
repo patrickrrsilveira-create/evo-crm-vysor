@@ -7,7 +7,7 @@ interface CampaignFormProps {
 }
 
 interface SelectedInboxes {
-  [key: string]: boolean;
+  [key: number]: boolean;
 }
 
 export const CampaignForm: React.FC<CampaignFormProps> = ({ onSubmit, loading = false }) => {
@@ -28,7 +28,7 @@ export const CampaignForm: React.FC<CampaignFormProps> = ({ onSubmit, loading = 
     setFormData(prev => ({ ...prev, name: e.target.value }));
   };
 
-  const handleInboxToggle = (inboxId: string) => {
+  const handleInboxToggle = (inboxId: number) => {
     setFormData(prev => ({
       ...prev,
       selectedInboxes: {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { CampaignForm } from '../components/campaigns/CampaignForm';
+import { CampaignForm } from '../components/Campaigns/CampaignForm';
 import { campaignsService, CampaignPayload, Campaign } from '../services/campaignsService';
 
 export const CampaignsPage: React.FC = () => {
