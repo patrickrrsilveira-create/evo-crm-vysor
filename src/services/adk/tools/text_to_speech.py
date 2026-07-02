@@ -293,25 +293,21 @@ def create_text_to_speech_tool(config: Dict[str, Any]) -> FunctionTool:
             # Create Part and save to artifacts
             audio_blob = types.Blob(mime_type=mime_type, data=audio_bytes)
             audio_part = types.Part(inline_data=audio_blob)
-            version = None
-            if tool_context:
-                version = await tool_context.save_artifact(filename, audio_part)
+            version = await tool_context.save_artifact(filename, audio_part)
 
             result = {
                 "status": "success",
                 "detail": "Speech generated successfully and stored in artifacts.",
                 "filename": filename,
+                "version": str(version),
             }
-            if version:
-                result["version"] = str(version)
 
             try:
-                if tool_context:
-                    loaded_artifact = await tool_context.load_artifact(filename, version)
-                    if loaded_artifact and loaded_artifact.text and loaded_artifact.text.startswith("Artifact URL: "):
-                        result["audio_url"] = loaded_artifact.text.replace("Artifact URL: ", "")
-                    else:
-                        result["url_hint"] = loaded_artifact.text if loaded_artifact and loaded_artifact.text else f"Audio file saved as {filename} version {version}."
+                loaded_artifact = await tool_context.load_artifact(filename, version)
+                if loaded_artifact and loaded_artifact.text and loaded_artifact.text.startswith("Artifact URL: "):
+                    result["audio_url"] = loaded_artifact.text.replace("Artifact URL: ", "")
+                else:
+                    result["url_hint"] = loaded_artifact.text if loaded_artifact and loaded_artifact.text else f"Audio file saved as {filename} version {version}."
             except Exception as e:
                 result["url_error"] = str(e)
 
