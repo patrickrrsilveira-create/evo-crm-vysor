@@ -1440,13 +1440,11 @@ async def handle_message_send(
                                                 import asyncio
                                                 async def fire_n8n_webhook_handoff(phone, v_url):
                                                     try:
-                                                        # Limpa o telefone mantendo apenas números (exigido pela Evolution API/WhatsApp)
-                                                        clean_phone = re.sub(r'\D', '', phone) if phone else ""
-                                                        payload = {"telefone": clean_phone, "video_url": v_url, "media": v_url}
+                                                        payload = {"telefone": phone, "video_url": v_url, "media": v_url}
                                                         url = "https://n8n1.vysortech.app.br/webhook/video-drone-ganader"
                                                         async with httpx.AsyncClient() as client:
                                                             resp = await client.post(url, json=payload, timeout=10.0)
-                                                            logger.info(f"🚀 N8N Webhook fired from handoff for {clean_phone} with video {v_url}. Status: {resp.status_code}")
+                                                            logger.info(f"🚀 N8N Webhook fired from handoff for {phone} with video {v_url}. Status: {resp.status_code}")
                                                     except Exception as e:
                                                         logger.error(f"❌ Failed to fire N8N webhook from handoff: {e}")
                                                 
