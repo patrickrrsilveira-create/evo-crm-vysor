@@ -303,9 +303,10 @@ class ToolBuilder:
             )
             from src.services.adk.tools.evo_crm.transfer_conversation import create_transfer_conversation_tool
 
-            # Add transfer_to_human tool if enabled
-            if transfer_to_human_enabled:
-                try:
+            try:
+                # Add transfer_to_human tool if enabled
+                if transfer_to_human_enabled:
+                    # Get transfer_rules from agent config
                     transfer_rules = agent_config.get("transfer_rules", [])
                     transfer_tool = create_transfer_to_human_tool(
                         transfer_rules=transfer_rules if isinstance(transfer_rules, list) else []
@@ -315,34 +316,26 @@ class ToolBuilder:
                         f"Added transfer_to_human tool from CRM tools"
                         + (f" with {len(transfer_rules)} transfer rules" if transfer_rules else "")
                     )
-                except Exception as e:
-                    logger.error(f"Error loading transfer_to_human tool: {e}")
 
-            # Add send_private_message tool if reminders are enabled
-            if allow_reminders:
-                try:
+                # Add send_private_message tool if reminders are enabled
+                if allow_reminders:
                     private_message_tool = create_send_private_message_tool()
                     self.tools.append(private_message_tool)
                     logger.info(
                         f"Added send_private_message tool from CRM tools (reminders enabled)"
                     )
-                except Exception as e:
-                    logger.error(f"Error loading send_private_message tool: {e}")
 
-            # Add update_contact tool if enabled
-            if allow_contact_edit:
-                try:
+                # Add update_contact tool if enabled
+                if allow_contact_edit:
                     update_contact_tool = create_update_contact_tool()
                     self.tools.append(update_contact_tool)
                     logger.info(
                         f"Added update_contact tool from CRM tools"
                     )
-                except Exception as e:
-                    logger.error(f"Error loading update_contact tool: {e}")
 
-            # Add pipeline_manipulation tool if enabled
-            if allow_pipeline_manipulation:
-                try:
+                # Add pipeline_manipulation tool if enabled
+                if allow_pipeline_manipulation:
+                    # Get pipeline_rules from agent config
                     pipeline_rules = agent_config.get("pipeline_rules", [])
                     pipeline_tool = create_pipeline_manipulation_tool(
                         pipeline_rules=pipeline_rules if isinstance(pipeline_rules, list) else []
@@ -352,42 +345,34 @@ class ToolBuilder:
                         f"Added pipeline_manipulation tool from CRM tools"
                         + (f" with {len(pipeline_rules)} pipeline rules" if pipeline_rules else "")
                     )
-                except Exception as e:
-                    logger.error(f"Error loading pipeline_manipulation tool: {e}")
 
-            # Add manage_conversation_labels tool if enabled
-            if allow_manage_labels:
-                try:
+                # Add manage_conversation_labels tool if enabled
+                if allow_manage_labels:
                     labels_tool = create_manage_conversation_labels_tool()
                     self.tools.append(labels_tool)
                     logger.info(
                         f"Added manage_conversation_labels tool from CRM tools"
                     )
-                except Exception as e:
-                    logger.error(f"Error loading manage_conversation_labels tool: {e}")
 
-            # Add link_product_to_pipeline_item tool if enabled
-            if allow_product_sales:
-                try:
+                # Add link_product_to_pipeline_item tool if enabled
+                if allow_product_sales:
                     product_link_tool = create_link_product_to_pipeline_item_tool()
                     self.tools.append(product_link_tool)
                     logger.info(
                         f"Added link_product_to_pipeline_item tool from CRM tools"
                     )
-                except Exception as e:
-                    logger.error(f"Error loading link_product_to_pipeline_item tool: {e}")
 
-            # Add transfer_conversation tool for A2A handoffs
-            if allow_agent_transfer:
-                try:
+                # Add transfer_conversation tool for A2A handoffs
+                if allow_agent_transfer:
                     transfer_rules = agent_config.get("transfer_rules", [])
                     transfer_conv_tool = create_transfer_conversation_tool(
                         transfer_rules=transfer_rules if isinstance(transfer_rules, list) else []
                     )
                     self.tools.append(transfer_conv_tool)
                     logger.info(f"Added transfer_conversation tool for A2A handoffs")
-                except Exception as e:
-                    logger.error(f"Error loading transfer_conversation tool: {e}")
+
+            except Exception as e:
+                logger.error(f"Error loading CRM tools: {e}")
 
         # Process TTS integration (text_to_speech)
         integrations = agent_config.get("integrations", {})
@@ -544,32 +529,31 @@ class ToolBuilder:
                     logger.warning("Cannot create Google Calendar tools: agent_id not available")
                 else:
                     # Add check_availability tool with configs from agent.config.integrations
-                    try:
-                        self.tools.append(
-                            create_check_availability_tool(
-                                agent_id=effective_agent_id,
-                                calendar_config=google_calendar_config,
-                                credentials_config=google_calendar_credentials,
-                                db=db
-                            )
+                    self.tools.append(
+                        create_check_availability_tool(
+                            agent_id=effective_agent_id,
+                            calendar_config=google_calendar_config,
+                            credentials_config=google_calendar_credentials,
+                            db=db
                         )
-                        logger.info(f"Added Google Calendar tool (check_availability) for agent {effective_agent_id}")
-                    except Exception as e:
-                        logger.error(f"Error creating Google Calendar check_availability tool: {e}")
+                    )
 
                     # Add create_event tool with configs from agent.config.integrations
-                    try:
-                        self.tools.append(
-                            create_calendar_event_tool(
-                                agent_id=effective_agent_id,
-                                calendar_config=google_calendar_config,
-                                credentials_config=google_calendar_credentials,
-                                db=db
-                            )
+                    self.tools.append(
+                        create_calendar_event_tool(
+                            agent_id=effective_agent_id,
+                            calendar_config=google_calendar_config,
+                            credentials_config=google_calendar_credentials,
+                            db=db
                         )
-                        logger.info(f"Added Google Calendar tool (create_event) for agent {effective_agent_id}")
-                    except Exception as e:
-                        logger.error(f"Error creating Google Calendar create_event tool: {e}")
+                    )
+
+                    logger.info(
+                        f"Added Google Calendar tools (check_availability, create_event) "
+                        f"for agent {effective_agent_id}"
+                    )
+            except Exception as e:
+                logger.error(f"Error creating Google Calendar tools: {e}")
         elif google_calendar_config and google_calendar_config.get("connected"):
             logger.warning("Google Calendar integration connected but credentials not available")
 
@@ -596,60 +580,51 @@ class ToolBuilder:
                     logger.warning("Cannot create Google Sheets tools: agent_id not available")
                 else:
                     # Add read_spreadsheet tool
-                    try:
-                        self.tools.append(
-                            create_read_spreadsheet_tool(
-                                agent_id=effective_agent_id,
-                                sheets_config=google_sheets_config,
-                                credentials_config=google_sheets_credentials,
-                                db=db
-                            )
+                    self.tools.append(
+                        create_read_spreadsheet_tool(
+                            agent_id=effective_agent_id,
+                            sheets_config=google_sheets_config,
+                            credentials_config=google_sheets_credentials,
+                            db=db
                         )
-                        logger.info(f"Added Google Sheets tool (read_spreadsheet) for agent {effective_agent_id}")
-                    except Exception as e:
-                        logger.error(f"Error creating Google Sheets read_spreadsheet tool: {e}")
+                    )
 
                     # Add write_spreadsheet tool
-                    try:
-                        self.tools.append(
-                            create_write_spreadsheet_tool(
-                                agent_id=effective_agent_id,
-                                sheets_config=google_sheets_config,
-                                credentials_config=google_sheets_credentials,
-                                db=db
-                            )
+                    self.tools.append(
+                        create_write_spreadsheet_tool(
+                            agent_id=effective_agent_id,
+                            sheets_config=google_sheets_config,
+                            credentials_config=google_sheets_credentials,
+                            db=db
                         )
-                        logger.info(f"Added Google Sheets tool (write_spreadsheet) for agent {effective_agent_id}")
-                    except Exception as e:
-                        logger.error(f"Error creating Google Sheets write_spreadsheet tool: {e}")
+                    )
 
                     # Add append_spreadsheet tool
-                    try:
-                        self.tools.append(
-                            create_append_spreadsheet_tool(
-                                agent_id=effective_agent_id,
-                                sheets_config=google_sheets_config,
-                                credentials_config=google_sheets_credentials,
-                                db=db
-                            )
+                    self.tools.append(
+                        create_append_spreadsheet_tool(
+                            agent_id=effective_agent_id,
+                            sheets_config=google_sheets_config,
+                            credentials_config=google_sheets_credentials,
+                            db=db
                         )
-                        logger.info(f"Added Google Sheets tool (append_spreadsheet) for agent {effective_agent_id}")
-                    except Exception as e:
-                        logger.error(f"Error creating Google Sheets append_spreadsheet tool: {e}")
+                    )
 
                     # Add create_spreadsheet tool
-                    try:
-                        self.tools.append(
-                            create_create_spreadsheet_tool(
-                                agent_id=effective_agent_id,
-                                sheets_config=google_sheets_config,
-                                credentials_config=google_sheets_credentials,
-                                db=db
-                            )
+                    self.tools.append(
+                        create_create_spreadsheet_tool(
+                            agent_id=effective_agent_id,
+                            sheets_config=google_sheets_config,
+                            credentials_config=google_sheets_credentials,
+                            db=db
                         )
-                        logger.info(f"Added Google Sheets tool (create_spreadsheet) for agent {effective_agent_id}")
-                    except Exception as e:
-                        logger.error(f"Error creating Google Sheets create_spreadsheet tool: {e}")
+                    )
+
+                    logger.info(
+                        f"Added Google Sheets tools (read, write, append, create) "
+                        f"for agent {effective_agent_id}"
+                    )
+            except Exception as e:
+                logger.error(f"Error creating Google Sheets tools: {e}")
         elif google_sheets_config and google_sheets_config.get("connected"):
             logger.warning("Google Sheets integration connected but credentials not available")
 
@@ -674,32 +649,31 @@ class ToolBuilder:
                     logger.warning("Cannot create Microsoft Teams tools: agent_id not available")
                 else:
                     # Add check_availability tool
-                    try:
-                        self.tools.append(
-                            create_check_teams_availability_tool(
-                                agent_id=effective_agent_id,
-                                teams_config=microsoft_teams_config,
-                                credentials_config=microsoft_teams_credentials,
-                                db=db
-                            )
+                    self.tools.append(
+                        create_check_teams_availability_tool(
+                            agent_id=effective_agent_id,
+                            teams_config=microsoft_teams_config,
+                            credentials_config=microsoft_teams_credentials,
+                            db=db
                         )
-                        logger.info(f"Added Microsoft Teams tool (check_availability) for agent {effective_agent_id}")
-                    except Exception as e:
-                        logger.error(f"Error creating Microsoft Teams check_availability tool: {e}")
+                    )
 
                     # Add create_meeting tool
-                    try:
-                        self.tools.append(
-                            create_create_teams_meeting_tool(
-                                agent_id=effective_agent_id,
-                                teams_config=microsoft_teams_config,
-                                credentials_config=microsoft_teams_credentials,
-                                db=db
-                            )
+                    self.tools.append(
+                        create_create_teams_meeting_tool(
+                            agent_id=effective_agent_id,
+                            teams_config=microsoft_teams_config,
+                            credentials_config=microsoft_teams_credentials,
+                            db=db
                         )
-                        logger.info(f"Added Microsoft Teams tool (create_meeting) for agent {effective_agent_id}")
-                    except Exception as e:
-                        logger.error(f"Error creating Microsoft Teams create_meeting tool: {e}")
+                    )
+
+                    logger.info(
+                        f"Added Microsoft Teams tools (check_availability, create_meeting) "
+                        f"for agent {effective_agent_id}"
+                    )
+            except Exception as e:
+                logger.error(f"Error creating Microsoft Teams tools: {e}")
         elif microsoft_teams_config and microsoft_teams_config.get("connected"):
             logger.warning("Microsoft Teams integration connected but credentials not available")
 

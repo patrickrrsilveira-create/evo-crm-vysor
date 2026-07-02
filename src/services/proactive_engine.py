@@ -42,7 +42,8 @@ class ProactiveEngineService:
             db = SessionLocal()
             
             # Fetch active campaigns
-            query = text("SELECT id, account_id, trigger_target, delay_hours, message_template, agent_id, attachment_url FROM proactive_campaigns WHERE status = 'ACTIVE'")
+            # For simplicity in this blueprint, we use raw SQL or SQLAlchemy to fetch campaigns
+            query = text("SELECT id, account_id, trigger_target, delay_hours, message_template, agent_id FROM proactive_campaigns WHERE status = 'ACTIVE'")
             campaigns = db.execute(query).fetchall()
             
             for campaign in campaigns:
@@ -51,7 +52,11 @@ class ProactiveEngineService:
                 # Here we would query the Chatwoot API (or DB directly) 
                 # to find conversations matching the label (trigger_target)
                 # and with last_activity > delay_hours.
-                # Push eligible conversations to a Delay Queue
+                # Example:
+                # 1. Hit GET /api/v1/accounts/{account_id}/conversations?labels={trigger_target}
+                # 2. Filter by updated_at
+                # 3. Exclude conversations with label "proact_done_{campaign.id}"
+                # 4. Push eligible conversations to a Delay Queue (Redis or asyncio.sleep queue)
                 
                 # Pseudocode for the actual delivery queue to prevent bans:
                 # asyncio.create_task(self.queue_delivery(eligible_conversations, campaign))
@@ -64,50 +69,22 @@ class ProactiveEngineService:
 
     async def queue_delivery(self, conversations, campaign):
         """Sends messages with a delay to avoid Meta/WhatsApp bans."""
-        import httpx  # For sending async HTTP requests to N8N
-        
-        N8N_WEBHOOK_URL = "https://n8n.sua-empresa.com.br/webhook/enviar-video" # TODO: Substituir pela URL real do seu N8N
-        
         for conv in conversations:
             try:
-                # 1. Enviar mensagem de texto normal via CRM API
+                # Send Message via CRM API
                 # POST /api/v1/accounts/{account_id}/conversations/{conv_id}/messages
                 # payload = {"content": campaign.message_template, "private": False}
-                
-                logger.info(f"Sent proactive message to conversation {conv['id']}")
-                
-                # 2. Se a campanha tiver uma mídia (attachment_url), dispara pro N8N!
-                if hasattr(campaign, 'attachment_url') and campaign.attachment_url:
-                    logger.info(f"Campaign {campaign.id} tem mídia associada. Disparando webhook do n8n para conv {conv['id']}...")
-                    
-                    # Pegamos o número do contato (telefone) do conversation. Exemplo: conv['meta']['sender']['phone_number']
-                    # Neste mock, vamos supor que o numero venha no objeto
-                    contact_number = conv.get('phone_number', '') 
-                    
-                    # Vamos tentar adivinhar o mediatype pela extensão ou enviar genérico
-                    media_type = "video" if ".mp4" in campaign.attachment_url.lower() else "document"
-                    
-                    n8n_payload = {
-                        "number": contact_number,
-                        "mediatype": media_type,
-                        "mimetype": "video/mp4" if media_type == "video" else "application/pdf",
-                        "caption": "",
-                        "media": campaign.attachment_url,
-                        "fileName": "arquivo_campanha"
-                    }
-                    
-                    async with httpx.AsyncClient() as client:
-                        resp = await client.post(N8N_WEBHOOK_URL, json=n8n_payload)
-                        logger.info(f"N8N disparado com sucesso: {resp.status_code}")
                 
                 # Apply idempotency label
                 # POST /api/v1/accounts/{account_id}/conversations/{conv_id}/labels
                 # payload = {"labels": [f"proact_done_{campaign.id}"]}
                 
+                logger.info(f"Sent proactive message to conversation {conv['id']}")
+                
                 # Anti-ban delay
                 await asyncio.sleep(30)
             except Exception as e:
-                logger.error(f"Delivery failed for conv {conv.get('id', 'unknown')}: {e}")
+                logger.error(f"Delivery failed for conv {conv['id']}: {e}")
 
 # Singleton instance
 proactive_engine = ProactiveEngineService()

@@ -65,7 +65,7 @@ def create_check_availability_tool(
         try:
             logger.info(f"Checking calendar availability from {start_date} to {end_date}, find_slots={find_slots}")
             logger.info(f"[CalendarConfig] Full config keys: {list(calendar_config.keys()) if calendar_config else 'None'}")
-            logger.info(f"[CalendarConfig] businessHours raw: {((calendar_config or {}).get('settings') or (calendar_config or {})).get('businessHours', 'NOT FOUND')}")
+            logger.info(f"[CalendarConfig] businessHours raw: {(calendar_config.get('settings') or calendar_config).get('businessHours', 'NOT FOUND')}")
             logger.debug(f"Calendar config received: {calendar_config}")
             logger.debug(f"Credentials available: {bool(credentials_config)}")
 
@@ -515,4 +515,4 @@ Args:
     slot_duration (int, optional): Duration of each slot in minutes when find_slots=True (default: 60)
 """
 
-    return FunctionTool(func=check_calendar_availability)
+    return check_calendar_availability

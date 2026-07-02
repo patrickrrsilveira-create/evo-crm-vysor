@@ -332,4 +332,4 @@ Examples:
 - Schedule without availability check: title='Personal Task', start_date='2024-01-16T09:00:00', end_date='2024-01-16T09:30:00', check_availability=False
 """
 
-    return FunctionTool(func=create_calendar_event)
+    return create_calendar_event
