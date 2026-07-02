@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 class Webhooks::BotRuntimeController < ActionController::API
+  include Events::Types
   before_action :validate_secret
 
   def postback
@@ -39,6 +40,10 @@ class Webhooks::BotRuntimeController < ActionController::API
     )
 
     if message
+      Rails.configuration.dispatcher.dispatch(
+        Events::Types::CONVERSATION_TYPING_OFF, Time.zone.now,
+        conversation: conversation, user: agent_bot, is_private: false
+      )
       Rails.logger.info "[BotRuntime::Postback] Message created: #{message.id} conversation=#{conversation.display_id}"
       render json: { status: 'sent' }, status: :ok
     else

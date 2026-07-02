@@ -147,13 +147,14 @@ class Whatsapp::Providers::EvolutionGoService < Whatsapp::Providers::BaseService
       Events::Types::CONVERSATION_TYPING_OFF => 'paused'
     }
 
-    presence = status_map[typing_status] || 'paused'
+    state = status_map[typing_status] || 'paused'
+    is_audio = typing_status == Events::Types::CONVERSATION_RECORDING
     clean_number = phone_number.delete('+')
 
     body = {
       number: clean_number,
-      presence: presence,
-      delay: 1200
+      state: state,
+      isAudio: is_audio
     }
 
     response = HTTParty.post(
