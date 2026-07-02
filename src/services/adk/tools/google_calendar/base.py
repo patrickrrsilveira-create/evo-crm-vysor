@@ -315,6 +315,7 @@ class GoogleCalendarClient:
             service = self.get_calendar_service(credentials_config)
 
             # Build event
+            from typing import Dict, Any
             event: Dict[str, Any] = {
                 'summary': summary,
                 'description': description,
